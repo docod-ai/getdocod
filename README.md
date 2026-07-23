@@ -65,7 +65,8 @@ So DOCOD isn't asking you to adopt something new. It's the SDLC you already know
 ## See it work in 60 seconds
 
 ```bash
-git clone https://github.com/docod-ai/getdocod && ./docod/install.sh /path/to/your/project
+git clone https://github.com/docod-ai/getdocod
+./getdocod/install.sh /path/to/your/project
 cd /path/to/your/project
 ```
 
