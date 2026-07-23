@@ -297,7 +297,31 @@ conversation cannot bounce through a subagent's hand-back protocol.
    instance's `language:`.
 4. Topic: $ARGUMENTS — if empty, ask what is on the table.
 LEAD
-echo "   ✓ 8 commands → .claude/commands/docod/  (status·start·continue·approve·ws·run·report·lead)"
+cat > "$CMD/loop.md" <<'LOOP'
+---
+description: "Delegated run under YOUR mandate: chain build→QA→review across tasks, stopping only at what needs a human"
+argument-hint: "<tasks|ws scope> [--until qa|review]"
+---
+You will drive the execution chain under an explicit HUMAN MANDATE. The user
+orchestrates by ISSUING it; you execute it faithfully. This batches the
+non-human stretch between gates — it never replaces a gate.
+
+1. Restate the mandate: which tasks, in what order (per tasks.md), until which
+   stage (default: through code-review). Confirm ONCE, then run without
+   narrating every step.
+2. Per task: delegate docod-task-executor → on delivery run
+   `node .docod/docod.mjs verify` + require evidence → delegate
+   docod-qa-executor → bugs found: fix_bugs → re-QA (max 2 rounds) →
+   delegate docod-code-review.
+3. STOP and return to the user when: an agent hands back QUESTIONS FOR THE
+   USER; the same task gets changes_requested/blocked twice; a requires
+   blocks; anything needs approval (you NEVER approve); or your judgment says
+   a human would want to know now. Otherwise: collect, do not interrupt.
+4. At the end or at a stop, ONE batch report: per task, ticks + verdicts +
+   evidence pointers; then the exact queue awaiting the human (approvals,
+   questions, decisions). Deploy and release remain human acts.
+LOOP
+echo "   ✓ 9 commands → .claude/commands/docod/  (status·start·continue·approve·ws·run·report·lead·loop)"
 
 # ── 6. root instructions → CLAUDE.md + AGENTS.md (EVERY harness finds DOCOD)
 #      Slash commands only exist for Claude Code; Codex/Gemini/Cursor/Kimi read

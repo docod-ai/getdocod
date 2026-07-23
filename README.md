@@ -121,6 +121,8 @@ Two things make this different from pointing a raw agent at your repo:
 
 So no, the paperwork isn't the product. It's what makes the code **explainable**: every line traces back to a requirement, a design, a rule, and a decision with an owner.
 
+**And you don't have to babysit the chain.** `/docod:loop` runs the non-human stretch on delegation: you issue one mandate ("tasks 3 to 7, through code-review"), it confirms the scope once, then drives build → external verify → QA → fix rounds → diff review per task without narrating every step. It stops and comes back only for what is yours: questions handed back, a repeated failing verdict, a blocked gate, anything needing approval (it never approves). One batch report at the end, with the exact queue awaiting you. "The human orchestrates" never meant clicking every invocation: the decision is the mandate, the stop conditions are contract, and deploy remains a human act. That's supervised delegation, not autopilot faith.
+
 ## A tech lead to think with
 
 Every other agent produces. This one thinks **with you**:
@@ -233,6 +235,7 @@ Swap the adapter, keep the method. And the **product speaks your language**: set
 /docod:ws list|done|abandon        workstream lifecycle
 /docod:report                      HTML dashboard: documents, kanban, flow
 /docod:lead [topic]                your tech lead: sparring for technical decisions
+/docod:loop <scope> [--until]      delegated run: build→QA→review under your mandate
 ```
 
 ## The map: who comes after whom

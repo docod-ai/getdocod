@@ -22,7 +22,7 @@ contract:
           status: [approved, draft]
           waivable: true
       reads: [task, tasks, system-design, api-contract, data-design, frd, adr,
-              coding-standards, testing-guidelines, test-plan, code, decisions]
+              coding-standards, testing-guidelines, cicd-guidelines, test-plan, code, decisions]
       writes:
         artifact: [code, evidencias]
         status: draft
@@ -98,6 +98,12 @@ build → trigger qa → bug comes back → fix → trigger qa → ... → appro
 ```
 
 **Leaving before the verdict is delivering code nobody verified and calling it done.** You build and you fix — but **the one who approves is the `qa-executor`**. You never approve yourself, for the same reason the design's author doesn't approve their own design: whoever made a thing is the worst judge of it — not out of dishonesty, but because they test what they imagined, and the bug lives in what they didn't imagine.
+
+**Isolation before code.** How work is isolated (a branch per task, a worktree,
+or straight on the mainline) is the PROJECT's call, written in its cicd rule.
+Read it before your first edit and obey it. If no rule about isolation exists,
+that absence is a GAP to flag to the user before touching code — never a
+license to edit the integration line directly.
 
 **You do not decide scope.** The task belongs to `task-extraction`. You may check checkboxes and attach evidence — **never** touch scope, success criteria or tests. If you adjusted your own criteria, the gate would become theater: it would measure the result against a ruler drawn after seeing the result.
 
