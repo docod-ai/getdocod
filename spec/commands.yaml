@@ -1,0 +1,176 @@
+specVersion: "1.0.0"
+
+# =============================================================================
+# LAYER 2 — COMMANDS  ·  NEUTRAL
+#
+# The HUMAN orchestrates. The commands give them the state and the transition —
+# they never decide for them.
+#
+# This resolves the model's oldest pending item: "trigger the adr", "hand back
+# to the task-executor" was prose in 27 agents, and nothing executed the
+# transition. The answer is NOT an orchestrator agent — it would be the hardest
+# agent to get right, owner of everything, and the first test would test the
+# method AND the orchestrator together, without knowing which one failed. The
+# answer is to give the human what they need to orchestrate without hunting:
+# where am I, what can I do, what is blocked.
+#
+# THE CENTRAL SCENARIO (the product's use case #1):
+#   I open the IDE with the bundle installed. I have a PRD — mine or someone
+#   else's. `start` tells me where to enter. I work. I close the IDE.
+#   Tomorrow: `status` tells me where I am. `continue` picks up where I left off.
+#
+# EACH COMMAND IS A CONCEPT (layer 2). How it materializes belongs to the
+# adapter (layer 3): slash command in Claude Code, CLI, prompt-file in agents-1.
+# The reference implementation is docod.mjs, at the bundle root — it is neutral
+# (filesystem + YAML, plain node with a vendored parser: zero installation) and
+# serves as the base for any adapter.
+# =============================================================================
+
+commands:
+  principle: "The human decides; the command informs and records. A command that decides on its own is an orchestrator in disguise."
+
+  registry:
+    # -------------------------------------------------------------------------
+    start:
+      desc: "Where to enter. Detects what already exists and offers the valid doors."
+      answers: "I have this — where do I start?"
+      behavior: |
+        Looks at the project's state and offers ONLY the entries that make sense:
+
+          nothing exists           → business-case (from scratch) or prd (from the idea)
+          an outside PRD exists    → prd.create importing: "fits the text into
+                                     the structure and flags gaps as questions —
+                                     never rejects at the door"
+          legacy code exists       → the reverse_* actions: prd, design,
+                                     contract, model — with provenance
+          an artifact already exists → this is not start; it is `continue`. Say so.
+
+        It creates NOTHING. It points to the door; the one who enters is the
+        human invoking the agent.
+      note: |
+        The doors are the ones the model already declares — start invents no
+        flow, it READS the contracts' requires. A new door in the model = a new
+        door in start, without touching the command.
+
+    # -------------------------------------------------------------------------
+    status:
+      desc: "Where we are. The project's state index — derived, never maintained by hand."
+      answers: "what exists, what counts, what is blocked, what can I do now?"
+      behavior: |
+        Reads docod.yaml + artifacts.yaml + the frontmatters of the real
+        artifacts and answers, PER WORKSTREAM and at the project level:
+
+          exists      — which artifacts exist, with status
+          counts      — approved whose approval hash still matches; otherwise,
+                        EFFECTIVELY review (approval of content that changed
+                        does not count — and the status says so instead of lying)
+          blocked     — actions whose requires are not satisfied, and WHY
+          possible    — actions whose requires are satisfied NOW
+          stale       — artifacts whose input changed (when inputs[].hash exists)
+
+        Derived from the files, always. A hand-maintained index would be the
+        tenth occurrence of this project's recurring failure by the next day.
+      note: |
+        It is the command's contract with the user: NEVER lie. A stale approval
+        shows up as invalid; a gap shows up as a gap. A status that reassures
+        is worse than no status at all.
+
+    # -------------------------------------------------------------------------
+    continue:
+      desc: "Resume. The status of ONE workstream + its next step."
+      answers: "where did I stop, and what is the next move?"
+      behavior: |
+        A `status` focused on one ws + the next-step recommendation — plural
+        when there is more than one valid path. The human chooses; the command
+        never invokes an agent on its own.
+
+        Includes what the `impact-analysis` would call suspect: an approved
+        artifact whose input changed, an executed task whose scope changed.
+      note: |
+        The difference from `status` is focus, not power. Continue has no
+        permission that status does not have.
+
+    # -------------------------------------------------------------------------
+    report:
+      desc: "The status with a face: visual project dashboard — derived, never maintained by hand."
+      answers: "show me the whole project at once: documents, tasks, flow, fronts"
+      behavior: |
+        Generates a STATIC, self-contained visualization of the SAME state the
+        `status` derives — zero opinion of its own, zero new information:
+
+          documents    — by nature (product/design/decisions/…), with the
+                         effective status, the approval and the readable CONTENT
+          tasks        — a kanban derived from the task's own checkboxes
+                         (to do / in progress / done + progress)
+          flow         — possible now vs blocked, with the why
+          workstreams  — states and abandonment reasons
+
+        Truly self-contained: no server, no network, no external asset.
+        Opens from the filesystem and works offline — in any harness.
+      note: |
+        Same contract as status: NEVER lie. An invalid approval shows up red,
+        it does not disappear. And being static, the report SAYS it is a
+        snapshot: generated when, reflecting what. An old snapshot announces
+        itself as a snapshot.
+
+    # -------------------------------------------------------------------------
+    approve:
+      desc: "The human gate. Records the verdict and moves the status — with a hash."
+      answers: "I, a human, approve this content — and what and when get recorded"
+      behavior: |
+        On an artifact in `review` (or `draft`, with a warning):
+
+          1. computes the content hash (excluding the frontmatter itself)
+          2. writes into the frontmatter:  approval: { by, at, content_hash }
+          3. moves status → approved
+
+        Validity is MECHANICAL: approved only counts while content_hash matches
+        the current content. Edited after approval → `status` shows "invalid
+        approval — content changed". Nobody has to remember anything; the hash
+        remembers.
+
+        For artifacts with an agent gate (design-review, qa, codereview),
+        approve REQUIRES an `approved` verdict from the gate newer than the
+        last edit — the human confirms on top of the agent, not in its place.
+      note: |
+        Closes `gate-ownership` for v1: the human is the gate for prd, frd,
+        user-stories, tasks — they are the one who pays, the one who approves
+        requirements. But approval is a verifiable RECORD, not a click: same
+        mechanics as the agent gates, with a person in the reviewer's seat.
+
+    # -------------------------------------------------------------------------
+    ws:
+      desc: "Workstream lifecycle: list, close, abandon."
+      answers: "which fronts exist, and which one died?"
+      behavior: |
+        `ws list`            — the workstreams and their states
+        `ws done <key>`      — active → done (the work is finished)
+        `ws abandon <key>`   — active → abandoned, with a MANDATORY reason
+
+        The one who CREATES is not this command: it is the `prd` running in ws
+        scope — the entry door is the method, not the tool. This command only
+        closes.
+      note: |
+        Abandonment without a reason is forbidden on purpose: a ws that
+        vanishes in silence is lost work with no record — and the abandonment
+        reason is [re]Define information, not bureaucracy.
+
+  # ---------------------------------------------------------------------------
+  # WHAT THE COMMANDS NEVER DO
+  # ---------------------------------------------------------------------------
+  never:
+    - "Invoke an agent on their own. The human invokes; the command points."
+    - "Maintain an index of their own. All state is derived from the files."
+    - "Approve without a hash, or hide an invalidated approval."
+    - "Decide between two valid paths. Present both."
+    - "Create a workstream. That belongs to the prd."
+
+  # ---------------------------------------------------------------------------
+  # MAPPING — how each adapter materializes it (reference; the real one is the adapter's)
+  # ---------------------------------------------------------------------------
+  adapters:
+    reference: "docod.mjs at the bundle root — filesystem + YAML, zero harness dependency and zero installation (vendored parser)"
+    note: |
+      The adapter may wrap it (a slash command that calls docod.mjs) or
+      reimplement it — but the BEHAVIOR declared here is the contract, and the
+      reference implementation is the tiebreaker.

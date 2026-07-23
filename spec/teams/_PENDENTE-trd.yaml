@@ -1,0 +1,132 @@
+specVersion: "1.0.0"
+status: PENDING — write when the teams phase begins
+
+# =============================================================================
+# trd-team — Technical Requirements Document
+#
+# The TRD is the blueprint that links business goal to technical execution: it
+# maps architecture, APIs, data models, and non-functional requirements needed
+# to build a FEATURE, guiding dev and QA through the implementation.
+#
+# It is not an agent because it writes nothing of its own: every part it maps
+# already has an owner. A TRD that wrote architecture would create a second
+# source, and it would diverge from system-design.md at the first edit. It
+# COORDINATES.
+#
+#   "maps the architecture"             → system-design
+#   "APIs"                              → api-contract
+#   "data models"                       → data-design
+#   "non-functional requirements"       → frd
+#   "guiding developers"                → task-extraction
+#   "guiding QA engineers"              → test-plan
+#
+# -----------------------------------------------------------------------------
+# MERGE — the `techspec` was the TRD reinvented
+#
+# The techspec was born as a prompt and became an agent. Measured in the real
+# repo (backend/tasks/prd-ws3/techspec.md), its sections match the TRD
+# definition almost one to one — same scope (feature), same function (guiding
+# dev and QA), same federation. Two names for the same thing. The market name
+# stays.
+#
+# The merge preserved what the techspec had and the TRD definition does not
+# mention:
+#
+#   Architecture > Component overview       → system-design      [both]
+#   Design > Interfaces, Models, Endpoints  → api-contract       [both]
+#   Integration points                      → system-design      [both]
+#   Non-functional requirements             → frd                [TRD only]
+#   Testing approach                        → test-plan          [techspec only] ✚
+#   Sequencing > Order, Dependencies        → task-extraction    [techspec only] ✚
+#   Monitoring and observability            → observability      [techspec only] ✚
+#   Considerations > Key decisions          → adr                [techspec only] ✚
+#   Compliance with rules / skills          → design-review      [techspec only] ✚
+#   Relevant and dependent files            → impact-analysis    [techspec only] ✚
+#
+# ✚ = came from the techspec and survived. It is not leftover: it is real-repo
+#     evidence against a market definition. The two most referenced by the
+#     real tasks were "Component overview" (4×) and "Sequencing" (4×) — and
+#     sequencing is NOT in the canonical TRD definition.
+#
+# The rules/skills compliance deserves a note: it was what caught the real bug
+# (`2_task.md` documenting "there is no .claude/skills — no applicable skill"
+# as compliance). With nobody checking, the agent executes blind and records
+# its ignorance as approval. That could not vanish in the merge.
+# =============================================================================
+
+key: trd-team
+name: Technical Requirements Document
+scope: ws                      # ⚠ NEW concept — see `blocked_by` below
+mode: collaborative
+role: feature_design
+supersedes: techspec-team
+
+purpose: |
+  Coordinates the technical design of ONE feature: ensures the owners deliver
+  the parts, that they stay coherent with one another, and that dev and QA
+  have what they need to build. Delivers no document of its own.
+
+agent_keys:
+  - system-design      # this feature's architecture (delta over the project)
+  - api-contract       # contracts the feature introduces or changes
+  - data-design        # model and migration the feature requires
+  - frd                # requirements, functional and non-functional
+  - test-plan          # testing approach
+  - observability      # what to monitor
+  - task-extraction    # build order and technical dependencies
+  - impact-analysis    # what the feature touches; relevant files
+  - design-review      # compliance with the project's rules and skills
+  # adr and rfc are cross-cutting — triggered by any of the above when a
+  # decision with a real alternative appears. They are not members; they are
+  # called in.
+
+# -----------------------------------------------------------------------------
+blocked_by:
+  - id: team-scope
+    severity: blocker
+    issue: |
+      Teams have no `scope` in the model. The design-architecture-team is
+      PROJECT-level (durable architecture); this one is WORKSTREAM-level
+      (feature design). Same set of agents, different altitude — exactly like
+      the prd, which has scope: [project, ws, target].
+    decision: "Add `scope` to the team schema when the teams phase begins."
+
+open_questions:
+  - id: derived-index
+    issue: |
+      Without a techspec.md/trd.md, the task points at 8 places instead of 1.
+      The two sections most referenced by the real tasks are "Component
+      overview" (4×) and "Sequencing > Build order" (4×).
+    option_a: |
+      The team delivers nothing. The task references the sources directly
+      (system-design.md § X, tasks.md, ADR-0007). Consistent with "the team
+      coordinates, the agent delivers". Loses the "open one file and it's all
+      there".
+    option_b: |
+      The team generates a DERIVED INDEX — trd.md with links only, zero
+      content. An index without content does not diverge: it is the only safe
+      projection. But it needs someone to generate it, and that is the
+      orchestrator, which does not exist.
+    inclination: |
+      (a) for now. The index is a convenience that depends on infra we do not
+      have. If the task points at 3 places and nobody complains, it never
+      needs to be born.
+
+  - id: duplicated-sequencing
+    issue: |
+      The techspec ordered the build ("Sequencing > step 2") and tasks.md
+      tracks it — two places holding the sequence, in the SAME FOLDER.
+      Duplication that already exists today and disappears with it.
+    decision: "The order belongs to task-extraction (tasks.md). Single owner."
+
+  - id: nfr-in-feature-scope
+    issue: |
+      The TRD definition includes non-functional requirements, but their owner
+      is the frd — which has scope [project, ws, target]. In feature scope
+      does the TRD point at the ws frd, or is there an NFR that is only born
+      during design?
+    inclination: |
+      It points. An NFR that shows up during design is an NFR that was missing
+      from the frd — the path is to go back and complete the frd, not to
+      create a second place. If that happens often, it is a sign of a loose
+      gate on the frd, not of a gap in the TRD.

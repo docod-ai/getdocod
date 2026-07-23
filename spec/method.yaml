@@ -1,0 +1,434 @@
+specVersion: "1.0.0"
+
+# =============================================================================
+# LAYER 1 — METHOD  ·  NEUTRAL
+#
+# The IP. Does not change per project, language, IDE, model, or harness.
+# If something here needs to change because the user switched models, it is
+# in the wrong layer.
+# =============================================================================
+
+method:
+  name: DOCOD
+  expansion: "Define · Orchestrate · Confirm · Observe · [re]Define"
+  property: "It is a cycle, not a cascade. [re]Define closes the loop — without it the method becomes waterfall with a new name."
+
+stages:
+  define:
+    order: 1
+    label: "Define"
+    question: "What, why, and what has already been decided?"
+    produces: "requirements, frozen decisions, standards"
+    gate: "An ambiguous requirement does not pass. Design on top of an ambiguous requirement is guaranteed rework."
+
+  orchestrate:
+    order: 2
+    label: "Orchestrate"
+    question: "How will it be built, in what order, by whom?"
+    produces: "design, contracts, plan, tasks"
+    gate: "A design that contradicts a frozen decision does not pass."
+
+  confirm:
+    order: 3
+    label: "Confirm"
+    question: "Does it do what it promised?"
+    produces: "reviews, tests, evidence"
+    gate: "An unmet exit criterion does not pass."
+
+  observe:
+    order: 4
+    label: "Observe"
+    question: "What is actually happening in production?"
+    produces: "SLOs, alerts, runbooks, incidents"
+    gate: null
+
+  redefine:
+    order: 5
+    label: "[re]Define"
+    question: "What did we learn, and which artifact does that invalidate?"
+    produces: "postmortem, corrected decisions, deprecations"
+    feeds_back_to: [define, orchestrate, confirm, observe]
+    note: |
+      This stage is what separates DOCOD from a waterfall. It does not produce
+      a document to be filed away — it produces a POINTER to an existing
+      artifact. A postmortem that ends in a report is a wasted postmortem.
+
+# =============================================================================
+# CAPABILITIES — neutral capability vocabulary
+#
+# The contract (layer 2) declares what the agent NEEDS TO BE ABLE TO DO.
+# The adapter (layer 3) decides WITH WHICH TOOL.
+#
+# This exists so that no vendor name appears in layer 2.
+# "Use the Context7 MCP" and "Use the Playwright MCP" are layer 3 written in
+# the wrong place.
+# =============================================================================
+
+# Each capability is bound to a concrete tool by the adapter (layer 3).
+# No vendor name appears here — not even as an example. See docod/adapters/.
+capabilities:
+  web_search:
+    desc: "Search public information on the web"
+
+  web_fetch:
+    desc: "Read the contents of a URL"
+
+  doc_lookup:
+    desc: "Consult up-to-date documentation for a language/framework/lib"
+
+  code_search:
+    desc: "Search for a symbol, file, or pattern in the project's code"
+
+  code_edit:
+    desc: "Create and edit project files"
+
+  shell:
+    desc: "Run a command (tests, lint, build, migration)"
+
+  vcs_diff:
+    desc: "Read the diff of uncommitted changes or of a PR"
+
+  vcs_history:
+    desc: "Consult history, PRs, issues"
+
+  browser_e2e:
+    desc: "Drive a browser for end-to-end testing"
+
+  a11y_audit:
+    desc: "Audit the accessibility of an interface"
+
+  calculator:
+    desc: "Deterministic calculation (cost, capacity, SLO, weighting)"
+
+  ask_user:
+    desc: "Render a question to the human in a structured way"
+    optional: true
+    note: |
+      ATTENTION — this capability is a convenience, NOT a prerequisite.
+
+      The instruction to ask lives in `knowledge.inquiry` and in the agent's
+      prompt, and it NEVER dies. An agent without this capability still asks:
+      it writes the question and stops. That is how it has always worked.
+
+      A real example of why this matters: Claude Code subagents do not have
+      AskUserQuestion. If this were a prerequisite, `prd`, `frd` and
+      `business-case` would be considered unexecutable there — when in fact
+      they ask normally, just without a widget.
+
+      What actually limits is not the tool: it is the EXECUTION MODE. See
+      `interactive` in spec/agent.yaml.
+
+# =============================================================================
+# SKILLS
+#
+# Skill ≠ capability. They are distinct axes and must not be merged:
+#   capability — "can I search the web?"                     tool access
+#   skill      — "do I know how to write a safe migration?"  procedure, know-how
+#
+# An agent can have every capability and still not know how to do the thing.
+# The inverse too: a skill without the necessary capability does not execute.
+#
+# EVERY SKILL HERE IS NEUTRAL. It holds in any project, any language,
+# any repo. A skill that presumes technology would give the method an opinion
+# about the stack — and then it no longer serves any repo, which is the only
+# thing it promises.
+#
+# What the user's project has inside it is its own business: conventions,
+# tools, its own procedures. It is not the method's, it is not a reference, it
+# does not go here — not even as an example. An example from someone else's
+# repo in layer 1 is the same leak as a vendor name, only harder to see,
+# because it looks like design.
+#
+# A skill does not deliver an artifact, therefore it HAS NO OWNER. It is a
+# library: agents declare `skills: [x]` and consume it. `used_by` is
+# informative, not ownership — and that is why it is validated in both
+# directions.
+#
+# The test for becoming a skill: does more than one agent need this procedure?
+#   Yes → skill.  No → it is an instruction, it goes in the agent's body.
+# =============================================================================
+
+skills:
+  root: spec/skills/
+
+  registry:
+    financial-modeling:
+      desc: "ROI, payback, TCO, NPV — formulas, conventions and pitfalls"
+      path: skills/financial-modeling/SKILL.md
+      neutral: true
+      requires_capabilities: [calculator]
+      used_by: [business-case, tradeoffs, project-management, infrastructure-design]
+      rationale: |
+        Five agents do money math. Without the skill, they are five versions of
+        the same formula drifting apart — the failure this project has already
+        committed five times with names, paths and templates. The pitfalls
+        (different window, savings counted as revenue, TCO without maintenance,
+        sunk cost) are the same for all of them.
+
+    measurable-goals:
+      desc: "Baseline, leading vs lagging, percentile, window, counter-metric, Goodhart"
+      path: skills/measurable-goals/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [prd, business-case, frd, observability, test-plan, qa-executor]
+      rationale: |
+        observability already had an slo_cookbook that knows percentile, window
+        and error budget. The prd knew "put a number on it". The same thing, in
+        two places, with different quality — and the other three did not even try.
+        The skill unifies: observability starts consuming instead of duplicating,
+        and PRD goal, acceptance criterion and SLO become the same discipline at
+        different scopes.
+
+    requirements-elicitation:
+      desc: "The craft of extracting requirements from people: peeling the solution down to the need, the implicit, negative space, ambiguity, contradiction, completeness"
+      path: skills/requirements-elicitation/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [business-case, prd, frd, user-stories-epics, rules-factory]
+      rationale: |
+        It was an AGENT — `requirements-specialist`. It could not be one: it does
+        not deliver a document, it delivers a craft. To exist as an agent it had
+        to invent an artifact (`requirements[]`), and what it invented was a
+        second FRD, with priority in a third place.
+
+        The signal was the question "where does it fit: subagent of the prd?
+        before the frd? alongside the frd? product-team or planning-team?".
+        Whatever fits everywhere is a library, not a member.
+
+        As a skill, both halves survive: the craft (SRS/29148, INVEST, Volere,
+        NFR checklist, diagnostic questions) becomes available to the four
+        agents that interview, instead of being locked inside one.
+
+    architecture-boundaries:
+      desc: "Where one thing ends and another begins: cohesion and coupling, dependency direction, what decides the boundary, Conway, and why distributed is not better"
+      path: skills/architecture-boundaries/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [system-design, design-review, data-design, infrastructure-design, api-contract, tech-lead]
+      rationale: |
+        One agent draws the boundary (system-design), two follow it (data-design
+        in the schema, infrastructure-design in the topology) and one judges it
+        (design-review). If each has its own notion of "where the thing ends",
+        the system has four architectures.
+
+        The hardest rule it carries: two owners writing to the same data are NOT
+        two components. It is what makes the data-design follow the
+        system-design's boundary instead of inventing its own.
+
+    decision-reversibility:
+      desc: "How much rigor the decision deserves: was it a decision or a constraint, one-way vs two-way door, the ADR trigger, supersede vs edit"
+      path: skills/decision-reversibility/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [adr, tradeoffs, rfc, design-review, playbook, tech-lead]
+      rationale: |
+        Without this, either every ADR becomes a thesis or every ADR becomes a
+        sticky note — and nobody knows which one is right. It is what resolves
+        the adr↔tradeoffs tension: the tradeoff is not a toll on every decision,
+        it is the deep dive the one-way door demands. Always requiring a
+        weighted matrix means nobody writes ADRs, and an unrecorded decision is
+        worse than a record without a matrix.
+
+        It also carries the entry filter that was missing: without a real
+        alternative it is not a decision, it is a constraint — and a constraint
+        recorded as a decision lies twice (it feigns choice, it hides the
+        lock-in that explains it).
+
+    vertical-slicing:
+      desc: "A slice that delivers value on its own: vertical vs horizontal, SPIDR, walking skeleton, how small is small"
+      path: skills/vertical-slicing/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [user-stories-epics, task-extraction, project-management]
+      rationale: |
+        Confirmed by evidence, not by theory: the repo's real task 2_task.md is
+        a vertical slice ("Security jobs", tracing RF1/RF3/RF8, with its own
+        criteria and tests) — it is not "create the model". And the task-creation
+        prompt demands "each task must be a well-defined deliverable" with
+        "tests that guarantee the business objective".
+
+        Therefore the task-extraction slices with the same discipline as the
+        user-stories-epics. Two agents, same trap: slicing by layer and
+        delivering nothing until the very end.
+
+    verifiable-requirements:
+      desc: "Atomic requirement and verifiable criterion: atomicity, testability, requirement × implementation, GWT"
+      path: skills/verifiable-requirements/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [frd, user-stories-epics, test-plan, task-extraction, design-review, api-contract, task-executor, qa-executor, coding-standards]
+      rationale: |
+        A requirement and its criterion are born in the same act: you do not
+        write "the system shall X" without knowing how to verify X. Five agents
+        touch this discipline — the frd writes it, the user-stories rewrites it
+        as a story, the test-plan derives cases, the task-extraction derives
+        tasks, the design-review checks whether the design satisfies it.
+        Without the skill, each one has its own notion of "testable" and the
+        traceability chain breaks in the middle.
+
+    schema-migration:
+      desc: "Changing the shape of the data without losing the data: expand/contract, mandatory rollback, batched backfill, compatibility with the N-1 application, signs of a dangerous migration"
+      path: skills/schema-migration/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [data-design, task-executor, code-review, qa-executor, design-review]
+      rationale: |
+        Four agents touch the SAME migration: one specifies it (data-design),
+        one executes it (task-executor), one reviews the PR (code-review) and
+        one tests it (qa-executor). If the playbook lives only with the one who
+        specifies, the one who executes runs the destructive step in the same
+        deploy as the constructive one — and then it does not matter how good
+        the document was.
+
+        It is the only skill in the set that protects against irreversible
+        damage. Everything else in the method assumes erring is cheap: commit,
+        test, rollback. Here that premise is false, and that is why the
+        playbook must be the same for all four.
+
+    diagram-as-code:
+      desc: "A diagram that survives: the question defines the type, zoom level, node limit, labeled edges, coherence with the text, and why an exported image rots"
+      path: skills/diagram-as-code/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [system-design, data-design, api-contract, observability, runbook, postmortem, task-extraction, security-design, playbook, infrastructure-design]
+      rationale: |
+        It was an agent and could not be one: it had no document of its own.
+        The ER lives in the data-design, the context diagram in the
+        system-design, the sequence diagram in the api-contract, the timeline
+        in the postmortem. To exist as an agent it needed a separate .mmd —
+        and then it became the very anti-pattern it itself prohibited ("a
+        diagram that contradicts the text beside it").
+
+        Same diagnosis as the requirements-specialist: it delivered a craft,
+        not a document. The auxiliary signal was `interactive: false` — an
+        agent that never talks to anyone and produces content for someone
+        else's document is a procedure with a badge.
+
+        Seven agents draw. Without a common rule, the project has seven visual
+        languages and no reading. The rule it carries: the QUESTION defines the
+        type, and a wrong diagram is worse than none — none forces you to read
+        the text, wrong convinces.
+
+    bugfix:
+      desc: "Fix the cause, not the symptom: reproduce first, regression test that fails if reverted, ordering by severity, the bug's siblings"
+      path: skills/bugfix/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [task-executor, code-review, postmortem]
+      rationale: |
+        Three agents touch the same fix: one fixes it (task-executor), one
+        catches the symptom-disguised-as-fix in the PR (code-review) and one
+        hunts an incident's cause (postmortem). Without a common rule, each has
+        its own notion of "fixed" — and the cheapest one wins, because it is
+        the one that closes the ticket.
+
+        It exists because of a pressure that features do not have: someone is
+        waiting. And that pressure pushes toward treating the symptom, which is
+        the only thing that guarantees the rework.
+
+        The demand the skill carries and that almost nobody meets: the
+        regression test must have been SEEN failing. A test written after the
+        fix frequently tests the happy path that already worked — and stays in
+        the suite forever giving confidence about nothing.
+
+    interface-evolution:
+      desc: "Changing the contract without breaking consumers: what is truly breaking, expand/contract on interfaces, versioning, deprecation with a deadline, the event that breaks silently"
+      path: skills/interface-evolution/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [api-contract, code-review, impact-analysis, task-executor, design-review, integration-guide, release-notes]
+      rationale: |
+        The same asymmetry as data, in a place where nobody expects it: a
+        deploy can be reverted, a client that already updated cannot. The
+        contract looks like code — it is in the repo, it passes CI — but it is
+        the promise other people built on top of.
+
+        code-review is the main reason this skill exists: it is the last cheap
+        place to catch the breaking change, and it is where it slips through,
+        because in a diff almost every breaking change looks small. Adding a
+        value to a response enum looks additive and is not. Switching cents to
+        whole currency units changes no type and breaks no test — it only
+        produces wrong charges.
+
+    data-privacy:
+      desc: "Personal data as a liability: legal basis, minimization, retention, anonymization vs pseudonymization, right to erasure and where the data spreads"
+      path: skills/data-privacy/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [data-design, security-design, observability, prd, design-review]
+      rationale: |
+        Four angles on the same data: the data-design stores and deletes it,
+        the security-design protects it and controls access, observability is
+        WHERE the data leaks without anyone deciding to leak it, and the prd
+        promises the privacy the other three will have to deliver. Without a
+        common rule, each has its own — and the log's wins, because it is the
+        one nobody reviews.
+
+        The distinction it carries and that all four get wrong: anonymizing is
+        irreversible and takes the data out of the law's scope; pseudonymizing
+        is reversible and does NOT. Swapping an id for a hash and calling it
+        anonymous is the most common mistake and the most expensive one.
+
+# =============================================================================
+# STATUS — the state machine of any artifact
+# =============================================================================
+
+status:
+  draft:      { terminal: false, desc: "exists, incomplete, nobody should depend on it" }
+  review:     { terminal: false, desc: "complete, awaiting the gate" }
+  approved:   { terminal: false, desc: "passed the gate; may be consumed downstream" }
+  rejected:   { terminal: false, desc: "failed the gate; needs revision" }
+  superseded: { terminal: true,  desc: "replaced by another artifact; kept for history" }
+
+transitions:
+  - { from: draft,      to: [review, rejected] }
+  - { from: review,     to: [approved, rejected] }
+  - { from: rejected,   to: [draft, review] }
+  - { from: approved,   to: [superseded, review] }
+  - { from: superseded, to: [] }
+
+rules:
+  - "An action's precondition is only satisfied by an artifact in `approved`."
+  - "An `immutable` artifact never goes from approved back to review: a new one is created with `supersedes`."
+  - "Status is declared in the artifact's own frontmatter — never in a central index, which desynchronizes."
+  - "Whoever moves the status is the artifact's OWNER. Nobody writes status on someone else's artifact."
+  - "Transitioning to `approved` requires an `approved` verdict from a gate agent, newer than the artifact's last edit (compare via `inputs[].hash`). Without that, the owner does not promote — not even themselves."
+
+who_approves: |
+  The rule above resolves the contradiction that was open: the status lives in
+  the artifact (not in an index), the artifact has an owner, and still nobody
+  can self-approve.
+
+  The owner writes their own status. But `approved` is only reachable with a
+  gate verdict newer than the last edit — the hash exposes whoever edited
+  after being approved. Approval is not an act of trust nor a write privilege:
+  it is a verifiable condition.
+
+  COVERAGE — closed in v1:
+    design-review  → system-design, data-design, api-contract,
+                     infrastructure-design, security-design, slos
+    qa-executor    → the behavior (a task closes with its verdict)
+    code-review    → the diff
+    HUMAN          → prd, frd, business-case, user-stories, roadmap, tasks,
+                     test-plan — and the final word on everything
+
+  The human is the gate for what is requirement and plan: the one who pays is
+  the one who approves. But human approval is a verifiable RECORD, not a click
+  — see `approval` below. Same mechanics as the agent gates, with a person in
+  the reviewer's place.
+
+approval:
+  desc: "The record of the human gate. Lives in the frontmatter of the approved artifact."
+  schema:
+    by:           "who approved — role or name"
+    at:           "when (ISO date)"
+    content_hash: "sha256 of the approved content, excluding the frontmatter"
+  rules:
+    - "Status `approved` is only VALID while content_hash matches the current content."
+    - "Edited after approval → the approval no longer holds, and the `status` shows it. The hash remembers; nobody has to."
+    - "An artifact with an agent gate (design-review, qa, codereview) requires the agent's verdict BEFORE the human approve — the human confirms on top, not in place."
+    - "Who records it is the `approve` command (see spec/commands.yaml). An agent never records an approval — not even its own."
+  note: |
+    It is what closes the contradiction recorded in `who_approves`: the status
+    lives in the artifact, the artifact has an owner, and still nobody
+    self-approves — because validity is a hash comparison, not a promise.

@@ -1,0 +1,374 @@
+specVersion: "1.0.0"
+
+# =============================================================================
+# LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
+#
+# An agent delivers ONE document. That is all.
+# Everything that ties one agent to another is: which document, who owns it,
+# what must exist before, what comes to exist after.
+# =============================================================================
+
+agent:
+  principle: "One agent, one document, one owner."
+
+  # ---------------------------------------------------------------------------
+  # WHAT AN AGENT HAS. Not what it had in some other format — that is migration,
+  # and migration lives in the instance's docod.yaml.
+  # ---------------------------------------------------------------------------
+  has:
+    key:         "kebab identifier, without the -agent suffix"
+    name:        "display name"
+    description: "one sentence: which document it delivers"
+    instructions: "the body of the markdown — structure, decisions and style"
+    contract:    "the binding — see `contract` below"
+
+  memory:
+    artefato:
+      what: "what was decided and written"
+      where: "filesystem — artifacts.yaml resolves the path, contract.reads says which ones"
+      status: exists
+    decisao:
+      what: "what the user answered, as a reusable fact"
+      where: "the `decisions` artifact — one file per agent, append-only"
+      status: exists
+      note: "It is what makes the inquiry's 'skip if' executable instead of decorative."
+    entre_sessoes:
+      what: "the agent learning things between runs"
+      status: REJECTED
+      rationale: |
+        Session memory is implicit and non-reproducible: the agent behaves
+        differently on your machine and on mine, and nobody knows why. It is
+        the opposite of governance, which is what the product sells.
+        The correct mechanism already exists and is explicit: the RULES. The
+        team's standard becomes {docsRoot}standards/*, is promoted to where the
+        harness reads, is versioned in git and goes through code review.
+        Auditable learning, not invisible learning.
+        A harness with persistent memory may use it — that is layer 3. The
+        model does not depend on it and must not.
+
+  # ---------------------------------------------------------------------------
+  # INTERACTIVE — does the agent need a human answering in real time?
+  # ---------------------------------------------------------------------------
+  interactive:
+    values:
+      true:  "Interviewing the user IS the job. Must run where a human is answering."
+      false: "Reads artifacts, produces an artifact. Can run delegated, in the background."
+    note: |
+      This is NOT about having or not having the asking tool. The instruction
+      to ask lives in the `inquiry` and always applies — an agent without the
+      widget writes the question down and stops.
+
+      It is about the question ARRIVING in time. A delegated agent that runs
+      alone and returns a summary at the end: its question reaches nobody. It
+      would generate by deduction and ask for a stamp — which is what the
+      rubber-stamp rule prevents.
+
+      The adapter validates: an `interactive: true` agent does not become a
+      delegated run.
+
+      The SOURCE is each agent's frontmatter. There was once a duplicated list
+      here (interactive_true/interactive_false) — it drifted in silence: 11
+      agents with `interactive: true` in the frontmatter were missing from it.
+      Ninth occurrence of this project's recurring failure, this time inside
+      the spec itself. A list that duplicates the frontmatter is an invitation
+      to drift; it was removed.
+
+  # ---------------------------------------------------------------------------
+  # AGENT ≠ RULE — the boundary, and why it cost three sessions
+  # ---------------------------------------------------------------------------
+  nao_e_agente:
+    rule: |
+      Discipline the executor obeys: coding-standards, testing-guidelines,
+      cicd-guidelines, security-rules. See spec/rules.yaml.
+
+      They were agents here and could not be. The test that fails them:
+
+        - the agent would run ONCE and become a parked file. No cycle, no gate,
+          no reaction to anything.
+        - nobody would read the agent: the task-executor and the code-review
+          read the DOCUMENT. An agent nobody reads exists for nobody.
+
+      It is `diagrams` inverted: that one delivered a craft and invented a file
+      in order to be an agent; this one delivers a file and would have invented
+      a craft.
+
+      And the model already said so — see `memory.entre_sessoes.rationale`
+      above, written sessions earlier: "the correct mechanism already exists
+      and is explicit: the RULES".
+
+    skill: |
+      A craft that more than one agent needs. See the registry in method.yaml.
+      Two agents died becoming skills: requirements-specialist and diagrams.
+      The test: does it deliver a DOCUMENT, or does it deliver a CRAFT?
+
+  # ---------------------------------------------------------------------------
+  # RESOLVED in the rewrite
+  # ---------------------------------------------------------------------------
+  resolved:
+    system_prompt: |
+      Was: "26/30 declare MINIMUM SECTIONS in the prompt — the same information
+      that instructions.structure carries."
+
+      The redundancy disappeared because the duplicate was in the format, not
+      the content: the agent's body IS the prompt, and `## structure` IS the
+      minimum sections. One place only.
+
+    skills: |
+      Was: "minimal skill per agent — mapping is its own phase."
+
+      Done, and not by deduction: each skill was born from a concrete agent
+      that needed it and survived the test "does more than one agent need this
+      procedure?". Two were born from agents that FAILED as agents —
+      requirements-elicitation (was requirements-specialist) and diagram-as-code
+      (was diagrams): both delivered a craft, not a document.
+
+# =============================================================================
+# INSTRUCTIONS — the body of the agent's markdown
+#
+# THIS IS NOT A KNOWLEDGE BASE. It is instruction.
+#
+# The distinction matters because agent formats tend to call this "knowledge"
+# and treat it as RAG — text dumped into a vector store for the agent to
+# retrieve semantically. Document structure, decision material and style guides
+# are not things to retrieve by similarity: they are things to obey. They go in
+# the prompt.
+#
+# The agent's real memory is the filesystem: `contract.reads` says which
+# artifacts to read, `artifacts.yaml` says where they are. It needs no vector
+# store — it needs a path.
+#
+# The pieces below live in the body of the file, as sections: the header IS
+# the role, and that is why it is validatable.
+#
+# Today there are 77 sources across 30 agents, with 4 implicit roles and 30+
+# free-form names. Same role, different names:
+#   'what to ask'  → question_bank · questions_bank · question_bank_testing
+#                    · questions_userstories · review_questions_bank
+#   'how to write' → style_guide_frd · rfc_style_guide · blameless_style_guide
+#   'structure'    → template · starter_kit · cookbook · guide · checklist · playbook
+#
+# It is the fourth time the same bug appears in this project — a reference with
+# no rule, no validator, drifting in silence. Here it hurts more: it is the
+# only part of the JSON that matters, and no agent can ask for "agent X's
+# question bank".
+#
+# The fix is to declare the ROLE. The name stays free; the role is enumerated.
+# =============================================================================
+
+instructions:
+  format: "sections of the markdown body; the header is the role"
+  required: [structure]
+  layout: |
+    ---
+    frontmatter: key, name, description, interactive, capabilities, skills, contract
+    ---
+    preamble — who the agent is, principles, what never to do
+
+    ## structure
+    ## inquiry
+    ## style
+    ## schema     (only when the output is structured)
+
+  roles:
+    structure:
+      desc: "The structure of the delivered document: sections, order, what each one answers."
+      cardinality: "exactly 1"
+      note: "It is the contract of form. Without it the agent does not know what to deliver."
+
+    inquiry:
+      desc: "What the agent needs to know before writing. The information preconditions."
+      cardinality: "0 or 1"
+      note: |
+        Not an accessory. Several agents have <critical>DO NOT GENERATE WITHOUT
+        ASKING FIRST</critical> in the prompt — the inquiry IS that step.
+        Answering the inquiry is what turns a generic template into the
+        project's document.
+
+        The inquiry is NOT a list of questions to dump.
+        It is decision material. The 17 inquiry sources that exist today are
+        written as questionnaires — they need to be rewritten under the rules
+        below.
+      rules:
+        - "One decision at a time. Never ask for approval of a document; ask for approval of a decision."
+        - "Closed question by default. Open only when no set of options is honest."
+        - "Ask only what changes the output. An unnecessary question degrades the next one."
+        - "Ask only what is uncertain. High confidence becomes a reviewable assertion, not a question."
+        - "Anchor in evidence when there is any: 'I saw X in <file> — was it A, B or C?'"
+        - "Show the cost of being wrong: what gets redone if this is wrong."
+        - "At most ~15 lines per approval request. Beyond that, break it into decisions."
+      rationale: |
+        A gate that gets rubber-stamped is worse than no gate: it produces
+        `status: approved` over content nobody read — formal authority over
+        fiction. Every high-friction approval system converges to
+        rubber-stamping.
+
+    provenance:
+      desc: "Provenance of every claim in a document generated by reverse engineering."
+      cardinality: "required when the scope includes reverse engineering"
+      values:
+        evidence:      "points to concrete code (file:line). It is fact."
+        inferred:      "deduction with declared confidence. Never satisfies a gate on its own."
+        user-supplied: "came from a user answer. The only one that counts as a 'why'."
+      note: |
+        Code tells the "what", never the "why". A PRD is about the why — so
+        the reverse PRD is born hollow there, and that is honest.
+        A reverse-engineered document without provenance is fiction with
+        authority.
+
+    style:
+      desc: "How to write: voice, right/wrong examples, vocabulary, anti-patterns."
+      cardinality: "0 or N"
+
+    schema:
+      desc: "Structured output format, when the document is not prose (JSON, matrix)."
+      cardinality: "0 or 1"
+      note: "Present in task-extraction, impact-analysis, design-review."
+
+# =============================================================================
+# CONTRACT — the binding
+#
+# Replaces the current `action` field, which is decorative: the workflows
+# invoke design_architecture, refine_requirements, generate_impact_report, and
+# no agent declares any action at all.
+#
+# A contract answers: what I need to exist · what I read · what I write.
+# =============================================================================
+
+contract:
+  schema:
+    owns:
+      artifact:  "key of the artifact, or LIST of keys, this agent owns"
+      immutable: "true = never edit; create a new one with supersedes"
+      note: |
+        The invariant is `one artifact, ONE owner` — and it is about the
+        artifact→owner direction. An agent may own more than one artifact; no
+        artifact may have two owners.
+
+        It was "just one" until task-extraction, which owns `tasks` (the
+        ordered index) and `task` (each one). They are two real artifacts, not
+        one derived from the other: the ORDER lives only in the index and
+        exists in no task file. Same owner, same discipline, same moment.
+
+    actions:
+      "<action>":
+        stage:    "define | orchestrate | confirm | observe | redefine"
+        scope:    "list: project | ws | target"
+        requires: "precondition — list of {artifact, status, waivable}. It is the gate."
+        reads:    "list of artifact keys"
+        writes:   "{artifact, status} — the status the document is born with"
+        capabilities: "list from the vocabulary in method.yaml"
+        postconditions: "what must be true when the action ends — see `postconditions_schema`"
+
+  # ---------------------------------------------------------------------------
+  # POSTCONDITIONS — what must be true at the end
+  #
+  # A POSTCONDITION IS A HOOK IN PROSE. As long as it is only text, it is
+  # ADVISORY: the agent obeys if it wants to, and nobody knows when it did not.
+  #
+  # It is the eighth occurrence of this project's recurring failure — and the
+  # largest in volume. The previous seven were references declared without a
+  # validator ("CI-CD Agent", qa-report.md, @.claude/rules, question_bank,
+  # format: mermaid, used_by, reads: [observability]). This one is 344 claims
+  # nobody checks, and the field was not even declared in this schema.
+  #
+  # The fix is NOT to turn every one into a hook. Half are not machine-
+  # verifiable, and pretending they are would be the same lie as the generic
+  # coding-standards: façade rigor is worse than absent rigor, because it
+  # looks solved.
+  #
+  # The fix is to DECLARE THE NATURE of each one. Layer 2 says what is
+  # enforceable; layer 3 wires it to whatever the harness has. Same pattern as
+  # `capabilities`: the method states the need, the adapter states the tool.
+  # ---------------------------------------------------------------------------
+  postconditions_schema:
+    format: "list of strings; the prefix declares the nature"
+    enforce:
+      deterministic: |
+        The machine decides, no judgment involved. Exists/does not exist,
+        passes/fails, matches/does not match. A script answers on its own.
+        E.g.: "a rollback script exists" · "the full suite passes" ·
+             "every case traces to an RF" · "no secret is written here"
+        The adapter MAY wire it to a mechanical gate. See adapters/.
+
+      evidence: |
+        The machine cannot decide, but the agent MUST SHOW THE PROOF —
+        command, output, file:line. Verifiable by the reader, not by the
+        writer.
+        E.g.: "every criterion has cited evidence" ·
+             "every finding cites file and line"
+        It is principle #1 of agentic coding: show proof instead of claiming
+        success. Reviewing proof is cheaper than redoing the verification.
+
+      judgment: |
+        Only a person or a model decides, and no mechanical proof is possible.
+        E.g.: "every threat is anchored to a real asset" ·
+             "no person is named as a cause" ·
+             "the rule is not generic"
+        NEVER promise to enforce this. Marking judgment as deterministic is
+        façade rigor — and façade is worse than nothing, because it stops the
+        conversation.
+
+    note: |
+      The proportion matters and is diagnostic: an action with only `judgment`
+      is an action nobody can verify. If it is the gate for anything, that
+      gate is decorative.
+
+  requires_schema:
+    artifact: "key of the required artifact"
+    status:   "list of statuses that satisfy — usually [approved]"
+    waivable: |
+      false (default) — hard gate: without the artifact, the action does not run.
+      true            — gate with an escape: the user may waive it, and the
+                        waiver is RECORDED in the frontmatter of the produced
+                        document, with who waived it and why.
+    note: |
+      `waivable` exists because not every precondition is equal. Requiring a
+      business-case before the PRD is correct in the full flow and an absurd
+      barrier for someone who has an idea and wants a PRD. The escape solves
+      it — but only if it is recorded. A silent waiver is the same as having
+      no gate.
+
+  rules:
+    - "An artifact has ONE owner. Other agents read and propose; the owner is who writes."
+    - "A precondition is only satisfied by an artifact in `approved`."
+    - "An artifact read but not declared in `reads` is an error — broken traceability."
+    - "An agent without `owns` does not exist: an agent that delivers no document binds nothing."
+
+  example:
+    adr:
+      owns: { artifact: adr, immutable: true }
+      actions:
+        record_decision:
+          stage: define
+          scope: [project]
+          requires:
+            - { artifact: tradeoffs, status: [approved] }
+          reads: [tradeoffs, rfc, system-design]
+          writes: { artifact: adr, status: draft }
+          capabilities: [web_search, calculator]
+
+# -----------------------------------------------------------------------------
+# REVERSE CONVENTIONS — formalized from the legacy-absorption pilot
+# ("The Blue City" admin, 2026-07; ran on a foreign harness, in pt-BR).
+# Every reverse_* action (and rules-factory.extract_from_code) honors these:
+# -----------------------------------------------------------------------------
+reverse_conventions:
+  triangulation: |
+    Legacy documents, when they exist, are a MANDATORY triangulation source
+    against the code — cited via external provenance (external: true), never
+    imported as artifacts. Where doc and code diverge, that is a FINDING, not
+    noise: it shows where the old documentation already lied.
+  divergences: |
+    Every divergence is a numbered DIV-nn entry: what the doc says, what the
+    code does, evidence on BOTH sides (file:line and doc section). A divergence
+    corroborated independently by another reverse cross-references it — the
+    strongest signal triangulation produces.
+  question_classes: |
+    Three classes, never mixed: GAP (nobody knows yet), PRODUCT DECISION
+    (the human decides), EXTERNAL-OWNER (only staging/backend/vendor can
+    answer — a question with an owner outside the room).
+  provenance_extras: |
+    Git history (git show/log) is a legitimate evidence source for the OLD side
+    of a divergence — cited as external provenance, honestly marked as having
+    no content hash. A ghost premise (a workaround documented for code that no
+    longer exists) is BURIED ON RECORD, so nobody fixes what is not there.

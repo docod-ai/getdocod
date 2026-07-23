@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOCOD · report</title>
+<style>
+  :root{
+    --bg:#0e1014; --panel:#151922; --panel2:#1b202c; --line:#252c3a;
+    --txt:#e6e9f0; --dim:#8b93a7; --faint:#5c6373;
+    --draft:#8b93a7; --review:#d9a441; --approved:#3fbf8a; --invalid:#e5484d;
+    --accent:#6c8cff; --accent2:#3fbf8a;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scrollbar-color:#2a3140 var(--bg)}
+  body{background:var(--bg);color:var(--txt);font:15px/1.6 var(--sans);min-height:100vh}
+  a{color:var(--accent);text-decoration:none}
+
+  header{position:sticky;top:0;z-index:20;background:rgba(14,16,20,.86);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);padding:0 28px}
+  .hrow{display:flex;align-items:center;gap:18px;height:62px;max-width:1280px;margin:0 auto}
+  .logo{font-weight:800;font-size:19px;letter-spacing:.14em}
+  .logo b{background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .proj{color:var(--dim);font-size:14px;border-left:1px solid var(--line);padding-left:18px}
+  .gen{margin-left:auto;color:var(--faint);font-size:12px;font-family:var(--mono)}
+  input#q{background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--txt);
+    padding:7px 12px;font-size:13px;width:220px;outline:none}
+  input#q:focus{border-color:var(--accent)}
+
+  nav{display:flex;gap:4px;max-width:1280px;margin:0 auto;padding-bottom:10px}
+  nav button{background:none;border:0;color:var(--dim);font:600 13.5px var(--sans);
+    padding:7px 14px;border-radius:8px;cursor:pointer}
+  nav button:hover{color:var(--txt)}
+  nav button.on{background:var(--panel2);color:var(--txt)}
+  nav .n{font-family:var(--mono);font-size:11px;color:var(--faint);margin-left:6px}
+
+  main{max-width:1280px;margin:26px auto 80px;padding:0 28px}
+  .tab{display:none}.tab.on{display:block}
+  h2.grp{font-size:12.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--faint);margin:30px 0 12px}
+  h2.grp:first-child{margin-top:0}
+  h2.grp .n{margin-left:8px;color:var(--faint);font-family:var(--mono);font-size:11px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px 16px;
+    cursor:pointer;transition:border-color .15s, transform .15s}
+  .card:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .card h3{font-size:14.5px;font-weight:650;margin-bottom:2px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .card .path{font-family:var(--mono);font-size:11px;color:var(--faint);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;margin-bottom:9px}
+  .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .chip{font:600 10.5px var(--mono);letter-spacing:.06em;padding:2.5px 9px;border-radius:99px}
+  .chip.draft{background:#8b93a71c;color:var(--draft)}
+  .chip.review{background:#d9a4411f;color:var(--review)}
+  .chip.approved{background:#3fbf8a1f;color:var(--approved)}
+  .chip.invalid,.chip.rejected,.chip.blocked{background:#e5484d1f;color:var(--invalid)}
+  .chip.none{background:#2a314055;color:var(--faint)}
+  .chip.kind{background:#6c8cff1a;color:var(--accent)}
+  .warn{color:var(--invalid);font-size:12px;margin-top:8px;line-height:1.45}
+  .appr{color:var(--dim);font-size:12px;margin-top:6px}
+  .appr b{color:var(--approved);font-weight:600}
+
+  /* kanban */
+  .kb{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+  .col{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .col h3{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+    margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .col h3 .dot{width:8px;height:8px;border-radius:99px}
+  .col h3 .n{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .tcard{background:var(--panel2);border:1px solid var(--line);border-radius:11px;
+    padding:12px 13px;margin-bottom:10px;cursor:pointer;transition:border-color .15s}
+  .tcard:hover{border-color:var(--accent)}
+  .tcard h4{font-size:13.5px;font-weight:600;margin-bottom:6px;line-height:1.4}
+  .meta{display:flex;gap:8px;align-items:center;font:11px var(--mono);color:var(--faint);flex-wrap:wrap}
+  .bar{height:5px;background:#252c3a;border-radius:99px;margin-top:10px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:99px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .empty{color:var(--faint);font-size:13px;padding:8px 2px}
+
+  /* flow & ws */
+  .list{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 0}
+  .li{display:flex;gap:12px;align-items:baseline;padding:9px 18px;border-bottom:1px solid #1d232f;
+    font-size:13.5px}
+  .li:last-child{border-bottom:0}
+  .li .ic{font-family:var(--mono);flex-shrink:0}
+  .li.ok .ic{color:var(--approved)} .li.no .ic{color:var(--invalid)}
+  .li .why{color:var(--dim)} .li .mono{font-family:var(--mono);font-size:12.5px}
+  .li .wv{color:var(--review);font-size:12px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  .wstate{font-family:var(--mono);font-size:12px}
+  .wstate.active{color:var(--approved)} .wstate.done{color:var(--accent)}
+  .wstate.abandoned{color:var(--invalid)}
+
+  /* doc viewer */
+  #ov{position:fixed;inset:0;background:rgba(8,9,12,.72);backdrop-filter:blur(6px);
+    z-index:50;display:none;overflow-y:auto;padding:44px 20px}
+  #ov.on{display:block}
+  #doc{max-width:880px;margin:0 auto;background:var(--panel);border:1px solid var(--line);
+    border-radius:16px;padding:38px 46px 50px;position:relative}
+  #doc .dpath{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-bottom:6px}
+  #doc .drow{margin-bottom:26px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  #x{position:sticky;top:0;float:right;background:var(--panel2);border:1px solid var(--line);
+    color:var(--dim);border-radius:9px;padding:5px 13px;cursor:pointer;font-size:13px}
+  #x:hover{color:var(--txt)}
+
+  /* markdown */
+  .md h1,.md h2,.md h3,.md h4{margin:1.5em 0 .5em;line-height:1.3}
+  .md h1{font-size:24px}.md h2{font-size:19px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .md h3{font-size:16px}.md h4{font-size:14px;color:var(--dim)}
+  .md p{margin:.7em 0}.md ul,.md ol{margin:.6em 0 .6em 1.5em}
+  .md li{margin:.25em 0}
+  .md code{font-family:var(--mono);font-size:12.8px;background:#232936;border-radius:5px;padding:1.5px 6px}
+  .md pre{background:#10131a;border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;margin:.9em 0}
+  .md pre code{background:none;padding:0}
+  .md blockquote{border-left:3px solid var(--accent);padding:2px 16px;margin:.8em 0;color:var(--dim)}
+  .md table{border-collapse:collapse;margin:.9em 0;width:100%;font-size:13.5px}
+  .md th,.md td{border:1px solid var(--line);padding:7px 12px;text-align:left}
+  .md th{background:var(--panel2)}
+  .md hr{border:0;border-top:1px solid var(--line);margin:1.4em 0}
+  .md input[type=checkbox]{accent-color:var(--accent2);margin-right:6px}
+  .md .h-done{color:var(--dim);text-decoration:none}
+
+  @media(max-width:900px){.kb,.two{grid-template-columns:1fr}.hrow{flex-wrap:wrap;height:auto;padding:10px 0}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <img src="assets/logo.png" alt="" style="height:30px" onerror="this.style.display='none'">
+    <div class="proj" id="proj"></div>
+    <input id="q" type="search" placeholder="filter…">
+    <div class="gen" id="gen"></div>
+  </div>
+  <nav id="nav"></nav>
+</header>
+<main>
+  <section class="tab" id="tab-docs"></section>
+  <section class="tab" id="tab-kanban"></section>
+  <section class="tab" id="tab-fluxo"></section>
+  <section class="tab" id="tab-ws"></section>
+</main>
+<div id="ov"><div id="doc"><button id="x">close ✕</button><div id="dbody"></div></div></div>
+
+<script id="data" type="application/json">"__DOCOD_DATA__"</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+/* i18n — UI labels follow the instance's `language:`. Add a locale by adding a key. */
+const I18N={'pt-BR':{Documents:'Documentos',Kanban:'Kanban',Flow:'Fluxo',Workstreams:'Frentes',
+ 'To do':'A fazer','In progress':'Em andamento','Done':'Concluída',subtasks:'subtarefas',
+ 'no checklist':'sem checklist','Possible now':'Possível agora','Blocked — and why':'Travado — e por quê',
+ missing:'falta',created:'criado','approved by':'aprovado por',on:'em',generated:'gerado',
+ 'changed since approval':'mudou após aprovação','filter…':'filtrar…','close ✕':'fechar ✕','empty document':'documento vazio',
+ 'No documents yet — run an agent via /docod:run.':'Nenhum documento ainda — rode um agente pelo /docod:run.',
+ 'No tasks yet — task-extraction extracts them from the approved FRD.':'Nenhuma tarefa ainda — o task-extraction extrai do FRD aprovado.',
+ 'nothing — start with the prd or business-case':'nada — comece pelo prd ou business-case',
+ 'nothing blocked':'nada travado',
+ 'No workstream registered — the prd creates one when run in ws scope.':'Nenhuma frente registrada — o prd cria ao rodar em escopo ws.'}};
+const T=(k)=>(I18N[D.language]||{})[k]??k;
+addEventListener('DOMContentLoaded',()=>{});
+document.getElementById('q').placeholder=T('filter…');
+document.getElementById('x').textContent=T('close ✕');
+
+/* ------------------------------------------------------------ mini markdown */
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function inline(s){
+  return s
+    .replace(/`([^`]+)`/g,(m,c)=>'<code>'+c+'</code>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/(^|[\s(])\*([^*\s][^*]*)\*/g,'$1<em>$2</em>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+function md(src){
+  const out=[]; const L=src.split('\n'); let i=0, inCode=false, code=[], para=[];
+  const flushP=()=>{ if(para.length){out.push('<p>'+inline(para.join(' '))+'</p>');para=[]} };
+  const list=(idx,ord)=>{
+    const items=[]; const rx=ord?/^\s*\d+[.)]\s+(.*)$/:/^\s*[-*]\s+(.*)$/;
+    while(idx<L.length){
+      const m=L[idx].match(rx); if(!m)break;
+      let t=m[1];
+      const cb=t.match(/^\[([ xX])\]\s+(.*)$/);
+      if(cb) t='<input type="checkbox" disabled '+(cb[1]!==' '?'checked':'')+'>'+
+             (cb[1]!==' '?'<span class="h-done">':'<span>')+inline(esc(cb[2]))+'</span>';
+      else t=inline(esc(t));
+      items.push('<li>'+t+'</li>'); idx++;
+    }
+    out.push((ord?'<ol>':'<ul>')+items.join('')+(ord?'</ol>':'</ul>'));
+    return idx;
+  };
+  while(i<L.length){
+    const l=L[i];
+    if(inCode){ if(/^```/.test(l)){out.push('<pre><code>'+esc(code.join('\n'))+'</code></pre>');inCode=false;code=[]}else code.push(l); i++; continue }
+    if(/^```/.test(l)){flushP();inCode=true;i++;continue}
+    const h=l.match(/^(#{1,4})\s+(.*)$/);
+    if(h){flushP();out.push('<h'+h[1].length+'>'+inline(esc(h[2]))+'</h'+h[1].length+'>');i++;continue}
+    if(/^\s*(---+|\*\*\*+)\s*$/.test(l)){flushP();out.push('<hr>');i++;continue}
+    if(/^\s*>/.test(l)){flushP();const q=[];while(i<L.length&&/^\s*>/.test(L[i])){q.push(L[i].replace(/^\s*>\s?/,''));i++}
+      out.push('<blockquote>'+md(q.join('\n'))+'</blockquote>');continue}
+    if(/^\s*[-*]\s+/.test(l)){flushP();i=list(i,false);continue}
+    if(/^\s*\d+[.)]\s+/.test(l)){flushP();i=list(i,true);continue}
+    if(/^\s*\|.*\|\s*$/.test(l)){flushP();const rows=[];
+      while(i<L.length&&/^\s*\|.*\|\s*$/.test(L[i])){rows.push(L[i]);i++}
+      const cells=r=>r.replace(/^\s*\||\|\s*$/g,'').split('|').map(c=>inline(esc(c.trim())));
+      let html='<table>'; rows.forEach((r,ri)=>{
+        if(/^[\s|:-]+$/.test(r))return;
+        const tag=ri===0?'th':'td';
+        html+='<tr>'+cells(r).map(c=>'<'+tag+'>'+c+'</'+tag+'>').join('')+'</tr>';
+      }); out.push(html+'</table>'); continue}
+    if(/^\s*$/.test(l)){flushP();i++;continue}
+    para.push(esc(l.trim())); i++;
+  }
+  if(inCode)out.push('<pre><code>'+esc(code.join('\n'))+'</code></pre>');
+  flushP(); return out.join('\n');
+}
+
+/* ------------------------------------------------------------------ helpers */
+const el=(h)=>{const t=document.createElement('template');t.innerHTML=h.trim();return t.content.firstChild};
+function chip(st){
+  const cls=/INVALID/i.test(st)?'invalid':({draft:'draft',review:'review',approved:'approved',
+    'approved?':'review',rejected:'rejected',blocked:'blocked','—':'none'}[st]||'none');
+  return '<span class="chip '+cls+'">'+esc(st)+'</span>';
+}
+function openDoc(it){
+  const head='<div class="dpath">'+esc(it.path)+'</div>'+
+    '<div class="drow row">'+chip(it.status)+
+    (it.kind?'<span class="chip kind">'+esc(it.kind)+'</span>':'')+
+    (it.approval?'<span class="appr">'+T('approved by')+' <b>'+esc(it.approval.by)+'</b> '+T('on')+' '+esc(String(it.approval.at))+'</span>':'')+
+    (it.warning?'<span class="warn">'+esc(it.warning)+'</span>':'')+'</div>';
+  document.getElementById('dbody').innerHTML=head+'<div class="md">'+md(it.body||'*'+T('empty document')+'*')+'</div>';
+  document.getElementById('ov').classList.add('on');
+  document.getElementById('ov').scrollTop=0;
+}
+document.getElementById('x').onclick=()=>document.getElementById('ov').classList.remove('on');
+document.getElementById('ov').onclick=e=>{if(e.target.id==='ov')e.target.classList.remove('on')};
+addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('ov').classList.remove('on')});
+
+/* -------------------------------------------------------------------- tabs */
+document.getElementById('proj').textContent=D.project+' · docsRoot: '+D.docsRoot;
+document.getElementById('gen').textContent=T('generated')+' '+D.generatedAt+' · node '+D.node;
+const tabs=[['docs',T('Documents'),D.docs.reduce((n,g)=>n+g.items.length,0)],
+            ['kanban',T('Kanban'),D.tasks.length],
+            ['fluxo',T('Flow'),D.possible.length+'·'+D.blocked.length],
+            ['ws',T('Workstreams'),Object.keys(D.workstreams).length]];
+const nav=document.getElementById('nav');
+tabs.forEach(([id,label,n],ix)=>{
+  const b=el('<button>'+label+'<span class="n">'+n+'</span></button>');
+  b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');document.getElementById('tab-'+id).classList.add('on')};
+  nav.appendChild(b); if(ix===0)b.click();
+});
+
+/* --------------------------------------------------------------- documentos */
+const td=document.getElementById('tab-docs');
+if(!D.docs.length)td.innerHTML='<div class="empty">'+T('No documents yet — run an agent via /docod:run.')+'</div>';
+D.docs.forEach(g=>{
+  td.appendChild(el('<h2 class="grp">'+esc(g.group)+'<span class="n">'+g.items.length+'</span></h2>'));
+  const grid=el('<div class="grid"></div>');
+  g.items.forEach(it=>{try{
+    const c=el('<div class="card" data-f="'+esc((it.title+' '+it.path).toLowerCase())+'">'+
+      '<h3>'+esc(it.title)+'</h3><div class="path">'+esc(it.path)+'</div>'+
+      '<div class="row">'+chip(it.status)+
+      (it.changed?'<span class="chip invalid">'+T('changed since approval')+'</span>':'')+
+      (it.verdict?chip(it.verdict):'')+
+      '<span class="chip kind">'+esc(it.artifact)+'</span></div>'+
+      (it.approval?'<div class="appr">✓ <b>'+esc(it.approval.by)+'</b> · '+esc(String(it.approval.at))+'</div>':'')+
+      (it.warning?'<div class="warn">'+esc(it.warning)+'</div>':'')+'</div>');
+    c.onclick=()=>openDoc(it); grid.appendChild(c);
+  }catch(e){grid.appendChild(el('<div class="card"><h3>⚠ item failed to render</h3><div class="path">'+esc((it&&it.path)||'?')+'</div><div class="warn">'+esc(String(e))+'</div></div>'))}
+  });
+  td.appendChild(grid);
+});
+
+/* ------------------------------------------------------------------- kanban */
+const tk=document.getElementById('tab-kanban');
+const cols=[['todo',T('To do'),'var(--draft)'],['doing',T('In progress'),'var(--review)'],['done',T('Done'),'var(--approved)']];
+const kb=el('<div class="kb"></div>');
+cols.forEach(([k,label,color])=>{
+  const items=D.tasks.filter(t=>t.lane===k);
+  const col=el('<div class="col"><h3><span class="dot" style="background:'+color+'"></span>'+label+
+    '<span class="n">'+items.length+'</span></h3></div>');
+  if(!items.length)col.appendChild(el('<div class="empty">—</div>'));
+  items.forEach(t=>{try{
+    const pct=t.total?Math.round(100*t.checked/t.total):0;
+    const c=el('<div class="tcard" data-f="'+esc((t.title+' '+t.path).toLowerCase())+'">'+
+      '<h4>'+esc(t.title)+'</h4>'+
+      '<div class="meta"><span>'+esc(t.where)+'</span>'+
+      (t.changed?'<span class="chip invalid">'+T('changed since approval')+'</span>':'')+(t.total?'<span>'+t.checked+'/'+t.total+' '+T('subtasks')+'</span>':'<span>'+T('no checklist')+'</span>')+
+      '</div>'+(t.total?'<div class="bar"><i style="width:'+pct+'%"></i></div>':'')+'</div>');
+    c.onclick=()=>openDoc(t); col.appendChild(c);
+  }catch(e){col.appendChild(el('<div class="tcard"><h4>⚠ task failed to render</h4><div class="meta">'+esc((t&&t.path)||'?')+' · '+esc(String(e))+'</div></div>'))}
+  });
+  kb.appendChild(col);
+});
+tk.appendChild(kb);
+if(!D.tasks.length)tk.innerHTML='<div class="empty">'+T('No tasks yet — task-extraction extracts them from the approved FRD.')+'</div>';
+
+/* -------------------------------------------------------------------- fluxo */
+const tf=document.getElementById('tab-fluxo');
+tf.appendChild(el('<div class="two">'+
+ '<div><h2 class="grp">'+T('Possible now')+'<span class="n">'+D.possible.length+'</span></h2><div class="list" id="fpos"></div></div>'+
+ '<div><h2 class="grp">'+T('Blocked — and why')+'<span class="n">'+D.blocked.length+'</span></h2><div class="list" id="fblk"></div></div></div>'));
+const fp=tf.querySelector('#fpos'), fb=tf.querySelector('#fblk');
+if(!D.possible.length)fp.innerHTML='<div class="li"><span class="empty">'+T('nothing — start with the prd or business-case')+'</span></div>';
+D.possible.forEach(p=>{
+  const w=p.indexOf('(waivable');
+  fp.appendChild(el('<div class="li ok"><span class="ic">→</span><span class="mono">'+
+    esc(w<0?p:p.slice(0,w))+'</span>'+(w<0?'':'<span class="wv">'+esc(p.slice(w))+'</span>')+'</div>'));
+});
+if(!D.blocked.length)fb.innerHTML='<div class="li"><span class="empty">'+T('nothing blocked')+'</span></div>';
+D.blocked.forEach(([name,why])=>fb.appendChild(el(
+  '<div class="li no"><span class="ic">✗</span><span class="mono">'+esc(name)+
+  '</span><span class="why">'+T('missing')+' '+esc(why.join('; '))+'</span></div>')));
+
+/* -------------------------------------------------------------- workstreams */
+const tw=document.getElementById('tab-ws');
+const wk=Object.keys(D.workstreams);
+if(!wk.length)tw.innerHTML='<div class="empty">'+T('No workstream registered — the prd creates one when run in ws scope.')+'</div>';
+else{
+  const l=el('<div class="list"></div>');
+  wk.forEach(k=>{const w=D.workstreams[k];
+    const ic={active:'●',done:'✓',abandoned:'✗'}[w.state]||'?';
+    l.appendChild(el('<div class="li"><span class="ic wstate '+esc(w.state)+'">'+ic+'</span>'+
+      '<span class="mono">'+esc(k)+'</span><span class="wstate '+esc(w.state)+'">'+esc(w.state)+'</span>'+
+      '<span class="why">'+esc(w.name||'')+(w.abandoned_reason?' — '+esc(w.abandoned_reason):'')+
+      (w.created?' · '+T('created')+' '+esc(String(w.created)):'')+'</span></div>'));
+  });
+  tw.appendChild(l);
+}
+
+/* ------------------------------------------------------------------- filtro */
+document.getElementById('q').addEventListener('input',e=>{
+  const q=e.target.value.toLowerCase();
+  document.querySelectorAll('[data-f]').forEach(c=>{
+    c.style.display=!q||c.dataset.f.includes(q)?'':'none'});
+});
+</script>
+</body>
+</html>

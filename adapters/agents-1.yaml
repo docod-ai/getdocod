@@ -1,0 +1,80 @@
+specVersion: "1.0.0"
+
+# =============================================================================
+# LAYER 3 — ADAPTER: AGENTS-1  ·  PLUGGABLE
+#
+# This is the NEUTRAL reference adapter. It uses the AGENTS-1 spec (`.agents/` +
+# `AGENTS.md`), which belongs to no vendor. It is Douro's default:
+# if the user does not choose an adapter, this is it.
+#
+# An adapter answers three questions, and only those three:
+#   1. capability → which concrete tool?
+#   2. canonical standard → where does this harness read?
+#   3. how is an action invoked?
+# =============================================================================
+
+adapter:
+  key: agents-1
+  name: "AGENTS-1 (neutral)"
+  spec: "https://agents.md"
+  vendor: null
+  default: true
+
+# -----------------------------------------------------------------------------
+# 1. CAPABILITY → TOOL
+# `null` = the harness does not offer it. The validator warns which actions are
+# unavailable BEFORE running, instead of failing mid-chain.
+# -----------------------------------------------------------------------------
+# HONESTY CORRECTION: the previous version promised duckduckgo, crawl4ai,
+# playwright-cli, axe-core — tools AGENTS.md does NOT HAVE, because AGENTS.md
+# is a FILE SPEC, not a runtime. An adapter that promises a nonexistent tool
+# is this project's failure #1 (a reference with nobody on the other end),
+# inside the adapter itself.
+#
+# What this adapter guarantees is only what the spec guarantees: files in a
+# known place. Tools belong to whoever READS the AGENTS.md — and each runtime
+# that reads it (IDE, CLI, agent) brings its own.
+capabilities:
+  code_edit:   { tool: "fs",        note: "filesystem — the spec's only real guarantee" }
+  shell:       { tool: "shell",     note: "presumes POSIX; it is the floor of any runtime" }
+  vcs_diff:    { tool: "git diff",  note: "presumes git in the project" }
+  vcs_history: { tool: "git log",   note: "presumes git in the project" }
+  code_search: { tool: null, runtime_defined: true, note: "grep is the floor; the runtime may have better" }
+  web_search:  { tool: null, runtime_defined: true }
+  web_fetch:   { tool: null, runtime_defined: true }
+  doc_lookup:  { tool: null, runtime_defined: true, degraded_to: web_search }
+  browser_e2e: { tool: null, runtime_defined: true, note: "without a runtime with a browser, the qa-executor marks NOT VERIFIED — it never pretends it tested" }
+  a11y_audit:  { tool: null, runtime_defined: true, note: "same as browser_e2e" }
+  calculator:  { tool: null, runtime_defined: true, note: "shell + arithmetic is the floor" }
+  ask_user:    { tool: null, runtime_defined: true, note: "a convenience, never a prerequisite — the agent writes the question and stops" }
+
+# -----------------------------------------------------------------------------
+# 2. PROMOTION — canonical standard → where this harness reads
+#
+# The standards agent writes ONCE, in {docsRoot}standards/.
+# Promotion replicates to where each harness actually reads.
+# Without this the human is the transport — which is today's bottleneck.
+# -----------------------------------------------------------------------------
+promote:
+  index:
+    path: "AGENTS.md"
+    mode: generate
+    note: "root index; points to the rules"
+  rules:
+    - { artifact: coding-standards,   to: ".agents/rules/code-standards.md" }
+    - { artifact: testing-guidelines, to: ".agents/rules/tests.md" }
+    - { artifact: security-rules,     to: ".agents/rules/security.md" }
+    - { artifact: system-design,      to: ".agents/rules/architecture.md" }
+    - { artifact: cicd-guidelines,    to: ".agents/rules/cicd.md" }
+  manifest:
+    path: ".agents/manifest.yaml"
+    mode: merge
+
+# -----------------------------------------------------------------------------
+# 3. INVOCATION
+# -----------------------------------------------------------------------------
+invoke:
+  mode: prompt-file
+  promptsRoot: ".agents/prompts/"
+  skillsRoot: ".agents/skills/"
+  note: "Each action becomes a prompt in .agents/prompts/<action>.md, assembled from the contract."

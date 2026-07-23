@@ -1,0 +1,210 @@
+specVersion: "1.0.0"
+
+# =============================================================================
+# LAYER 3 — ADAPTER: CLAUDE CODE  ·  PLUGGABLE
+#
+# Exists to prove that layer 2 is neutral: EVERYTHING Anthropic-specific is
+# confined to this file. If any name from here shows up in the contract, the
+# method or an agent, it is a layer leak.
+#
+# It is also where the current violations must be repaired:
+#   - "@.claude/rules"            in the 4 execute_* prompts  → belongs here
+#   - "Use the Context7 MCP"      in create_techspec          → belongs here
+#   - "Use the Playwright MCP"    in execute_qa               → belongs here
+# =============================================================================
+
+adapter:
+  key: claude-code
+  name: "Claude Code"
+  vendor: anthropic
+  default: false
+
+capabilities:
+  web_search:  { tool: "WebSearch" }
+  web_fetch:   { tool: "WebFetch" }
+  doc_lookup:  { tool: "mcp__Context7__get-library-docs", mcp: "Context7",
+                 external: true, degraded_to: "WebSearch + WebFetch (native)",
+                 install: "claude mcp add context7" }
+  code_search: { tool: "Grep" }
+  code_edit:   { tool: "Edit" }
+  shell:       { tool: "Bash" }
+  vcs_diff:    { tool: "Bash", cmd: "git diff" }
+  vcs_history: { tool: "Bash", cmd: "git log" }
+  browser_e2e: { tool: "mcp__playwright__*", mcp: "playwright",
+                 external: true, degraded_to: null,
+                 install: "claude mcp add playwright",
+                 note: "without it, the qa-executor marks the interface verification as NOT VERIFIED — it never pretends it tested" }
+  a11y_audit:  { tool: "mcp__playwright__*", mcp: "playwright",
+                 external: true, degraded_to: null,
+                 install: "claude mcp add playwright",
+                 note: "playwright + axe. Same honest degradation as browser_e2e" }
+
+# -----------------------------------------------------------------------------
+# EXTERNAL TOOL — the rule
+#
+# Context7 and Playwright are MCPs the USER installs; the harness does not ship
+# them. Vendor names in layer 3 are allowed — the problem was never citing
+# them, it is DEPENDING on them in silence. So the rule is:
+#
+#   external: true      → the adapter does not presume; it DETECTS
+#   degraded_to: X      → without the tool, the capability falls back to X
+#   degraded_to: null   → without the tool, the capability becomes UNAVAILABLE —
+#                         and the agent records "not verified", never pretends
+#
+# Each agent's wrapper already carries this instruction: a missing tool is not
+# the user's fault nor a license to improvise — it is degradation declared in
+# the produced document.
+# -----------------------------------------------------------------------------
+  calculator:  { tool: "Bash", cmd: "node -e" }
+  ask_user:    { tool: "AskUserQuestion",
+                 note: "only works in the main session. In a subagent (invoke.mode) it degrades to the hand-back protocol: stop and return 'QUESTIONS FOR THE USER:' to the caller" }
+
+promote:
+  index:
+    path: "CLAUDE.md"
+    mode: generate
+  rules:
+    # Claude Code has no native rules directory: the canonical content is
+    # inlined into CLAUDE.md, with the files kept as a referenceable source.
+    - { artifact: coding-standards,   to: ".agents/rules/code-standards.md", inline_into: "CLAUDE.md" }
+    - { artifact: testing-guidelines, to: ".agents/rules/tests.md",          inline_into: "CLAUDE.md" }
+    - { artifact: security-design,    to: ".agents/rules/security.md",       inline_into: "CLAUDE.md" }
+    - { artifact: system-design,      to: ".agents/rules/architecture.md",   inline_into: "CLAUDE.md" }
+    - { artifact: cicd-guidelines,    to: ".agents/rules/cicd.md" }
+  skills:
+    root: ".claude/skills/"
+    from: ".agents/skills/"
+    mode: symlink
+
+invoke:
+  mode: subagent
+  agentsRoot: ".claude/agents/"           # docod-<key>.md, one per agent
+  commandsRoot: ".claude/commands/docod/" # ONLY orchestration: status·start·continue·approve·ws·run·report
+  sync: "install.sh <project root> — pure bash, zero dependencies; idempotent and merge-safe"
+  materialization: |
+    ONE NATIVE SUBAGENT per agent (.claude/agents/docod-<key>.md) + the 6
+    orchestration commands (status, start, continue, approve, ws, run).
+    User decision in v1 (was: one command per agent): the agent lives in the
+    place the harness reserves for agents; commands are only for what IS a
+    command — orchestration. /docod:run <agent> is the explicit door.
+
+    THE SUBAGENT IS A THIN ENVELOPE: the first instruction is to read
+    .docod/agents/<key>.md in full — there is one source, the envelope points
+    to it. (Subagents do not expand @references; that is why the read is an
+    instruction, not an inclusion.) A copy would be scheduled drift. Re-running
+    the sync is only needed when an agent is BORN or DIES, not when it changes.
+
+    WHAT THIS MODE COSTS — owned, not hidden:
+    1. interactive: a subagent cannot reach the user. Hand-back protocol:
+       the subagent STOPS and returns "QUESTIONS FOR THE USER:"; the main
+       session (via /docod:run) asks and reinvokes with the answers.
+       Inventing an answer is a violation — the envelope explicitly forbids it.
+    2. hooks: do NOT fire in subagents (issue #34692) → EVERY deterministic
+       postcondition is enforced in band, for ALL agents. See enforcement.
+    3. auto-invocation: the model MAY delegate to a subagent on its own.
+       Mitigation in each one's description: "invoke ONLY when the user
+       explicitly asks". It is an instruction, not a lock — accepted risk.
+
+    THE ONE EXCEPTION — tech-lead: it materializes as a MAIN-SESSION command
+    (/docod:lead), not a subagent. Its essence is conversation (sparring), and
+    conversation cannot bounce through the hand-back protocol on every turn.
+    The counsel it records follows the same rules as everything else.
+
+    Ownership: every generated file carries the `generated-by: docod` marker.
+    A namesake without the marker is not ours → the installer warns and skips.
+
+# -----------------------------------------------------------------------------
+# ENFORCEMENT — how this harness enforces postconditions
+#
+# Layer 2 declares the NATURE of each postcondition (deterministic | evidence |
+# judgment) in spec/agent.yaml. Here we say what to wire it to, in this harness.
+#
+# Same pattern as `capabilities`: the method states the need, the adapter states
+# the tool. When the harness changes, this section changes and the method does
+# not feel it.
+# -----------------------------------------------------------------------------
+enforcement:
+  deterministic:
+    mechanism: in-band     # direct consequence of invoke.mode: subagent
+    contract: |
+      Hooks do NOT fire inside a subagent — not PreToolUse, not PostToolUse,
+      not Stop/SubagentStop (anthropics/claude-code#34692 and #33049; open
+      issue, not docs — current behavior, not a promise). With the subagent
+      materialization, EVERY agent runs where hooks do not exist. Therefore:
+
+      A `deterministic` postcondition is enforced IN BAND for ALL agents,
+      no exception: the agent runs the verification and SHOWS command + output
+      in the report; /docod:run REQUIRES that evidence before accepting the
+      delivery. It is worse than a hook (the executor is the reporter), but it
+      is honest — and the double check exists: the caller compares the report
+      against the contract's postconditions.
+
+      Historical note: in the previous materialization (one command per agent),
+      the hook protected the main session but inverted who got protected —
+      the delegates (task-executor, qa-executor), who need it MOST, ran
+      without hooks. Subagent mode did not create the hole; it made it
+      UNIFORM, and the answer (in-band) became the single rule instead of the
+      exception.
+    hook_reference: |
+      Hooks remain the right mechanism for what runs in the MAIN SESSION —
+      and they are used in the bundle's development repo (PostToolUse
+      validator in .claude/settings.json). If the issue closes, promoting
+      in-band → hook is swapping this section; the method does not feel it.
+        pre_write:  { hook: PreToolUse, matcher: "Write|Edit", blocks: true }
+        post_write: { hook: PostToolUse, matcher: "Write|Edit", blocks: false }
+        turn_end:   { hook: Stop, blocks: true }
+      Real blocking only in PreToolUse and Stop. `exit 2` → stderr goes back
+      to the agent as the reason. The rest injects feedback and prevents
+      nothing.
+
+    limits:
+      stop_loop: |
+        Stop blocks up to 8 consecutive times; after that Claude Code ends the
+        turn anyway. And `stop_hook_active` must be checked, otherwise it
+        becomes a loop. That is why the bundle's validator is PostToolUse, not
+        Stop: a broken intermediate edit is normal, and fighting it costs more
+        than the error it would prevent.
+
+      tool_choice: |
+        A hook decides whether the tool EXECUTES, not which one the model
+        chooses. Denying Write does not stop the model from trying something
+        else. For real guarantees, OS-level control — not hooks.
+
+  evidence:
+    mechanism: in-band
+    contract: |
+      The agent runs the verification and SHOWS the output: command, return
+      value, file:line. It does not depend on hooks, works in subagents, works
+      in any harness.
+
+      It is principle #1 of agentic coding — show proof instead of asserting
+      success. And it is what the task-executor, the qa-executor and
+      code-review already demand: "evidence is cited, not asserted".
+
+      Honest weakness: the executor is the reporter. That is why the model
+      does not trust this alone — the verdict belongs to another agent
+      (design-review, qa-executor, code-review), and none of them approves
+      itself.
+
+  judgment:
+    mechanism: none
+    contract: |
+      It is not enforceable, and promising to enforce it would be worse than
+      not having it.
+
+      The defense here is not mechanical: it is another agent's gate + the
+      inquiry that refuses rubber-stamping + the evidence that lets someone
+      disagree.
+
+# -----------------------------------------------------------------------------
+# CONFORMANCE — what this adapter offers
+# -----------------------------------------------------------------------------
+conformance:
+  supports_all_capabilities: true
+  degraded: []
+  unavailable: []
+  enforcement:
+    deterministic: "in-band for all (subagent materialization; hooks do not fire there — issue #34692). Evidence required by /docod:run."
+    evidence: "full"
+    judgment: "n/a by definition"
+  interactive: "via the hand-back protocol: the subagent stops, returns QUESTIONS FOR THE USER, /docod:run asks and reinvokes. Owned cost of subagent mode."

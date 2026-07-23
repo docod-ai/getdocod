@@ -1,0 +1,65 @@
+specVersion: "1.0.0"
+
+# =============================================================================
+# LAYER 4 — INSTANCE  ·  PER PROJECT
+#
+# This file is written by the USER, at the root of their project. Rust, Go,
+# monorepo, microservice, whatever. It is the only thing that changes between
+# projects.
+#
+# Nothing here is model. The model lives in spec/ (layers 1-2) and adapters/ (3).
+# =============================================================================
+
+project:
+  name: "<project name>"
+  spec: ./spec/
+
+# -----------------------------------------------------------------------------
+# ADAPTER — layer 3. Changing this line swaps the entire harness.
+# agents-1 (neutral, default) | claude-code | cursor | copilot | agno
+# -----------------------------------------------------------------------------
+adapter: agents-1
+
+# -----------------------------------------------------------------------------
+# LANGUAGE — the language everything the method PRODUCES is written in
+# (artifacts, inquiry questions, reports). The method speaks English; the
+# product speaks this.
+# -----------------------------------------------------------------------------
+language: en
+
+# -----------------------------------------------------------------------------
+# ARTIFACTS ROOT — where the method writes in this repo. The spec says WHAT and
+# the internal structure (by nature: product/ design/ decisions/ quality/ ops/
+# releases/ standards/ workstreams/); the instance says WHERE. Stage does not
+# become a folder.
+# -----------------------------------------------------------------------------
+docsRoot: docs/
+
+# -----------------------------------------------------------------------------
+# TOPOLOGY — what lets the same spec serve any shape of repo.
+#   single     — one target; microservice, lib, app. path: "."
+#   monorepo   — several targets under one root
+#   multi-repo — targets in distinct repos
+# -----------------------------------------------------------------------------
+topology: single
+
+targets:
+  app:
+    path: .
+    stack: []
+    tasksRoot: tasks/
+
+# -----------------------------------------------------------------------------
+# The same spec, another shape — nothing in spec/ or adapters/ changes:
+#
+#   adapter: cursor
+#   topology: monorepo
+#   targets:
+#     api:  { path: services/api/, stack: [rust, axum], tasksRoot: services/api/tasks/ }
+#     web:  { path: apps/web/,     stack: [typescript, remix], tasksRoot: apps/web/tasks/ }
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# MODEL PENDINGS — the model's, not anyone's repo.
+# The repo is the user's life; a divergent file name between their folders is
+# not our problem. Only what blocks the model goes here.

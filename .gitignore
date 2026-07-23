@@ -1,0 +1,6 @@
+# generated — never versioned (a report is a photo, regenerate it)
+report.html
+__pycache__/
+.DS_Store
+# internal planning — not part of the public bundle
+EPICO-adocao.md

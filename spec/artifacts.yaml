@@ -1,0 +1,922 @@
+specVersion: "1.0.0"
+
+# =============================================================================
+# LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
+#
+# This is what binds. An agent delivers one document; this file says which one,
+# in which scope and at which path. Without these keys, `contract` references
+# nothing.
+#
+# Extracted from `knowledge.structure` and the MINIMUM SECTIONS of the 30
+# agents — the definition of each document was already written there, it just
+# was not registered anywhere another agent could find it.
+#
+# PATHS ARE NEUTRAL. No repo name, language, or anyone's folder.
+#   {docsRoot} — the ROOT of the artifacts, decided by the INSTANCE (docod.yaml,
+#                default docs/). The method's stage does NOT appear in the
+#                filesystem: stage is metadata (frontmatter/spec); the folder
+#                groups by NATURE (product/ design/ decisions/ quality/ ops/
+#                releases/ standards/ workstreams/) — a revisited document does
+#                not change homes. Target scope stays next to the code
+#                ({target.tasksRoot}).
+#   {ws}     — workstream key
+#   {seq}    — 4-digit sequential
+#   {slug}   — kebab
+#   {date}   — YYYY-MM-DD
+#   {target.tasksRoot} — resolved by the instance's docod.yaml
+# =============================================================================
+
+defaults:
+  format: markdown
+  immutable: false
+  numbering: none
+
+# =============================================================================
+# STALENESS — how an artifact knows its input changed
+#
+# Every artifact records, in its frontmatter, the CONTENT HASH of each input it
+# consumed. If the input's current hash differs from the recorded one, this
+# artifact is stale.
+#
+#   inputs:
+#     - { artifact: adr, key: 0004-particionar, hash: "sha256:a3f2c1..." }
+#
+# Content hash, not date and not commit:
+#   - date      → false positive on any touch to the file, and a false positive
+#                 trains the user to ignore the alert
+#   - commit    → ties the model to git, and the file changes without a commit
+#   - hash      → detects REAL content change, works without a VCS
+#
+# The transitive closure gives the impact: ADR changes → system-design stale →
+# task stale → that task's code is suspect. It is the propagation the epic asks
+# for in "every project has changes".
+#
+# An `approved` artifact with a stale input STOPS satisfying preconditions.
+# Otherwise the `approved` lies after the first change.
+# =============================================================================
+
+staleness:
+  # LINEAGE CLASSES (born from the first real test):
+  #   live (default)      — inputs are LIVE dependencies: hash mismatch = stale.
+  #   lineage: snapshot   — the artifact is a RECORD of a moment (reviews,
+  #                         impact, postmortem, ADR…): inputs are "observed-at";
+  #                         verify reports them, never fails them. Refreshing
+  #                         them would lie about what was analyzed.
+  # INPUT ENTRY EXTRAS:
+  #   external: true      — provenance outside the registry (an imported .docx):
+  #                         recorded, not resolvable, never a failure.
+  #   (input pointing at an append_only artifact, e.g. decisions: the hash
+  #    records the observed state of a file that grows by design — reported,
+  #    not failed.)
+  algorithm: sha256
+  scope: content        # the artifact's text, excluding its own frontmatter
+  field: inputs[].hash
+  on_stale:
+    gate: invalidate    # an artifact that is a gate loses validity — must revalidate
+    other: warn         # the rest warns; invalidating everything creates noise, and noise gets ignored
+
+# =============================================================================
+artifacts:
+
+  # -------------------------------------------------------------- DEFINE
+  workstreams:
+    stage: define
+    owner: prd
+    format: yaml
+    delivers: "The registry of workstreams: key, name, state — the single source of which fronts exist"
+    scope: [project]
+    path:
+      project: "{docsRoot}workstreams.yaml"
+    note: |
+      The ws lifecycle, closed:
+
+        BORN    — when the `prd` runs in ws scope. The entry door of a front is
+                  the method (prd = the what and the why), not a command.
+                  The prd records: key, name, state `active`, date.
+        LIVES   — its artifacts live in {docsRoot}workstreams/{key}/ and in the targets.
+        DIES    — `done` (the release-notes cites it) or `abandoned` (with a
+                  MANDATORY reason, via the `ws abandon` command). It never
+                  vanishes in silence: a ws abandoned without a reason is lost
+                  work with no record.
+
+      It is the single source. The folder {docsRoot}workstreams/{key}/ existing
+      does NOT create a ws — a folder without a registration is a `status`
+      finding, not a new front. (A folder convention with no registration would
+      be the tenth occurrence of this project's recurring failure.)
+
+      schema per entry:
+        <key>: { name, state: active|done|abandoned, created: date,
+                 abandoned_reason: mandatory when abandoned }
+
+    co_writer:
+      agent: user
+      may_write: [state, abandoned_reason]
+      may_not_write: [key, name, created]
+      note: |
+        The human closes (done/abandon) via the `ws` command — closing a front
+        is a human decision, not an agent's. Creating remains the prd's alone.
+
+  business-case:
+    stage: define
+    owner: business-case
+    delivers: "Investment justification: ROI, alternatives, go/no-go recommendation"
+    scope: [project, ws]
+    path:
+      project: "{docsRoot}product/business-case.md"
+      ws: "{docsRoot}workstreams/{ws}/business-case.md"
+    sections: [Executive Summary, Context & Problem, Analysis of Alternatives, Recommended Solution,
+               Expected Benefits, Cost Analysis, Risks, Timeline, Recommendation]
+
+  prd:
+    stage: define
+    owner: prd
+    delivers: "Vision, goals & KPIs, IN/OUT scope, functional and non-functional requirements"
+    scope: [project, ws, target]
+    path:
+      project: "{docsRoot}product/prd.md"
+      ws: "{docsRoot}workstreams/{ws}/prd.md"
+      target: "{target.tasksRoot}prd-{ws}/prd.md"
+    note: |
+      The scope is decided per WS (shared vs per-target), not by a fixed rule.
+
+      FEATURE IN LEGACY: the workstream's PRD stands on its own — the project's
+      PRD may not exist, and that is fine. The entry door of a feature is
+      ALWAYS the prd (the what and the why); the rfc answers a different
+      question ("do you all agree?") and only enters if the impact-analysis
+      reveals the change touches other people's things. In legacy, the rfc is
+      DERIVED from the impact-analysis, not a style choice.
+
+      Exception: in the open-source model, where there is no product owner and
+      consensus IS the decision process, the rfc is the door. If the one who
+      decides is the product owner, it is prd.
+
+  frd:
+    stage: define
+    owner: frd
+    delivers: "Numbered (RF-XXX), testable functional requirements, with acceptance criteria"
+    scope: [project, ws]
+    path:
+      project: "{docsRoot}product/frd.md"
+      ws: "{docsRoot}workstreams/{ws}/frd.md"
+    sections: [Context and Overview, In/Out Scope, Numbered Functional Requirements,
+               Acceptance Criteria, Non-Functional Requirements, Dependencies & Impact]
+
+  user-stories:
+    stage: define
+    owner: user-stories-epics
+    delivers: "Theme → Epic → Story with INVEST and Given-When-Then criteria"
+    scope: [ws]
+    path:
+      ws: "{docsRoot}workstreams/{ws}/user-stories.md"
+    sections: [Structure & Hierarchy, Epic Template, User Story Template,
+               INVEST Checklist, Examples]
+
+  rfc:
+    stage: define
+    owner: rfc
+    delivers: "A proposal open for comment, with who must agree, who decides and by when"
+    transversal: true
+    optional: true
+    note: |
+      RFC and TRADEOFFS ARE INDEPENDENT AXES, not a chain:
+
+        tradeoffs  ← the cost of being WRONG is high (one-way door)          → reduces the risk of the choice
+        rfc        ← the cost of DECIDING ALONE is high (people affected)    → reduces the political risk
+
+      A trivial decision that affects 5 teams: rfc yes, tradeoffs no.
+      An irreversible decision only the author touches: tradeoffs yes, rfc no.
+      When both apply, the rfc REFERENCES the tradeoffs — it does not repeat
+      the matrix.
+
+      The `decisions-team` v1 is `sequential: rfc → tradeoffs → adr`. It is
+      wrong: it forces all three whenever you want one. The ADR is the anchor;
+      the other two are optional companions, for different reasons.
+
+      An RFC closed without becoming an ADR is discussion without consequence.
+    scope: [project]
+    numbering: sequential
+    path:
+      project: "{docsRoot}decisions/rfc/{seq}-{slug}.md"
+    sections: [Summary, Context, Proposal, Impacts, Implementation Requirements,
+               Alternatives Considered, Risks & Mitigations, Next Steps]
+
+  tradeoffs:
+    stage: define
+    owner: tradeoffs
+    delivers: "Weighted comparison of alternatives, with sensitivity and a conditional recommendation"
+    transversal: true
+    optional: true
+    note: |
+      It is the DEEP DIVE the one-way door demands — not a toll on every
+      decision. A two-way door is handled by the ADR's own "Alternatives
+      Considered" section. See decision-reversibility.
+    scope: [project]
+    numbering: sequential
+    path:
+      project: "{docsRoot}decisions/tradeoffs/{seq}-{slug}.md"
+    sections: [Context and Goal, Alternatives, Comparison Criteria, Detailed Evaluation,
+               Trade-off Matrix, Discussion, Conclusion, Assumptions & Risks]
+
+  adr:
+    stage: define
+    lineage: snapshot
+    owner: adr
+    delivers: "A frozen technical decision, with alternatives, consequences and cost"
+    scope: [project]
+    numbering: sequential
+    immutable: true
+    transversal: true
+    domain: [architecture, data, security, cicd, operations, infra]
+    note: |
+      TRANSVERSAL — no position in the pipeline. It is triggered by any agent
+      that runs into a decision, at any stage: the frd discovering it needs a
+      cloud, the system-design choosing persistence, the cicd choosing a
+      runner, the postmortem correcting the decision that caused the incident.
+
+      `stage: define` is by NATURE, not by position: DOCOD defines Define as
+      "the what, the why, and what has already been decided" — the ADR IS
+      "what has already been decided". It produces a constraint, and a
+      constraint is input to Define wherever it comes from.
+
+      GLOBAL numbering despite the domain: ADR-0004 is unique in the project,
+      whether it is about CI/CD or security. The point is having one single
+      place to look at "what we decided".
+
+      Not to be confused with `decisions/`: that is a product answer in the
+      inquiry ("persona = operator"); this is a technical decision with an
+      alternative ("Azure instead of AWS"). Product answers product;
+      engineering decides engineering.
+    path:
+      project: "{docsRoot}decisions/adr/{seq}-{slug}.md"
+    sections: [Title, Context / Motivation, Decision, Alternatives Considered,
+               Consequences, Status, Authors, References]
+
+  counsel:
+    stage: define
+    lineage: snapshot
+    owner: tech-lead
+    transversal: true
+    optional: true
+    append_only: true
+    delivers: "The tech lead's counsel log: question, recommendation, rationale, and the user's call — influential advice with a trail"
+    scope: [project]
+    path:
+      project: "{docsRoot}decisions/counsel.md"
+    note: |
+      Counsel is not a decision record — the ADR is. This log exists so that
+      advice that CHANGED a direction has an origin: what was asked, what was
+      recommended on what basis, and what the human decided. The tech-lead
+      appends; nobody rewrites. When an entry flags an ADR candidate, the ADR
+      (once recorded) is the authority and this entry is its prehistory.
+
+  # ----- GOVERNANCE — RULES, not agents. See spec/rules.yaml -----
+  #
+  # `kind: rule` means: discipline the task-executor obeys while writing and
+  # the code-review demands in the PR. It is not an agent — it has no contract,
+  # action, gate or inquiry. The `rules-factory` is who creates and revises it.
+  #
+  # They were agents for three sessions, and could not be: the agent would run
+  # once and become a parked file, and nobody would read the AGENT — everybody
+  # reads the DOCUMENT. It is `diagrams` inverted: that one delivered a craft
+  # and invented a file in order to be an agent; this one delivers a file and
+  # would have invented a craft.
+  #
+  # The model already said this. In spec/agent.yaml, about memory between
+  # sessions:
+  #   "The correct mechanism already exists and is explicit: the RULES. The
+  #    team's standard becomes {docsRoot}standards/*, is promoted to where the
+  #    harness reads."
+  # And `promotable: true` was exactly this: promoting to where the harness
+  # reads IS becoming a rule. The adapter already had the map in
+  # `promote.rules`.
+  #
+  # `template:` points to the MOLD (layer 2, docod/rules/). The rule does not
+  # come ready-made because a generic rule is WORSE than none: "use descriptive
+  # names" makes the code-review point out personal taste with the authority of
+  # a norm.
+  #
+  # The generated rule has `paths` — it applies to a subtree, not the whole
+  # repo. That is what keeps it from becoming a 40-item list nobody reads.
+  coding-standards:
+    stage: define
+    kind: rule
+    owner: rules-factory
+    template: rules/coding-standards.md
+    delivers: "The project's code standards: naming, formatting, errors, security"
+    scope: [project, target]
+    path:
+      project: "{docsRoot}standards/coding-standards.md"
+      target: "{docsRoot}standards/{target}/coding-standards.md"
+    promotable: true
+
+  testing-guidelines:
+    stage: define
+    kind: rule
+    owner: rules-factory
+    template: rules/testing-guidelines.md
+    delivers: "The project's testing strategy: types, coverage, flakiness, CI"
+    scope: [project, target]
+    path:
+      project: "{docsRoot}standards/testing-guidelines.md"
+      target: "{docsRoot}standards/{target}/testing-guidelines.md"
+    promotable: true
+
+  cicd-guidelines:
+    stage: define
+    kind: rule
+    owner: rules-factory
+    template: rules/cicd-guidelines.md
+    delivers: "Pipeline, deploy, monitoring and rollback guidelines"
+    scope: [project, target]
+    path:
+      project: "{docsRoot}standards/cicd-guidelines.md"
+      target: "{docsRoot}standards/{target}/cicd-guidelines.md"
+    promotable: true
+
+  security-rules:
+    stage: define
+    kind: rule
+    owner: rules-factory
+    template: rules/security-rules.md
+    delivers: "The security discipline the executor obeys: principle, IAM, secrets, input validation"
+    scope: [project, target]
+    path:
+      project: "{docsRoot}standards/security-rules.md"
+      target: "{docsRoot}standards/{target}/security-rules.md"
+    promotable: true
+
+  security-design:
+    stage: orchestrate
+    owner: security-design
+    delivers: "THIS system's threat model: attack surface, cryptography, keys, controls per boundary"
+    scope: [project, target]
+    path:
+      project: "{docsRoot}design/security-design.md"
+      target: "{target.tasksRoot}prd-{ws}/security-design.md"
+    sections: [Assets, Flow & Boundaries, Threats, Controls, Accepted Risks, Gaps]
+    note: |
+      IT SPLIT. The v1 had two things under one name — same diagnosis as the `trd`:
+
+        principle, IAM, secrets, input validation        → security-rules (rule)
+        threat model, cryptography, keys, attack surface → here (design)
+
+      A norm the executor obeys; a threat model someone must DO, looking at
+      this system, together with the system-design and the data-design.
+      Turning it all into a rule would leave the threat model orphaned — and
+      the design-review would start checking security against a generic
+      checklist, which is the opposite of its job.
+
+      It moved out of `{docsRoot}standards/` into `{docsRoot}design/`: it was
+      never a standard, it was design living in the wrong folder.
+
+  decisions:
+    stage: define
+    owner: "{agent}"
+    delivers: "The user's answers as reusable FACT — not as prose inside a document"
+    scope: [ws, project]
+    format: yaml
+    append_only: true
+    path:
+      ws: "{docsRoot}workstreams/{ws}/decisions/{agent}.yaml"
+      project: "{docsRoot}decisions/log/{agent}.yaml"
+    entry_schema:
+      key:        "stable identifier of the decision (e.g. persona-principal)"
+      question:   "what was asked"
+      answer:     "what the user answered"
+      provenance: "user-supplied | inferred | evidence"
+      asked_by:   "agent that asked"
+      asked_at:   "date"
+      affects:    "list of artifacts that depend on this answer"
+    rationale: |
+      Without this, the user's answer becomes prose inside the document. The
+      `frd` can read the persona in the PRD — but by luck, not by contract.
+      And if somebody changes the persona, nobody knows the stories are aimed
+      at a different user.
+
+      With this, three things start working:
+      1. The inquiry's "skip if" becomes executable: does the decision
+         `persona-principal` exist? Then do not ask again. It is what sustains
+         fluid validation.
+      2. `affects` gives staleness to DECISIONS, not only to documents: the
+         persona changes → prd, frd, user-stories and test-plan go stale.
+      3. Provenance survives. Knowing the persona came from the user (and not
+         from the agent's deduction) is what separates fact from fiction in
+         the reverse-engineered document.
+
+    owner_note: |
+      ⚠ `owner: "{agent}"` is dynamic — the owner is the agent that asked.
+      It is the only exception to "one artifact, one owner", and it is
+      deliberate: one file per agent avoids the merge conflicts a shared
+      decisions.yaml would generate. Any agent READS all of them; each one
+      writes only its own.
+
+  # ----------------------------------------------------------- ORCHESTRATE
+  system-design:
+    stage: orchestrate
+    owner: system-design
+    delivers: "Architecture, components, flows, interfaces, scale"
+    scope: [project, target]
+    path:
+      project: "{docsRoot}design/system-design.md"
+      target: "{target.tasksRoot}prd-{ws}/system-design.md"
+    promotable: true
+    sections: [Overview & Goals, High-Level Architecture, Components,
+               Data Flows, Interfaces/APIs, Data & Storage]
+    note: |
+      RESOLVED: the techspec was not feature design — it was a PACKAGE of the
+      outputs of 7 agents, at feature scope. It became `techspec-team` (see
+      spec/teams/_PENDENTE-techspec.yaml).
+
+      A feature that changes the architecture UPDATES this document. There is
+      no parallel design per feature: the project's design is the source, and
+      the feature's delta is an edit here. A feature that does not change the
+      architecture has no design to do — just implement within what exists.
+
+      IT OWNS THE BOUNDARIES; the detail inside them belongs to others:
+        API contract          → api-contract
+        model, index          → data-design
+        threat model          → security-design
+        SLI/SLO, alert        → observability
+        capacity, cost        → infrastructure-design
+        decision with an alternative → adr
+
+      The v1 did all six. It was a project techspec.
+
+  data-design:
+    stage: orchestrate
+    owner: data-design
+    delivers: "Model, schema, indexes, consistency, migration with rollback, retention and privacy"
+    scope: [project, target]
+    path:
+      project: "{docsRoot}design/data-design.md"
+    sections: [Overview & Access Pattern, Conceptual Model, Physical Model,
+               Per-field Classification, Indexes, Consistency & Transactions,
+               Migration Strategy, Volumetrics & Projection,
+               Partitioning & Archiving, Retention & Purge,
+               Risks & Assumptions]
+    note: |
+      RPO/RTO, backup, cost and topology are NOT here — they belong to the
+      infrastructure-design and enter as a consumed constraint. Cryptography
+      and threat model belong to the security-design: this artifact says WHAT
+      needs protection, not HOW to protect it.
+
+  infrastructure-design:
+    stage: orchestrate
+    owner: infrastructure-design
+    delivers: "Topology, infra components, reliability, scale"
+    scope: [project]
+    path:
+      project: "{docsRoot}design/infrastructure-design.md"
+
+  api-contract:
+    stage: orchestrate
+    owner: api-contract
+    delivers: "The contract between components: endpoint, event, payload, error, idempotency, versioning"
+    scope: [project, target]
+    path:
+      project: "{docsRoot}design/api-contract.md"
+    sections: [Overview, Conventions, Operations, Events & Messages,
+               Evolution & Deprecation, Traceability, Risks & Assumptions]
+    note: |
+      Replaces the `trd` artifact. The v1 TRD had 11 minimum sections and only
+      ONE was its own (APIs/Interfaces): architecture belonged to the
+      system-design, the data model to the data-design, technology to the adr,
+      SLOs to observability, security to the security-design. It was the union
+      of the others — the same failure that killed the techspec.
+
+      The TRD (Technical Requirements Document) survives with the meaning it
+      really has: a feature blueprint that federates the owners to guide dev
+      and QA. That is coordination, not an artifact — see
+      spec/teams/_PENDENTE-trd.yaml. What was left orphaned, and became this
+      artifact, is the interface contract: nobody else writes payloads, error
+      codes and breaking-change policy.
+
+# diagrams — REMOVED. It became the `diagram-as-code` skill.
+#
+# It had no document of its own: the ER lives in the data-design, the context
+# diagram in the system-design, the sequence diagram in the api-contract, the
+# timeline in the postmortem. This artifact gave it
+# `orquestrar/diagramas/{slug}.mmd` — a file separate from the text the figure
+# explains.
+#
+# And it was the very anti-pattern the agent itself forbade: "a diagram without
+# surrounding text is a riddle", "a diagram that contradicts the text next to
+# it". A separate file, with a different owner, GUARANTEES the divergence —
+# whoever edits the text does not open the other file.
+#
+# Same shape as the requirements-specialist: it delivered a craft, not a
+# document, and to exist as an agent it had to invent a parallel file. The
+# auxiliary signal: it was `interactive: false` — it never talked to anyone,
+# it only produced content for someone else's document.
+#
+# The `format: mermaid` that lived here was tool lock-in at layer 2. The
+# method requires diagrams AS TEXT (versionable, reviewable in a diff); which
+# language is the adapter's or the project's choice.
+
+  roadmap:
+    stage: orchestrate
+    owner: project-management
+    delivers: "Scope, timeline, sprints, RACI, dependencies, risks"
+    scope: [project]
+    path:
+      project: "{docsRoot}product/roadmap.md"
+
+  tasks:
+    stage: orchestrate
+    owner: task-extraction
+    delivers: "Index of the workstream's tasks, with state"
+    scope: [target]
+    path:
+      target: "{target.tasksRoot}prd-{ws}/tasks.md"
+
+  task:
+    stage: orchestrate
+    owner: task-extraction
+    delivers: "One task: scope, subtasks, success criteria, tests, traceability"
+    scope: [target]
+    numbering: sequential
+    path:
+      target: "{target.tasksRoot}prd-{ws}/{seq}_task.md"
+    co_writer:
+      agent: task-executor
+      may_write: [subtasks.checkbox, subtasks.inline_evidence]
+      may_not_write: [overview, rules, requirements, success_criteria,
+                      task_tests, size, implementation_details]
+      note: |
+        The ONLY exception to "one artifact, one owner" in the whole method,
+        and it is narrow on purpose.
+
+        The task is a LIVING document — measured in the real repo:
+        `- [x] 2.1 ... (evidencias-2.0.md)`. Progress lives next to the scope
+        because that is where it is read: whoever opens the task wants to see
+        what is left, not open a second file.
+
+        But the executor may NOT touch scope, criteria or tests. An executor
+        that adjusts its own success criteria self-approves through the back
+        door — and then the qa-executor's gate becomes theater, because it
+        measures against a criterion the executed party wrote after seeing the
+        result.
+
+        Wrong scope is not fixed by writing over it: the executor stops and
+        triggers the task-extraction.
+
+  # ------------------------------------------------------------ CONFIRM
+  design-review:
+    stage: confirm
+    lineage: snapshot
+    owner: design-review
+    delivers: "Verdict on the design's conformance with ADRs, requirements, boundaries and guidelines"
+    scope: [project, ws, target]
+    path:
+      project: "{docsRoot}quality/design-review/{slug}.md"
+      ws: "{docsRoot}workstreams/{ws}/design-review.md"
+    sections: [Traceability, Findings, Conformance, Not Reviewable,
+               Assumptions, Questions for the Author]
+    gate: true
+    verdict:
+      field: frontmatter.verdict
+      values: [approved, approved_with_comments, changes_requested, blocked]
+      note: |
+        The verdict lives in the frontmatter — parseable, like the `status`.
+        The findings live in the body, in markdown: they are read by people
+        who will fix the design, and JSON is not made for that.
+
+        The v1 demanded "return ONLY valid JSON". That came from an external
+        system that consumed the output via API; here the consumer is the
+        design's author, and the artifact is a file in the repo. One single
+        format for the whole method: markdown with frontmatter.
+    note: |
+      IT MOVES NOBODY'S STATUS. The status lives in the reviewed artifact's
+      frontmatter, and that artifact has an owner. The design-review writes
+      the verdict HERE; the owner reads it and moves their own status.
+
+      What prevents self-approval: the owner may only go to `approved` if
+      there is an `approved` verdict newer than their last edit — and
+      `inputs[].hash` already provides that comparison. Edited after the
+      review, the verdict no longer counts.
+
+      It checks CONFORMANCE, not correctness: "does the design respect
+      security-design §3?" is its question; "is the design secure?" belongs
+      to the security-design.
+
+  impact-analysis:
+    stage: confirm
+    lineage: snapshot
+    owner: impact-analysis
+    delivers: "What became outdated when something changed, the proposed fix, and the owner of each one"
+    transversal: true
+    note: |
+      DETECT → PROPOSE → DELEGATE. The user approves WHAT changes; the agent
+      resolves WHO does it. The pain is not approving — it is discovering that
+      the one who fixes 3_task.md is the task-extraction.
+
+      It NEVER writes into another owner's artifact: it points, proposes and
+      triggers. If it rewrote the task, the task-extraction would overwrite it
+      on the next run and the two would fight forever.
+
+      TWO MODES, different natures:
+        a document changed → the input GRAPH answers. Deterministic, complete
+                             transitive closure. What is computable is not
+                             guessed.
+        code will change   → ANALYSIS. Inferential, with source and declared
+                             confidence.
+
+      The gravest finding it produces: an ALREADY EXECUTED task whose input
+      changed. Code written against a dead requirement.
+    scope: [project, ws]
+    numbering: sequential
+    path:
+      project: "{docsRoot}quality/impact/{seq}-{slug}.md"
+      ws: "{docsRoot}workstreams/{ws}/impact.md"
+
+  test-plan:
+    stage: confirm
+    owner: test-plan
+    delivers: "The feature's test cases + RF→case traceability matrix"
+    scope: [target]
+    path:
+      target: "{target.tasksRoot}prd-{ws}/test-plan.md"
+    sections: [Scope, Out of Scope, Traceability Matrix, Test Cases,
+               Data & Environment, Edge Cases, Entry and Exit Criteria, Gaps]
+
+  codereview:
+    stage: confirm
+    lineage: snapshot
+    owner: code-review
+    delivers: "The code review's verdict: standards, design, task, migration and contract"
+    scope: [target]
+    path:
+      target: "{target.tasksRoot}prd-{ws}/codereview.md"
+    sections: [Project Verification, Scope vs Task, Findings, The Two One-Way Doors,
+               Conformance, Not Evaluated, Done Right]
+    gate: true
+    verdict:
+      field: frontmatter.verdict
+      values: [approved, approved_with_comments, changes_requested, blocked]
+    note: |
+      IT MOVES NOBODY'S STATUS — same rule as the design-review and the
+      qa-executor.
+
+      One path only. The v1 prompt (execute_review) said to save "in
+      codereview.md at the project root (or in tasks/prd-*/codereview.md when
+      specific)" — two paths for the same document is the usual failure, and
+      it produces two copies nobody knows which one counts.
+
+      THREE REVIEWERS, THREE OBJECTS. None redoes another's work:
+        design-review → the document, before the code
+        code-review   → the diff
+        qa-executor   → the behavior, running
+
+      The "write a review guide" half of the v1 agent died here: the code
+      guide is `coding-standards` (governance, promotable, refined per
+      project). This agent REVIEWS against the guide; it does not write the
+      guide.
+
+  # ----- produced by the executors (ADR-0003) -----
+  # They existed and worked with no owner in the registry. They were the hole
+  # in the doc→code boundary: the execute_* prompts produced them, but they
+  # were not in the catalog.
+
+  code:
+    stage: orchestrate
+    owner: task-executor
+    delivers: "The codebase"
+    scope: [target]
+    format: source
+    path:
+      target: "{target.path}"
+
+  evidencias:
+    stage: confirm
+    lineage: snapshot
+    owner: task-executor
+    delivers: "Proof of what the task did: commands, outputs, verified criteria"
+    scope: [target]
+    numbering: sequential
+    path:
+      target: "{target.tasksRoot}prd-{ws}/evidencias-{seq}.md"
+
+  qa:
+    stage: confirm
+    lineage: snapshot
+    owner: qa-executor
+    delivers: "Verdict: does what was built do what was promised? Requirement by requirement, with observed evidence"
+    scope: [target]
+    path:
+      target: "{target.tasksRoot}prd-{ws}/qa.md"
+    sections: [Requirements, Methods Applied, Accessibility, Not Verified, Bugs, Conclusion]
+    gate: true
+    verdict:
+      field: frontmatter.verdict
+      values: [approved, approved_with_comments, rejected, blocked]
+    note: |
+      IT MOVES NOBODY'S STATUS — same rule as the design-review. The verdict
+      lives here; the owner reads it and moves their own status, and only
+      reaches `approved` while this verdict is newer than their last edit.
+
+      The v1 (execute_qa prompt) was QA of a WEB FRONT END, not of software:
+      browser, WCAG, screenshot and localhost, all marked "Mandatory". In a
+      library, a CLI or a pipeline none of that exists — and an impossible
+      mandatory step becomes a rubber-stamped "not applicable", which is how
+      verification dies.
+
+      The method depends on the target; the principle does not: observe the
+      real behavior, against the REQUIREMENT, and prove it with evidence. A
+      method absent because the target lacks that thing is a decision; absent
+      because it did not get done is a FINDING.
+
+  bugs:
+    stage: confirm
+    owner: qa-executor
+    delivers: "Bugs found in QA, with reproduction and evidence — input to the fix_bugs action"
+    scope: [target]
+    path:
+      target: "{target.tasksRoot}prd-{ws}/bugs.md"
+
+  pr:
+    stage: confirm
+    owner: task-executor
+    delivers: "The PR description: what changed, why, how to validate"
+    scope: [target]
+    path:
+      target: "{target.tasksRoot}prd-{ws}/pr.md"
+
+  # ------------------------------------------------------------- OBSERVE
+  slos:
+    stage: observe
+    owner: observability
+    delivers: "SLIs, SLOs with numbers, error budget, actionable alerts, log and trace contract"
+    scope: [project, target]
+    path:
+      project: "{docsRoot}ops/slos.md"
+      target: "{target.tasksRoot}prd-{ws}/slos.md"
+    sections: [Critical Journeys, SLIs, SLOs, Error Budget, Alerts,
+               Log & Trace, Cardinality & Cost, Dashboards, Assumptions & Gaps]
+    note: |
+      The name is `slos` but the content is larger — and the SLO is the
+      spine: without a number, a window and a measurement point, nothing else
+      here means anything.
+
+      TWO SECTIONS THE REGISTRY HAD LOST and the v1 agent already required:
+      estimated cardinality and telemetry cost. They are not an appendix — a
+      label with a user identifier explodes the time series and the bill, and
+      the invoice arrives three months later, when nobody remembers who put
+      it there.
+
+      What is NOT here: the list of what never to log (that is
+      `data-privacy`), the alert's procedure (that is `runbook`), infra
+      capacity and cost (that is `infrastructure-design`).
+
+  runbook:
+    stage: observe
+    owner: runbook
+    delivers: "Deterministic procedure for a KNOWN cause: exact command, expected result, rollback"
+    scope: [project, target]
+    numbering: sequential
+    path:
+      project: "{docsRoot}ops/runbooks/{slug}.md"
+      target: "{target.tasksRoot}runbooks/{slug}.md"
+    sections: [Prerequisites, Procedure, If It Did Not Work, Afterwards, Full Rollback]
+    note: |
+      See `playbook` for the what/how axis.
+
+      TWO THINGS THE REGISTRY DID NOT HAVE and that are what separates a
+      runbook from fiction:
+        - `Last verified` in the header. A procedure ages in silence: the
+          system changes, the command no longer exists, and nobody finds out
+          until the moment when finding out is least affordable. A runbook
+          never executed is hope formatted as procedure.
+        - `Do NOT use when`. A runbook applied to the wrong situation is
+          faster than discovering the right one — and that is why it happens.
+
+      A secret is NEVER written here, only its origin: the runbook lives in
+      the repo, ends up in a screenshot in a ticket and gets pasted into chat
+      during an incident.
+
+  playbook:
+    stage: observe
+    owner: playbook
+    delivers: "The response decision tree: what to do, whom to notify, when to escalate"
+    scope: [project]
+    numbering: sequential
+    path:
+      project: "{docsRoot}ops/playbooks/{slug}.md"
+    sections: [First 5 Minutes, Decision Tree, Containment, Escalation,
+               Communication, Exit]
+    note: |
+      PLAYBOOK × RUNBOOK — the axis is `what` vs `how`, and neither v1 said
+      so: both declared "steps with branches and rollback", with 8 identical
+      sections. The v1 playbook template even included "Scenario: Critical
+      Deploy", which is a runbook.
+
+        playbook  → the WHAT: decision, whom to notify, when to escalate. Macro. The reader DECIDES.
+        runbook   → the HOW: command, sequence, validation.                 Micro. The reader FOLLOWS.
+
+      Consequence of the axis: the playbook is activated by SYMPTOM — the
+      cause is still an open question. When it becomes known, it triggers the
+      runbook. If you know the cause, it was a runbook from the start.
+
+      The half every playbook in the world forgets: communication and
+      escalation. In the real moment, half the damage comes from there —
+      nobody told support, and the on-call held for 40min what should have
+      been escalated in 5.
+
+  integration-guide:
+    stage: observe
+    owner: integration-guide
+    delivers: "External API consumption guide, oriented by use case"
+    scope: [project]
+    path:
+      project: "{docsRoot}releases/integration-guide.md"
+    sections: [Quickstart, Concepts, Authentication, Environments, Flows by Use Case,
+               Error Handling, Limits, Webhooks, Versioning, Troubleshooting]
+
+  # ------------------------------------------------------------ REDEFINE
+  postmortem:
+    stage: redefine
+    lineage: snapshot
+    owner: postmortem
+    delivers: "Blameless root cause + pointer to the artifacts to update"
+    scope: [project]
+    numbering: date
+    immutable: true
+    path:
+      project: "{docsRoot}ops/postmortems/{date}-{slug}.md"
+    sections: [Summary, Impact, Timeline, Root Cause, Contributing Factors, Trigger,
+               Detection & Response, What Worked, Counterfactuals, Corrective Actions,
+               Artifacts to Update]
+
+  release-notes:
+    stage: redefine
+    lineage: snapshot
+    owner: release-notes
+    delivers: "What changed for whoever USES the product; breaking changes and migration"
+    scope: [project]
+    numbering: version
+    immutable: true
+    path:
+      project: "{docsRoot}releases/{version}.md"
+
+
+# =============================================================================
+# AMBIGUITIES — flagged, not decided.
+# If I choose wrong here, everything depending on these keys inherits the error.
+# =============================================================================
+
+open_questions:
+
+  - id: um-agente-um-documento
+    severity: major
+    issue: |
+      The principle in spec/agent.yaml says "one agent, one document, one
+      owner". It did not survive contact: `task-extraction` owns TWO artifacts
+      (tasks = index, task = item). And `system-design` serves two scopes with
+      different scopes (project and target).
+    options: |
+      (a) Loosen the principle: "one artifact, one owner" — but an agent may have more than one.
+      (b) Keep it and create new agents (task-index vs task-item) — inflation.
+      (c) Treat tasks.md as a DERIVED index, not an artifact — it leaves the registry.
+    inclination: "(c) for tasks; (a) in general. A derived index is not an artifact."
+
+  - id: artefatos-sem-dono
+    severity: resolved
+    issue: "qa.md, bugs.md, evidencias-{seq}.md and pr.md had no owner in the registry."
+    resolution: |
+      The execute_task, execute_qa and execute_bugfix prompts become the
+      agents task-executor, qa-executor and bugfix-executor, in the SAME
+      catalog. Code is an artifact; there is no boundary between a document
+      agent and a code agent — both have a contract with requires/reads/writes.
+
+  - id: sobreposicao-prompt-agente
+    severity: resolved
+    issue: "create_prd and the `prd` agent defined the same document, divergently."
+    resolution: |
+      The prompts cease to exist as files. The process goes into `contract`,
+      the material into `knowledge`. On the structure conflict: keep the
+      proven skeleton (7/7 sections of the real PRD) and add from the agent
+      only what is clearly better (Goals & KPIs, In/Out Scope).
+
+  - id: staleness-do-codigo
+    severity: major
+    issue: |
+      When the system-design changes, the code written against it becomes
+      suspect. That is the product's most valuable detection — "code written
+      against a dead requirement".
+    resolution: |
+      It does not go through the `code` artifact: it goes through the TASK.
+      The task declares inputs: [system-design]. The design changes → the
+      task goes stale → if the task was already executed, its code is
+      suspect. The codebase needs no version of its own; the commit and the
+      task already carry it.
+    status: "resolved in design; the input version field in the frontmatter is still missing"
+
+  - id: sections-como-contrato
+    severity: minor
+    issue: |
+      I registered `sections:` in 24 of the 30, extracted from the prompt's
+      MINIMUM SECTIONS. 6 declare no sections (JSON format or a prompt
+      without the marker).
+      If `sections` is a contract, the validator can check whether the
+      delivered document has the sections. If it is a suggestion, it is
+      useless.
+    inclination: "Contract. A document missing a mandatory section does not pass the gate."

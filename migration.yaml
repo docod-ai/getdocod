@@ -1,0 +1,324 @@
+# INTERNAL — the model's pending/resolved history. Dev-only: never installed,
+# never part of a user's repo. A deleted blocker is a blocker that comes back.
+
+# -----------------------------------------------------------------------------
+migration:
+  pending:
+    - id: scale-down-profile
+      severity: major
+      issue: |
+        Ceremony cost is justified on rigorous projects and crushing for a
+        CRUD. The bundle assumes rigor always pays; two independent testimonies
+        flag the same edge (with cascade-cost as its sharpest symptom).
+      decision: |
+        Design a lighter profile (instance-level), not a weaker method: fewer
+        mandatory gates by declared project class, dispensables pre-waived with
+        the waiver recorded. Needs more N before designing.
+
+    - id: multi-approver
+      severity: major
+      issue: |
+        The human gate is singular (approval: {by, at, content_hash}) — team
+        operation has no joint approval. Boundary-crossing work (integration
+        tasks touching two targets' owners) can be approved by one side alone.
+      decision: |
+        Teams phase: approvals[] with per-artifact requirements (count or named
+        roles); approved only counts when ALL required approvals match the hash,
+        and any edit invalidates all at once (mechanical re-consensus).
+        Disagreement is NOT resolved in the approval field: it routes to
+        rfc/tradeoffs → ADR with a named decision owner, then fresh approvals.
+
+    - id: action-contract
+      severity: major          # was blocker: the agents already declare
+      progress: "agent side resolved; workflow side pending"
+      issue: "Workflows invoke design_architecture, refine_requirements, generate_impact_report. No agent declares any action — `action` is decorative."
+      decision: "Fill in `contract` on each agent per spec/agent.yaml."
+      note: |
+        Half closed: the 16 written agents declare real actions, and the
+        validator checks that every artifact has an owner and the owner confirms.
+
+        The other half belongs to the workflows, and it is worse than it looked:
+        the 25 actions they invoke have ZERO intersection with the ones the
+        agents declare. It is not a renaming matter — the workflows were written
+        against a model that did not exist. They will be rewritten in the
+        teams/workflows phase, against the contracts that now exist.
+
+  # ---------------------------------------------------------------------------
+  # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
+  # ---------------------------------------------------------------------------
+  resolved:
+    - id: cascade-cost
+      was: major
+      issue: |
+        Every upstream edit reopens and forces re-sync + re-approval of 5+
+        artifacts even when the change is lineage-only (hash + trace, zero
+        content). Correct, but expensive — the tester's warning: this can make
+        people AVOID touching upstream, the opposite of the method's goal.
+      resolution: |
+        Needs design, not a quick fix: likely a batched "re-bless" that shows
+        the diffs and re-approves fast without becoming a rubber stamp. Do not
+        ship an escape hatch that lies.
+      done: |
+        `docod.mjs rebless --by <who> --reason "..." [--repin-inputs] [--yes]`.
+        Designed against the perfect real case: a product rename (voare→voarr)
+        touched 361 prose-only points and invalidated 32 approvals + ~110 input
+        pins. Anti-rubber-stamp guards: --reason MANDATORY and stored inside
+        every re-approval it touches (rebless_reason — audit sees the batch and
+        its why); without --yes it prints the PLAN with a per-file diff command;
+        input re-pin is opt-in, live-lineage only, single-instance resolution
+        only; snapshot/append-only/external inputs never touched. The honest
+        limit stands: rebless makes bulk re-blessing cheap and recorded — it
+        does not decide whether the change was really cosmetic. That reading
+        is, and remains, the human's.
+        Day-one refinement (found by the voarr rebless itself): repin
+        eligibility is cardinality of RESOLUTION, not of type — an input whose
+        key names exactly one existing file among many candidates (adr,
+        tradeoffs) is an identified source and repins; keyless among many
+        still refuses. Refusing an identified source is not honesty, it is a
+        coarse guard.
+        Third sub-edge (same week): slash-keys are written without extension
+        (standards/pista/coding-standards vs coding-standards.md) — resolver
+        now normalizes both sides (extension off, path relative) and matches
+        path-first, basename after. Basename keys and slash keys both 100%.
+
+    - id: bundle-migration
+      was: major
+      issue: |
+        Bundle updates that change an artifact's path or format mid-flight
+        leave the installed project in a fragmented state to reconcile by hand
+        (the ADR ledger episode: rich ledger vs inquiry log). Migration of
+        user-side state is not first-class.
+      resolution: |
+        install.sh gains a versioned migrations step: detect old layouts and
+        convert them losslessly (or print the exact manual recipe and refuse to
+        guess). While migration is manual, transition states bite.
+      done: |
+        install.sh step 2b: detection-based migrations — no state file, the
+        detection IS the state (house law: derived, never maintained). Policy:
+        move only when the destination does not exist; old+new both present, or
+        judgment-required shapes (the rich ADR ledger), print the exact manual
+        recipe and continue — never guess, never destroy. Ships with M1 (stage
+        folders → docsRoot by nature), M2 (root workstreams.yaml), M3 (root
+        decisions logs) and M4 (ADR ledger recipe). New bundle changes that
+        move user state MUST land with their migration in the same commit.
+
+    - id: legacy-absorption
+      was: major
+      issue: |
+        The market is drowning in AI tech debt. reverse_* rebuilds the live
+        baseline from code, but legacy systems also HAVE old docs (parent PRD,
+        per-epic prd/techspec/tasks). Today nothing makes the reverse agents
+        triangulate old docs vs current code and surface divergences ("the doc
+        says X, the code does Y") as first-class findings.
+      resolution: |
+        Make legacy absorption a flagship flow: reverse_* actions take legacy
+        docs as a mandatory triangulation source (cited via external
+        provenance), every reversed artifact gains a structured Divergences
+        section (doc vs code, with evidence), and a coordinated reverse
+        sequence lands in the teams phase. Output is LIVE documentation, never
+        imported snapshots. Pilot on the current legacy test before promoting
+        it to README/landing as its own use case.
+      pilot_result: |
+        Pilot ran (2026-07, "The Blue City" admin, via Kimi K3 on AGENTS.md):
+        it works. 3 reversed designs with 40 structured DIV-nn divergences,
+        cross-corroborated (the gravest found independently by two reverses),
+        a privacy finding classified as RISK not neutral gap, stale detection
+        of the legacy docs AND of our own doc (asked before fixing), and a
+        ghost premise buried on record so nobody "fixes" what does not exist.
+        Formalize what the pilot improvised: the DIV-nn section shape, the
+        "only staging/backend can answer" question class, and git-history
+        citations as external provenance.
+      residual: |
+        The coordinated reverse SEQUENCE (which reverse runs first, what feeds
+        what) stays in the teams phase, alongside action-contract. What is now
+        contract: 3 postconditions on every reverse_* action (+ extract_from_code)
+        and the canonical reverse_conventions block in spec/agent.yaml.
+
+    - id: declared-inputs-coverage
+      was: minor
+      issue: |
+        The graph is only as good as what artifacts declare: tasks did not
+        declare the new ADRs in inputs[], so impact-analysis had to read bodies
+        and judge (honestly labeled, but not machine-checked). Where the
+        artifact does not declare, verify cannot see.
+      resolution: |
+        DONE: task-extraction gained a deterministic postcondition (cited ADRs/designs declared in inputs[] with computed hash) and verify gained a warn: body cites ADR-nnnn absent from inputs[] — "undeclared link, invisible to staleness". Warn, not fail: the heuristic is textual. Original sketch: declare consumed ADRs/designs in
+        inputs[] as a postcondition; consider a verify warn when a task's body
+        cites an ADR id absent from its inputs.
+
+    - id: rules-before-build
+      was: major
+      issue: |
+        Chicken-and-egg found in the build phase of the first real project:
+        task-extraction and the executors ran with docs/standards/ absent —
+        nothing in the contracts required rules to exist, so code-review had
+        no norm and the absence passed in silence. Review without a ruler is
+        self-attestation with taste as the standard. Bonus bug: the per-target
+        rules path used a {target} placeholder the resolver did not know, so
+        per-target rules were invisible to status/report/verify.
+      resolution: |
+        (1) task-executor.execute_task and code-review.review_code now REQUIRE
+        coding-standards in [approved, draft] — waivable, so a small project
+        can consciously skip, but the gate names the absence and the waiver is
+        recorded. (2) resolvePaths learned {target} = the target's key, one
+        pattern per target. Per-target rules resolve everywhere now.
+    - id: lineage-classes
+      was: major
+      issue: |
+        verify treated every input as a LIVE dependency. First full sweep on a
+        real project: impact/0001 (a record of a propagation) failed on the 5
+        inputs it had itself made obsolete; the PRD failed on its append-only
+        decisions sidecar and on the imported .docx provenance. Refreshing any
+        of them would lie about what was analyzed.
+      resolution: |
+        Three lineage classes, declared in the registry and honored by verify:
+        `lineage: snapshot` on record artifacts (reviews, impact, postmortem,
+        adr, qa, codereview, evidencias, release-notes, counsel) — inputs are
+        observed-at, reported, never failed; inputs pointing at `append_only`
+        artifacts (decisions) — observed state, not live-checked; and
+        `external: true` on an input entry — provenance outside the registry.
+        Unregistered inputs WITHOUT external remain failures (typo catch).
+    - id: self-attestation
+      was: major
+      issue: |
+        "deterministic" postconditions enforced in band degenerated into
+        self-attestation (subagent verifying its own work) and DIVERGED in the
+        first real test: wrong hash cited, wrong counts.
+      resolution: |
+        `docod.mjs verify <file>`: the CALLER runs external verification of the
+        computable class — frontmatter parses, status enum, approval hash vs
+        content, every inputs[].hash vs the current source artifacts, artifact
+        registered. Wired into /docod:run (step 5) and the subagent envelope.
+        Judgment/evidence classes remain reviewer-gated — honest, not computable.
+    - id: junk-subagent
+      was: major
+      issue: |
+        A subagent returned junk (echoed instructions, tool_uses: 0) and the
+        harness surfaced it as if it were a result.
+      resolution: |
+        /docod:run rule: a reply with neither a written artifact nor
+        `QUESTIONS FOR THE USER:` is a FAILED run — declared and reinvoked,
+        never presented as a result.
+    - id: seq-race
+      was: minor
+      issue: "Two parallel adr runs both took {seq} 0002 — allocation is not atomic."
+      resolution: |
+        Claim-by-creation rule in adr.md: create the empty file FIRST (file
+        creation is the allocation), then write. Parallel runs on the same
+        numbered artifact documented as best avoided in v1.
+    - id: yaml-by-grep
+      was: minor
+      issue: "With no parser available, agents claimed 'valid YAML' verified only by grep."
+      resolution: "`docod.mjs verify` parses YAML/frontmatter with the vendored parser — zero install."
+    - id: runtime-node
+      was: minor
+      issue: |
+        The command runtime (docod.py) required python3+pyyaml, which not every
+        machine has — and "install pip before using the method" contradicts a
+        bundle that calls itself zero-dependency.
+      resolution: |
+        Ported to docod.mjs: pure node (>=18) with js-yaml VENDORED in
+        vendor/ (MIT) — zero python, zero pip, zero npm install. Own glob
+        (fs.globSync only exists in node 22) and YAML 1.2 CORE schema pinned,
+        otherwise js-yaml converts dates into Date and the reserialization
+        would mutate the user's file. Port validated by diff: output identical
+        to docod.py's across the 6 smoke-test scenarios, byte for byte on
+        status. docod.py deleted — there is one reference implementation, not
+        two.
+    - id: agent-format
+      was: major
+      issue: "The 30 agents were in the phidata/agno schema, made for an external runtime — config.model, config.tools, config.memory."
+      resolution: |
+        27/27 rewritten in markdown + contract, all passing the validator.
+        The count changed along the way, and every change is on record:
+          DIED (6): deprecation (no need for it) · diagrams and
+            requirements-specialist (became skills) · trd (became a team) ·
+            coding-standards, testing-guidelines, cicd-guidelines (became rules)
+          SPLIT (1): security-design → security-rules (rule) + security-design (agent)
+          BORN (4): api-contract (from the trd) · task-executor and qa-executor
+            (from the execute_* prompts) · rules-factory
+        + 12 neutral skills + 4 rule templates + 344 postconditions classified
+        by nature (deterministic 34% · evidence 22% · judgment 44%).
+    - id: gate-ownership
+      was: blocker
+      issue: |
+        Eleven agents wrote `status: draft`, one wrote `approved`, and nobody
+        promoted prd/frd/tasks/code — every `status: [approved]` precondition
+        was unsatisfiable. The status machine existed on paper and blocked
+        nothing.
+      resolution: |
+        Closed in three pieces, all in v1:
+
+        1. AGENT GATES already covered design (design-review), behavior
+           (qa-executor) and diff (code-review) — verdict in the reviewer's
+           artifact, the owner moves their own status.
+        2. HUMAN GATE for requirement and plan (prd, frd, user-stories, tasks,
+           test-plan, roadmap): the `approve` command writes
+           `approval: {by, at, content_hash}` into the frontmatter. See
+           method.yaml § approval and spec/commands.yaml.
+        3. MECHANICAL VALIDITY: approved only holds while the hash matches.
+           Edited after approval → it invalidates by itself, and `status` shows
+           it. Tested: the frd unblocked with the prd approved and RE-BLOCKED
+           when the prd was edited — without anyone having to remember anything.
+
+        Reference implementation: docod.mjs (status, start, continue,
+        approve, ws). Full smoke test on a fake project: 6 scenarios, including
+        an invalidated approval and an abandon without a reason being refused.
+    - id: tool-lockin
+      was: blocker
+      issue: "Method prompts demand a concrete tool ('USE THE CONTEXT 7 SKILL', 'Use the Playwright MCP') and point at @.claude/rules."
+      root_cause: "layer 3 written inside layer 2"
+      resolution: |
+        The entire lock-in lived in FOUR files — execute_task, execute_qa,
+        execute_review, execute_bugfix — and was not scattered as assumed.
+        The four were absorbed by the agents; no tool string entered the
+        bundle. What used to be a name became a capability:
+
+          Context7 MCP            → doc_lookup
+          Playwright MCP          → browser_e2e, a11y_audit
+          @.claude/rules, /skills → coding-standards, testing-guidelines
+          bun run test, npm test  → shell
+          @task-reviewer          → code-review (which now actually exists)
+
+        The adapter resolves each capability. Switching harness does not touch
+        the bundle.
+
+        Kept from what the prompts taught, because it is not about tooling:
+        execute_task repeated "mark it complete in tasks.md" NINE times.
+        Repetition in a prompt is not emphasis — it is design debt screaming.
+        Whoever wrote it knew the agent was not doing it and kept turning up
+        the volume.
+
+    - id: knowledge-roles
+      was: major
+      issue: "77 knowledge sources, 4 implicit roles, 30+ free-form names. question_bank vs questions_bank vs questions_userstories are the same role."
+      root_cause: "Reference without a rule and without a validator — fourth occurrence of the same failure in this project."
+      resolution: |
+        `knowledge` dissolved along with the format: the agent body is markdown
+        and the role became a SECTION — `## structure`, `## inquiry`, `## style`.
+        Free-form naming is over; there are four, enumerated.
+
+        And now validated. Enumerating without validating would repeat the
+        failure with new syntax — which is exactly how it came back the other
+        five times. `validate-layers.py` rejects a role outside the list, an
+        agent without `## structure`, and `interactive: true` without
+        `## inquiry`.
+
+    - id: artifacts-registry
+      was: major
+      issue: "spec/artifacts.yaml does not exist: missing the registry of which document each agent delivers, in which scope, at which path."
+      resolution: "34 artifacts registered. Every artifact has an owner, and the validator checks that the owner confirms ownership — in both directions."
+
+    - id: skills-map
+      was: major
+      issue: "spec/method.yaml has `skills: {}` empty on purpose."
+      resolution: |
+        12 neutral skills, registered, with `used_by` validated against what the
+        agents declare — in both directions. It was not deduction: each one was
+        born from a concrete agent that needed it, and survived the test "does
+        more than one agent need this procedure?".
+
+        Two became skills for having failed as agents: `requirements-elicitation`
+        (was requirements-specialist) and `diagram-as-code` (was diagrams). Both
+        delivered a craft, not a document.
+

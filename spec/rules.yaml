@@ -1,0 +1,174 @@
+specVersion: "1.0.0"
+
+# =============================================================================
+# LAYER 2 — WHAT A RULE IS  ·  NEUTRAL
+#
+# A rule is the discipline the executor obeys while writing code.
+# It is not an agent. It has no contract, no action, no gate, it asks nothing.
+# It is short text that applies to a set of files.
+#
+# WHY IT IS NOT AN AGENT — the four governance ones were agents in this
+# project, and could not be:
+#
+#   - the agent would run ONCE and become a parked file. No cycle, no gate,
+#     no reaction. An agent that runs once is a file with bureaucracy around it.
+#   - nobody would read the agent. The task-executor and the code-review read
+#     the DOCUMENT. If nobody reads the agent, it exists for nobody.
+#   - it is `diagrams` inverted: that one delivered a craft and invented a
+#     file in order to be an agent; this one delivers a file and would have
+#     invented a craft.
+#
+# And the model already said so before anyone noticed. In spec/agent.yaml, in
+# the rationale for why memory between sessions was REJECTED:
+#
+#   "The correct mechanism already exists and is explicit: the RULES. The
+#    team's standard becomes {docsRoot}standards/*, is promoted to where the
+#    harness reads, is versioned in git and goes through code review.
+#    Auditable learning, not invisible learning."
+#
+# The agent layer was built on top of a concept that was already declared —
+# and the `promotable: true` of those artifacts was exactly this: promoting to
+# where the harness reads IS becoming a rule.
+# =============================================================================
+
+rule:
+  principle: "A rule is discipline the executor obeys. It is not a document someone files away."
+
+  is_not:
+    agente:  "has no contract, action, gate or inquiry. The rules-factory is who creates and revises it."
+    guia:    "a guide is read once; a rule is obeyed every time. A guide explains, a rule restricts."
+    tutorial: "teaching the language is not the project's job. The rule says what THIS project requires."
+
+  has:
+    key:   "kebab identifier"
+    paths: "the files where it applies — see `scope` below"
+    body:  "the rules. Short, imperative, verifiable."
+
+  # ---------------------------------------------------------------------------
+  # SCOPE — the rule applies to a SUBTREE, not the whole repo
+  # ---------------------------------------------------------------------------
+  scope:
+    field: paths
+    type: "list of globs"
+    default: "['**'] — applies to everything"
+    note: |
+      It is what keeps the rule from becoming a 40-item tome nobody reads.
+
+      A UI-component rule has nothing to say about data migration, and vice
+      versa. One rule per area, scoped, gets read; a single "coding standards"
+      does not — and a rule nobody reads protects nothing: it only serves as
+      ammunition to reject a PR.
+
+      It matches `topology` in docod.yaml: in a monorepo, each target has its
+      own globs. Same axis, resolved in the same place.
+
+      The scope's SYNTAX belongs to the harness (layer 3). The concept —
+      "this discipline applies to these files" — is neutral and lives here.
+
+  # ---------------------------------------------------------------------------
+  # PROVENANCE — where the rule came from. Born in the rules-factory, travels with the rule.
+  # ---------------------------------------------------------------------------
+  provenance:
+    evidence:      "it is in the project's config or code. Not debated, cited."
+    decided:       "came from an ADR. It is a constraint; changing it requires superseding."
+    user-supplied: "the human said so. It is NEVER overwritten in silence."
+    note: |
+      It is what allows regenerating without destroying. A derived rule, the
+      factory rewrites; a rule the human gave, it asks first.
+
+  # ---------------------------------------------------------------------------
+  # THE RULES ABOUT THE RULES
+  # ---------------------------------------------------------------------------
+  rules:
+    - "If it applies equally in any repository, it is not a rule: it is advice. Delete it."
+    - "What the formatter or the linter already rejects does NOT become a rule. Nobody reads a rule to learn what CI catches."
+    - "Every rule is verifiable without consulting its author."
+    - "Every rule has provenance."
+    - "An invented number is forbidden. No answer means a declared GAP."
+    - "A written gap is what keeps the code-review from filling the silence with its own taste."
+    - "Short. A long rule is not read, and an unread rule never becomes discipline."
+    - "A rule nobody follows and nobody flags is fiction — fix it or remove it."
+
+  anti_pattern:
+    generico: |
+      The central trap, and it is counterintuitive: a generic
+      `coding-standards` is WORSE than none.
+
+      "Use descriptive names, short functions, handle errors properly" looks
+      better than the void. It is not. Without a rule, the reviewer says "it's
+      my opinion" and the author argues as an equal. With a vague rule, they
+      say "it violates the coding-standards" — and the same opinion became a
+      norm.
+
+      Generic does not fill the void. It institutionalizes personal taste.
+
+      That is why these rules do NOT come ready-made in the bundle: they come
+      as templates, and the rules-factory generates the project's rule with
+      the real tool, the real number and the real convention.
+
+    so_cresce: |
+      Nobody removes a rule. The list reaches 40 items, nobody reads it, and
+      then it stops being discipline and becomes an arsenal: any PR can be
+      rejected by citing something. Removing is part of the job, not cleanup.
+
+# =============================================================================
+# TEMPLATES — the mold of each rule, in docod/rules/
+#
+# It is not the rule: it is what the rules-factory uses to generate THIS
+# project's rule. Each mold carries the derivation table — where each rule is
+# born — because that is domain knowledge: coding-standards is born from the
+# linter config, cicd-guidelines is born from the pipeline. The factory has no
+# way of knowing on its own.
+# =============================================================================
+
+templates:
+  root: rules/
+
+  registry:
+    coding-standards:
+      path: rules/coding-standards.md
+      generates_artifact: coding-standards
+      desc: "The code discipline the machine does NOT catch"
+
+    testing-guidelines:
+      path: rules/testing-guidelines.md
+      generates_artifact: testing-guidelines
+      desc: "What to test, at what level, and what rejects"
+
+    cicd-guidelines:
+      path: rules/cicd-guidelines.md
+      generates_artifact: cicd-guidelines
+      desc: "Pipeline, deploy, rollback, secrets, branches"
+
+    security-rules:
+      path: rules/security-rules.md
+      generates_artifact: security-rules
+      desc: "The security discipline the executor obeys"
+      note: |
+        It SPLIT from `security-design`. The v1 had two things under one name:
+
+          principle, IAM, secrets, input validation        → RULE (here)
+          THIS system's threat model, cryptography, keys   → DESIGN (agent)
+
+        Same diagnosis as the `trd`. The threat model is not a norm: it is an
+        analysis of this system's attack surface, done together with the
+        system-design and the data-design. Turn it into a rule and the design
+        is orphaned — and then the design-review starts checking security
+        against a generic checklist, which is the opposite of what it should
+        do.
+
+  # ---------------------------------------------------------------------------
+  structure:
+    required: [derivation, structure]
+    derivation: |
+      The section that makes the factory work without becoming a form.
+
+      It says what to DERIVE (from an artifact, from a config, from the code)
+      and what to ASK. Deriving is the default; asking is the exception.
+
+      Asking what is already written is not redundancy — it is damage: the
+      user answers differently from what the ADR says, and the project gains
+      two sources born on the same day. Then they learn that answering is a
+      waste of time, and rubber-stamp the next one.
+
+    structure: "The shape of the generated rule: sections, scope, what each one answers."
