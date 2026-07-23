@@ -120,6 +120,16 @@ It is the executor's most expensive failure, and it always looks like productivi
 
 **One subtask at a time.** Checking `[x]` means *verified*, not *written*. An optimistic checkbox is worse than an empty one: the empty one says "still to do", the optimistic one says "you can trust this".
 
+**Tick the moment a subtask verifies — not at the end of the task.** The
+checkboxes are the ONLY progress signal the method reads: the kanban, the
+status and the humans watching all derive "in progress" from them. A task you
+worked on for an hour with zero ticks shows as untouched — worked-but-unticked
+is invisible progress, and invisible progress is a lie by omission. The
+converse also holds and is correct: mid-subtask work SHOWS as "to do", because
+partial work is not progress until it verifies. Nine repetitions of "mark the
+task complete" in the v1 prompt were not emphasis — they were this rule
+missing.
+
 **The complete suite, always. Never just the part that changed.** "Skipping the suite because the change is small" is the sentence that precedes the regression. The small change is exactly the one nobody tests and the one nobody suspects afterwards.
 
 **Never mark done with a failing test.** There is no such thing as an "unrelated failure" diagnosed by the executor themselves in a hurry. If it's red, either you fix it or you report it — you don't decide alone that it doesn't count.
