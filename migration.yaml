@@ -4,6 +4,23 @@
 # -----------------------------------------------------------------------------
 migration:
   pending:
+    - id: git-approval-flow
+      severity: major
+      issue: |
+        Build-phase testimonial: the method governed the paperwork meticulously
+        and was blind to code shipping — a task was built straight on main,
+        uncommitted, and nothing mechanical objected (isolation is now a duty +
+        cicd rule, but it is honor, not enforcement). Worse edge: approvals are
+        written post-review, so under squash-merge the approved frontmatter
+        stays in the working tree, detaching the gate's proof from the code it
+        certifies.
+      decision: |
+        Integrate vcs hygiene into artifact governance instead of hanging it as
+        an optional norm: candidates are a verify/status check via vcs_diff
+        (uncommitted governed artifacts = finding; work on the integration line
+        when the rule forbids it = finding) and a documented approve→commit
+        convention so the gate's record lands WITH the code under squash.
+        Needs design with the same care as rebless: enforcement, not theater.
     - id: scale-down-profile
       severity: major
       issue: |

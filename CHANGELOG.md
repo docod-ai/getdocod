@@ -5,6 +5,12 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.2.1] — 2026-07-23
+
+Fixed: `verify` false-positive storm — the undeclared-ADR-link guard sliced
+path-shaped keys to "docs" and warned on every declared ADR. It now extracts
+the ADR number from any key shape. When everything warns, nothing warns.
+
 ## [1.2.0] — 2026-07-23
 
 Added: the execution-start stamp. The task-executor's first write on a task is

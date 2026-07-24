@@ -404,7 +404,15 @@ function cmdVerify(root, file) {
   // Cited-but-undeclared guard: a body that cites ADR-nnnn the frontmatter does
   // not declare is a link the machine cannot check (declared-inputs-coverage).
   {
-    const declared = new Set((fm.inputs || []).filter(i => i.artifact === "adr").map(i => String(i.key ?? "").slice(0, 4)));
+    // Extract the ADR NUMBER from the key whatever its shape (slug "0004-sync"
+    // or full path ".../adr/0004-sync...md") — slice(0,4) matched "docs" on
+    // path keys and false-warned on EVERY declared ADR. When everything warns,
+    // nothing warns.
+    const declared = new Set();
+    for (const i of (fm.inputs || [])) if (i.artifact === "adr") {
+      const m = String(i.key ?? "").match(/(\d{3,4})/);
+      if (m) declared.add(m[1].padStart(4, "0"));
+    }
     const cited = new Set([...body0.matchAll(/ADR-(\d{3,4})/g)].map(m => m[1].padStart(4, "0")));
     for (const n of cited) if (![...declared].some(k => k.startsWith(n)))
       warns.push(`body cites ADR-${n} but inputs[] does not declare it — undeclared link, invisible to staleness`);
