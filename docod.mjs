@@ -547,8 +547,11 @@ function cmdReport(root) {
         const unchecked = (body.match(/-\s\[\s\]/g) || []).length;
         const total = checked + unchecked;
         tasks.push({ ...item, checked, total, where: path.dirname(rel),
-          lane: total ? (checked === 0 ? "todo" : checked === total ? "done" : "doing")
-                      : (st === "approved" ? "done" : "todo") });
+          lane: total ? (checked === total ? "done"
+                         : checked > 0 ? "doing"
+                         : fm.execution?.started ? "doing"   // stamped start: worked, nothing verified yet
+                         : "todo")
+                      : (st === "approved" ? "done" : fm.execution?.started ? "doing" : "todo") });
         continue; // tasks live in the kanban, not duplicated among documents
       }
       const group = rel.startsWith(dr)

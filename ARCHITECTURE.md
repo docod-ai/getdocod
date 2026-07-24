@@ -61,7 +61,7 @@ Path resolution is the load-bearing trick. Templates use placeholders; the runti
 
 Filesystem layout is by NATURE, never by stage (a revisited document must not change homes): `product/ design/ decisions/ quality/ ops/ releases/ standards/ workstreams/` under `{docsRoot}`; target-scoped artifacts (tasks, evidence, qa, codereview) live next to the code under `{target.tasksRoot}`.
 
-**Ownership exceptions** (exactly two, both narrow and declared as `co_writer`): the `task` file (executor may tick `- [x]` checkboxes and add inline evidence, may NOT touch scope/criteria/tests, because an executor that edits its own bar self-approves through the back door) and `workstreams.yaml` (the user closes fronts via the `ws` command; only `prd` creates them).
+**Ownership exceptions** (exactly two, both narrow and declared as `co_writer`): the `task` file (executor may tick `- [x]` checkboxes, add inline evidence and stamp `execution.started` before its first edit, may NOT touch scope/criteria/tests, because an executor that edits its own bar self-approves through the back door) and `workstreams.yaml` (the user closes fronts via the `ws` command; only `prd` creates them).
 
 **Lineage classes** (born from the first real test):
 

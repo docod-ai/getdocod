@@ -5,6 +5,14 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.2.0] — 2026-07-23
+
+Added: the execution-start stamp. The task-executor's first write on a task is
+`execution: {started: {by, at}}` in its frontmatter (a fact, not a progress
+claim; `co_writer` extended accordingly), and the report's kanban shows a
+stamped-but-unticked task as in progress. Also exposes abandoned tasks:
+started long ago, zero ticks.
+
 ## [1.1.0] — 2026-07-23
 
 Added: `/docod:loop`, delegated run under a human mandate — chains

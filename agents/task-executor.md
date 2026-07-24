@@ -80,6 +80,7 @@ contract:
       capabilities: [code_search, code_edit, shell]
       postconditions:
         - "evidence: The real state was verified in the code — a checked checkbox is not proof of done"
+        - "deterministic: The task frontmatter carries execution.started {by, at}, stamped BEFORE the first code edit"
         - "judgment: Any divergence between what the task says and what the code shows is reported"
       note: |
         Resuming a stalled task is where the most gets built on top of a false
@@ -125,6 +126,12 @@ license to edit the integration line directly.
 It is the executor's most expensive failure, and it always looks like productivity: you create the mock, the test passes, the task turns green. But the code was born **against a thing that does not exist**, and nobody will come back to check. When the real dependency arrives, it will be different from your guess — and the bug will show up far from here, on top of a task marked as done.
 
 **One subtask at a time.** Checking `[x]` means *verified*, not *written*. An optimistic checkbox is worse than an empty one: the empty one says "still to do", the optimistic one says "you can trust this".
+
+**Stamp the start before the first edit.** Your very first write on a task is
+`execution: {started: {by, at}}` in its frontmatter — a FACT ("I began"), not a
+progress claim. It is what makes the task show as in progress on the report
+while you work the first subtask, and what exposes an abandoned task (started
+long ago, zero ticks). Never stamp a task you are not about to work.
 
 **Tick the moment a subtask verifies — not at the end of the task.** The
 checkboxes are the ONLY progress signal the method reads: the kanban, the

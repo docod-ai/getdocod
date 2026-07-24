@@ -62,7 +62,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.0.0"
+specVersion: "1.2.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -309,7 +309,10 @@ non-human stretch between gates — it never replaces a gate.
 1. Restate the mandate: which tasks, in what order (per tasks.md), until which
    stage (default: through code-review). Confirm ONCE, then run without
    narrating every step.
-2. Per task: delegate docod-task-executor → on delivery run
+2. Per task: delegate docod-task-executor (its contract stamps
+   execution.started before the first edit — a delivery without the stamp
+   fails its deterministic postconditions; the report shows progress live
+   because of it) → on delivery run
    `node .docod/docod.mjs verify` + require evidence → delegate
    docod-qa-executor → bugs found: fix_bugs → re-QA (max 2 rounds) →
    delegate docod-code-review.

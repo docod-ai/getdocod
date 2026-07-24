@@ -1,4 +1,4 @@
-specVersion: "1.0.0"
+specVersion: "1.2.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -539,7 +539,7 @@ artifacts:
       target: "{target.tasksRoot}prd-{ws}/{seq}_task.md"
     co_writer:
       agent: task-executor
-      may_write: [subtasks.checkbox, subtasks.inline_evidence]
+      may_write: [subtasks.checkbox, subtasks.inline_evidence, execution.started]
       may_not_write: [overview, rules, requirements, success_criteria,
                       task_tests, size, implementation_details]
       note: |
