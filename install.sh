@@ -62,7 +62,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.2.1"
+specVersion: "1.3.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -317,7 +317,9 @@ non-human stretch between gates — it never replaces a gate.
    docod-qa-executor → bugs found: fix_bugs → re-QA (max 2 rounds) →
    delegate docod-code-review.
 3. STOP and return to the user when: an agent hands back QUESTIONS FOR THE
-   USER; the same task gets changes_requested/blocked twice; a requires
+   USER; QA or review root-causes a finding to an APPROVED upstream artifact
+   rather than this task's code (patching forward would fork code from
+   design — the upstream owner must amend and the human re-approve first); the same task gets changes_requested/blocked twice; a requires
    blocks; anything needs approval (you NEVER approve); or your judgment says
    a human would want to know now. Otherwise: collect, do not interrupt.
 4. At the end or at a stop, ONE batch report: per task, ticks + verdicts +

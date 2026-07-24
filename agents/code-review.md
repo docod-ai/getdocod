@@ -37,6 +37,8 @@ contract:
         - "judgment: A breaking contract change was classified by the rule (`interface-evolution`)"
         - "deterministic: Migrations were checked against `schema-migration` — a missing rollback is a blocker"
         - "judgment: No code was altered. Nothing was written into another agent's artifact"
+        - "deterministic: upstream_smells: [BUG-ids] in the codereview frontmatter — empty list when none; the mismatch check reads it"
+        - "judgment: A fix implementing behavior the approved contract/design does not specify was flagged as an UPSTREAM smell — not waved through as a bugfix. The diff is where a mis-attributed root cause becomes visible"
       note: |
         `task` is waivable: there are reviews of changes that didn't come from a
         task (hotfix, one-off correction). What is NOT waivable is having a

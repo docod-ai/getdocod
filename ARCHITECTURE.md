@@ -124,3 +124,4 @@ Pending: `multi-approver` (the human gate is singular; the team phase needs `app
 8. False positives are worse than gaps: they train the user to ignore the alert.
 9. Guards tighten without loosening: a resolver may learn to recognize an identified source; it never learns to guess an ambiguous one.
 10. The machine automates the work and leaves the judgment where it belongs: rebless executes in bulk, but whether a change was cosmetic is, and remains, the human's call.
+11. Make the implicit sayable before making it enforceable. The answer to patch-divergence was never more enforcement: it was giving the root-cause a field, the smell a list, and the disagreement a name — once a judgment is structured and recorded, opposition becomes computable and the alarm rings itself. Vocabulary first; mechanism follows.

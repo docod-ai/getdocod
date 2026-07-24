@@ -5,6 +5,17 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.3.0] — 2026-07-23
+
+Added: the upstream-root-cause gate. QA now classifies every bug's root cause
+by layer (this task's code vs a named upstream artifact); an UPSTREAM root
+cause triggers impact-analysis and blocks forward-patching. The executor is
+forbidden to patch around an approved contract/design ("additive,
+non-breaking" self-classification is the fork). The loop stops on it. Found in
+the field: a code fix for a contract omission created a code↔design
+contradiction that no hash can detect, because neither side was edited — they
+just stopped agreeing.
+
 ## [1.2.1] — 2026-07-23
 
 Fixed: `verify` false-positive storm — the undeclared-ADR-link guard sliced

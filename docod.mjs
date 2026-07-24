@@ -437,6 +437,21 @@ function cmdVerify(root, file) {
     if (hit) oks.push(`input ${inp.artifact}: hash matches ${path.relative(root, hit)}`);
     else fails.push(`input ${inp.artifact}: NO instance matches the declared hash — stale input or wrong hash`);
   }
+  // Attribution mismatch — first-class opposition of two judgments with
+  // opposite biases: qa says a bug is local, the diff review smells upstream.
+  // Neither alone is the alarm; the DISAGREEMENT is. Warn, not fail: two
+  // low-confidence judgments disagreeing deserve eyes, not a halted line.
+  if (selfKey === "codereview" && Array.isArray(fm.upstream_smells) && fm.upstream_smells.length) {
+    const qaP = path.join(path.dirname(p), "qa.md");
+    if (!fs.existsSync(qaP)) warns.push("upstream_smells declared but no sibling qa.md to oppose them against");
+    else {
+      const [qfm] = readFrontmatter(qaP);
+      const bugs = Object.fromEntries((qfm.bugs || []).map(x => [x.id, x.root_cause]));
+      for (const id of fm.upstream_smells)
+        if (bugs[id] === "local")
+          warns.push(`attribution MISMATCH on ${id}: qa says local, review smells upstream — oppose them before merging`);
+    }
+  }
   for (const o of oks) console.log(`  ✓ ${o}`);
   for (const w of warns) console.log(`  ⚠ ${w}`);
   for (const f of fails) console.log(`  ✗ ${f}`);

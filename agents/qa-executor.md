@@ -33,6 +33,10 @@ contract:
         - "judgment: Verification was against the REQUIREMENT, not against what the code does"
         - "judgment: Nothing was written into another agent's artifact, including the status field"
         - "judgment: No code was fixed — a found bug goes back to the task-executor"
+        - "deterministic: The qa frontmatter carries bugs: [{id: BUG-nn, root_cause: local | <upstream-artifact-key>}] — machine-readable, agreeing with the prose"
+        - "judgment: Before attributing a bug to this task's code, the spec side was checked: a bug whose fix requires behavior the upstream artifact never specifies is UPSTREAM by definition — under-attribution (blaming local code) is the failure mode that disarms the gate"
+        - "judgment: Every bug is root-caused to a LAYER: this task's code, or a named upstream artifact. An upstream root cause is flagged UPSTREAM — it triggers impact-analysis and blocks forward-patching; it is never silently absorbed into code"
+
       note: |
         Verification methods depend on what the thing is: browser and a11y only
         exist if there is an interface; `shell` always exists. An impossible
