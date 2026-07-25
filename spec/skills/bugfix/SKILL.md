@@ -17,6 +17,22 @@ Fixing a bug carries a pressure that building a feature does not: someone is wai
 
 ---
 
+## Build the feedback loop first — this is the skill
+
+Everything else is mechanical. If you have a TIGHT pass/fail signal that goes
+red on THIS bug, you will find the cause: bisection, hypothesis-testing and
+instrumentation all just consume it. If you do not have one, no amount of
+staring at code will save you. Spend disproportionate effort here.
+
+Ways to construct one, in rough order of preference: a failing test at
+whatever seam reaches the bug; a scripted call against a running instance
+diffed against known-good output; replaying a captured real input through the
+code path in isolation; a throwaway harness (minimal subset of the system,
+one call); a property/fuzz loop for "sometimes wrong"; a bisection harness
+when the bug appeared between two known states; a differential run (old vs
+new, same input, diff the outputs). A human-in-the-loop script is the last
+resort — and even then, script the human so the loop stays structured.
+
 ## Reproduce before fixing
 
 **The rule haste kills first.** If you did not reproduce, you do not know what the bug is — you have a hypothesis about a report. Fixing a hypothesis produces three outcomes, and two are bad:

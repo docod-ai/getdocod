@@ -4,6 +4,29 @@
 # -----------------------------------------------------------------------------
 migration:
   pending:
+    - id: shared-language
+      severity: minor
+      issue: |
+        No ubiquitous-language artifact. Agents redescribe domain concepts in
+        20 words where the project's own jargon uses 1 — verbose docs,
+        inconsistent naming, wasted reasoning tokens. (Learned from
+        mattpocock/skills' CONTEXT.md; it is DDD's ubiquitous language.)
+      decision: |
+        A `glossary` artifact with an owner, derivable like rules are
+        (extracted from code/docs + asked where underivable), read by every
+        agent. Term → meaning → where it lives. Small, high leverage.
+
+    - id: gradual-adoption
+      severity: minor
+      issue: |
+        All-or-nothing install is an adoption barrier next to composable
+        single-skill repos. But the governance runtime already works standalone
+        (status/approve/verify/rebless over any docs folder, no agents needed).
+      decision: |
+        Document the "receipts first" entry path: adopt docod.mjs alone, add
+        the method when the receipts prove themselves. A README section, not
+        new machinery.
+
     - id: git-approval-flow
       severity: major
       issue: |
@@ -64,6 +87,33 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: skill-enrichment
+      was: minor
+      issue: |
+        mattpocock/skills has techniques ours lack: tdd's SEAMS (test at
+        pre-agreed public boundaries) and TAUTOLOGICAL-test anti-pattern;
+        diagnosing-bugs' "build a tight feedback loop FIRST" with 10 ordered
+        constructions; tracer-bullet framing for vertical slices; a thin
+        session HANDOFF (session-only context + pointers, never duplicating
+        artifacts).
+      resolution: |
+        DONE: folded seams + tautological into testing-guidelines and test-plan;
+        feedback-loop-first into the bugfix skill; tracer-bullet into
+        vertical-slicing; add a thin handoff skill honoring "reference
+        artifacts by path, never duplicate".
+
+    - id: plugin-distribution
+      was: major
+      issue: |
+        Distribution was bash-installer-only. mattpocock/skills (186k stars)
+        shows the two-philosophy model: copy-and-hack vs subscribe-as-plugin.
+      resolution: |
+        Shipped as a Claude Code marketplace plugin: .claude-plugin/
+        (marketplace.json + plugin.json) with a single /docod:setup-docod
+        command that runs the merge-safe installer from CLAUDE_PLUGIN_ROOT —
+        the plugin is the subscription, the instance stays the user's, and
+        re-running the command is the update flow. Packaging excluded from
+        the installed .docod/.
     - id: cascade-cost
       was: major
       issue: |

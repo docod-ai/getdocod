@@ -47,6 +47,13 @@ PR. Nothing more.
 | legacy code without tests: require on touch, or leave it? | it is policy | **gap** |
 | what is deliberately **not** tested here | nobody writes down what they decided not to do | skip |
 
+### Ask — seams
+- *"What are the public seams — the boundaries where behavior is observed —
+  and which ones do we test at?"* Tests live at PRE-AGREED seams, never
+  against internals: code can change entirely, tests should not. An
+  unconfirmed seam gets no test — agreeing seams up front is how effort lands
+  on critical paths instead of every edge.
+
 ### Never
 
 - **Do not teach how to test.** AAA, mocks, the pyramid: the team knows, and if it does not, the rule is not what will fix it. A rule that becomes a tutorial is not read — and what matters in it dies along with it.
@@ -78,6 +85,16 @@ paths:
   **Why:** a migration that runs in 2s in dev runs in 40min with real data — and locks the table.
 - **TG-03** — A bug fix comes in with a test that **fails if the fix is reverted**, and it was **seen failing**.  **blocks**
   **Why:** a test written after the fix usually tests the happy path that already passed. It stays in the suite forever giving confidence about nothing.
+
+## Anti-patterns the review rejects
+
+- **Implementation-coupled**: mocks internal collaborators, tests private
+  methods, or asserts through a side channel. The tell: it breaks on refactor
+  with behavior unchanged.
+- **Tautological**: the assertion recomputes the expected value the same way
+  the code does — it passes by construction and can never disagree with the
+  code. Expected values come from an independent source: a known-good
+  literal, a worked example, the spec.
 
 ## Gaps
 - **minimum coverage** — not decided. The `code-review` does NOT flag coverage as a violation.

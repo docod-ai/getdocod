@@ -48,7 +48,7 @@ mkdir -p "$TARGET/.docod"
 # validate-layers.py is the bundle's DEV tool (validates the layers in the
 # source repo) — it is not part of what the user uses; installing it would
 # bring python along.
-EXCL="--exclude __pycache__ --exclude .DS_Store --exclude validate-layers.py --exclude install.sh --exclude report.html --exclude migration.yaml"
+EXCL="--exclude __pycache__ --exclude .DS_Store --exclude validate-layers.py --exclude install.sh --exclude report.html --exclude migration.yaml --exclude .claude-plugin --exclude plugin-commands"
 if command -v rsync >/dev/null 2>&1; then
   # shellcheck disable=SC2086
   rsync -a --delete $EXCL "$BUNDLE/" "$TARGET/.docod/"
@@ -62,7 +62,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.3.0"
+specVersion: "1.4.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -246,7 +246,7 @@ gen_cli start    "Where to enter, given what already exists" \
 gen_cli continue "Resume a workstream: focused status + next steps" \
   "Run \`$PY continue \$ARGUMENTS\`. More than one valid path → present ALL of them; the user decides."
 gen_cli approve  "The human gate: verdict with a hash, moves the status" \
-  "Run \`$PY approve \$ARGUMENTS --by <whoever the user says>\`. NEVER without an explicit request — approving is their act. Then show the \`status\`."
+  "Run \`$PY approve \$ARGUMENTS --by <whoever the user says>\`. NEVER without an explicit request — approving is their act. Re-approving AMENDED content requires --impact <impact-file> or --no-impact \"<reason>\" (the runtime refuses otherwise): touched doc means mapped radius, mechanically. Then show the \`status\`."
 gen_cli ws       "Workstreams: list, done, abandon (reason mandatory)" \
   "Run \`$PY ws \$ARGUMENTS\`. Abandoning requires --reason — without one the command refuses, and it is right to."
 gen_cli report   "HTML dashboard: documents, task kanban, flow, workstreams" \
@@ -299,24 +299,24 @@ conversation cannot bounce through a subagent's hand-back protocol.
 LEAD
 cat > "$CMD/loop.md" <<'LOOP'
 ---
-description: "Delegated run under YOUR mandate: chain build→QA→review across tasks, stopping only at what needs a human"
-argument-hint: "<tasks|ws scope> [--until qa|review]"
+description: "Dispatch ONE task through build→QA→fix→review without stopping at every station"
+argument-hint: "<task> [--until qa|review]"
 ---
-You will drive the execution chain under an explicit HUMAN MANDATE. The user
-orchestrates by ISSUING it; you execute it faithfully. This batches the
-non-human stretch between gates — it never replaces a gate.
+This is the DISPATCH of ONE task: it carries it through the non-human stretch
+(build → verify → QA → fix rounds → diff review) so the user does not babysit
+each station. It is NOT a batch runner — one task per mandate; parallel tasks
+are parallel dispatches. It never replaces a gate.
 
-1. Restate the mandate: which tasks, in what order (per tasks.md), until which
-   stage (default: through code-review). Confirm ONCE, then run without
-   narrating every step.
-2. Per task: delegate docod-task-executor (its contract stamps
+1. Restate the mandate: which task, until which stage (default: through
+   code-review). Confirm ONCE, then run without narrating every step.
+2. Delegate docod-task-executor (its contract stamps
    execution.started before the first edit — a delivery without the stamp
    fails its deterministic postconditions; the report shows progress live
    because of it) → on delivery run
    `node .docod/docod.mjs verify` + require evidence → delegate
    docod-qa-executor → bugs found: fix_bugs → re-QA (max 2 rounds) →
    delegate docod-code-review.
-3. STOP and return to the user when: an agent hands back QUESTIONS FOR THE
+3. STOP and hand back when: an agent hands back QUESTIONS FOR THE
    USER; QA or review root-causes a finding to an APPROVED upstream artifact
    rather than this task's code (patching forward would fork code from
    design — the upstream owner must amend and the human re-approve first); the same task gets changes_requested/blocked twice; a requires

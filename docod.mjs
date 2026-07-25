@@ -311,7 +311,7 @@ function cmdStart(root) {
   return 0;
 }
 
-function cmdApprove(root, arquivo, by) {
+function cmdApprove(root, arquivo, by, opt) {
   const caminho = path.isAbsolute(arquivo) ? arquivo : path.join(root, arquivo);
   if (!fs.existsSync(caminho)) die(`✗ does not exist: ${arquivo}`);
   const [fm] = readFrontmatter(caminho);
@@ -324,6 +324,29 @@ function cmdApprove(root, arquivo, by) {
   for (const gk of gates)
     if (arts[gk] && nomeBase.startsWith(gk))
       console.log(`ℹ '${gk}' has an agent gate (design-review). The human approve confirms ON TOP of the verdict — confirm it exists and is newer than the last edit.`);
+  // Re-approval of CHANGED content is the "touched a doc" moment — the ad-hoc
+  // impact sweep happens exactly here when nothing demands the real one.
+  // Mechanics, not posture: re-approving an amended artifact requires either
+  // --impact <file> (the impact-analysis that mapped the radius) or
+  // --no-impact "<reason>" (a recorded waiver). First approvals are untouched.
+  const changed = fm.approval?.content_hash && fm.approval.content_hash !== sha256Body(caminho);
+  if (changed) {
+    const imp = opt("--impact"), noimp = opt("--no-impact");
+    if (imp) {
+      const ip = path.isAbsolute(imp) ? imp : path.join(root, imp);
+      if (!fs.existsSync(ip)) die(`✗ --impact points at nothing: ${imp}`);
+      fm.impact = path.relative(root, ip);
+    } else if (noimp && noimp.trim()) {
+      fm.impact_waived = noimp.trim();
+    } else {
+      console.log("✗ this artifact was AMENDED after approval. Re-approving without mapping the radius");
+      console.log("  is the ad-hoc sweep that misses stale downstream (it did, on record). Either:");
+      console.log(`    docod.mjs approve ${path.relative(root, caminho)} --by ${by} --impact <impact-file>`);
+      console.log(`    docod.mjs approve ${path.relative(root, caminho)} --by ${by} --no-impact "<why no radius>"`);
+      console.log("  (cosmetic bulk changes have their own door: rebless)");
+      return 1;
+    }
+  }
   // Re-approval visibility: approving content that CHANGED since the last
   // approval deserves eyes on the diff, not a rubber stamp. No forced reading
   // (a checkbox is theater); just make the unread visible and cheap to read.
@@ -647,7 +670,7 @@ function main() {
     case "approve": {
       const by = opt("--by");
       if (!pos[0] || !by) die("usage: docod.mjs approve <file> --by <who>");
-      return cmdApprove(root, pos[0], by);
+      return cmdApprove(root, pos[0], by, opt);
     }
     case "ws": {
       const sub = pos[0];

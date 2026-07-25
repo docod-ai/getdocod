@@ -1,0 +1,17 @@
+{
+  "name": "docod",
+  "owner": {
+    "name": "Fabio Valencio",
+    "url": "https://docod.ai"
+  },
+  "description": "DOCOD — the SDLC revived for agents: 28 governed agents, a governance runtime, and receipts for everything.",
+  "plugins": [
+    {
+      "name": "docod",
+      "source": "./",
+      "description": "Agent-driven development with a governance runtime: PRD→FRD→design→tasks→code under hash-sealed approvals, external verification and honest gates. The human orchestrates; nothing approves itself.",
+      "category": "engineering",
+      "keywords": ["sdlc", "governance", "agents", "spec-driven", "method", "tdd", "qa"]
+    }
+  ]
+}

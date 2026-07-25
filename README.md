@@ -70,6 +70,16 @@ git clone https://github.com/docod-ai/getdocod
 cd /path/to/your/project
 ```
 
+**Or install as a Claude Code plugin** (you subscribe to the method; your instance stays yours):
+
+```
+/plugin marketplace add docod-ai/getdocod
+/plugin install docod@docod
+/docod:setup-docod        ← once per repo; re-running it is the update flow
+```
+
+Two installs, two philosophies: the git clone copies the bundle so you can read and hack every contract; the plugin keeps it as a managed, always-current subscription. Either way, `docod.yaml` and everything you produce belong to you and are never touched.
+
 Then, in your agent harness:
 
 ```
@@ -122,7 +132,7 @@ Two things make this different from pointing a raw agent at your repo:
 
 So no, the paperwork isn't the product. It's what makes the code **explainable**: every line traces back to a requirement, a design, a rule, and a decision with an owner.
 
-**And you don't have to babysit the chain.** `/docod:loop` runs the non-human stretch on delegation: you issue one mandate ("tasks 3 to 7, through code-review"), it confirms the scope once, then drives build → external verify → QA → fix rounds → diff review per task without narrating every step. It stops and comes back only for what is yours: questions handed back, a repeated failing verdict, a blocked gate, anything needing approval (it never approves). One batch report at the end, with the exact queue awaiting you. "The human orchestrates" never meant clicking every invocation: the decision is the mandate, the stop conditions are contract, and deploy remains a human act. That's supervised delegation, not autopilot faith.
+**And you don't have to babysit one task's chain.** `/docod:loop` is the dispatch of a single task: you hand it over once and it carries the task through the non-human stretch (build, external verify, QA, fix rounds, diff review) without stopping at every station. It is not a batch runner: one task per dispatch, and parallel tasks are parallel dispatches. It comes back only for what is yours: questions handed back, a bug root-caused to an approved upstream document, a repeated failing verdict, anything needing approval (it never approves). "The human orchestrates" never meant clicking every station: the decision is the dispatch, the stop conditions are contract, and deploy remains a human act.
 
 ## A tech lead to think with
 
@@ -192,6 +202,25 @@ This is the part no other tool gives you, and the reason a tech lead can trust a
 4. **Evidence is cited, not asserted.** A deterministic postcondition demands command + output in the report, and the computable part isn't even trusted to the agent: `docod.mjs verify` re-checks frontmatter, status, approval hash and every input hash mechanically, run by the caller. Whoever verifies behavior, diff, or design is never the one who did the work.
 5. **A missing tool is not a license to improvise.** The capability degrades per the adapter and the document records "not verified". It never pretends.
 6. **A subagent doesn't invent answers.** It stops and returns `QUESTIONS FOR THE USER:`; `/docod:run` asks you and reinvokes.
+7. **A fix never patches around an approved document.** When QA root-causes a bug to an upstream artifact (a contract that omitted a field, a design that guessed wrong), the line stops: the owner amends, and re-approving amended content mechanically requires the mapped radius (`--impact <impact-file>`) or a recorded waiver. Code and design are never allowed to quietly stop agreeing.
+
+## Where DOCOD sits, and what it refuses to be
+
+| If you're using | It gives you | It cannot give you |
+|---|---|---|
+| A skill pack (TDD prompts, debugging loops, review checklists) | Better craft, task by task | Receipts. Nothing records what was approved, by whom, against which version of what |
+| A process framework that owns your flow | Structure | Control. The process decides for you, and a bug in the process is yours to live with |
+| A raw agent pointed at the repo | Speed | A trail. Code that runs, looks right, and nobody can explain |
+
+DOCOD takes the opposite bet on all three axes at once. Craft stays **composable**: bring any skill you love. Control stays **yours**: commands inform and record, never decide; every gate is a human act; every guard ships with a recorded waiver, because a rule you can't consciously bypass is a rule you'll route around. And everything gains a **receipt**: hash-sealed approvals, external verification, lineage from requirement to diff.
+
+**Skills make the work better. DOCOD proves the work happened, and that it still holds.**
+
+> **"Doesn't this own my process?"** No, and that refusal is load-bearing. Everything is plain files in your repo. The runtime derives state and reports it; it never invokes an agent on its own. Approval is a record, not a forum. When you disagree with a gate, you waive it and the waiver is recorded: the method's job is that nothing happens silently, not that nothing happens without permission.
+
+### Bring your own skills
+
+DOCOD's 13 skills are method-neutral, and the method is not a walled garden: install any skill from anywhere (a TDD skill, a debugging loop, your team's review checklist) and use it inside a `/docod:run` task or a `/docod:loop` dispatch. The executor writes code with whatever craft you hand it; DOCOD governs what surrounds the craft: inputs declared and hashed, success criteria the executor cannot edit, adversarial QA, verified delivery. Your favorite skills and DOCOD compose. That is the design, not an accident.
 
 ## Working in a legacy codebase
 
@@ -219,7 +248,7 @@ The method doesn't know your stack. That's by design, and it's **enforced by a v
 
 | Layer | Lives in | Says |
 |---|---|---|
-| 1–2 · **spec** (neutral) | `spec/` | **what**: method, 28 agent contracts, 37 artifacts, commands, rules, 12 skills |
+| 1–2 · **spec** (neutral) | `spec/` | **what**: method, 28 agent contracts, 37 artifacts, commands, rules, 13 skills |
 | 3 · **adapter** (pluggable) | `adapters/` | **which tool**: every tool name lives here. If it shows up in the spec, it's a leak |
 | 4 · **instance** | `docod.yaml` | **where and in which language**: your paths, your project. The only thing that changes between repos |
 
@@ -236,7 +265,7 @@ Swap the adapter, keep the method. And the **product speaks your language**: set
 /docod:ws list|done|abandon        workstream lifecycle
 /docod:report                      HTML dashboard: documents, kanban, flow
 /docod:lead [topic]                your tech lead: sparring for technical decisions
-/docod:loop <scope> [--until]      delegated run: build→QA→review under your mandate
+/docod:loop <task> [--until]       dispatch one task through build→QA→review, no babysitting
 ```
 
 ## The map: who comes after whom

@@ -5,6 +5,32 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.4.0] — 2026-07-24
+
+Added: Claude Code plugin packaging (.claude-plugin/ + /docod:setup-docod);
+the `handoff` skill (session-only context by reference, never duplicating
+artifacts); skill enrichment learned from the field — seams and the
+tautological-test anti-pattern in testing-guidelines, feedback-loop-first as
+the spine of bugfix, tracer bullets in vertical-slicing.
+
+Added: touched-doc-means-mapped-radius, mechanically. Re-approving an artifact
+AMENDED after approval now requires either --impact <impact-file> (recorded in
+the frontmatter) or --no-impact "<reason>" (a recorded waiver); the runtime
+refuses otherwise. Born on record: an ad-hoc impact sweep left 4 task files
+stale (2 merged) and spent effort on a non-ripple; the owned transitive
+closure caught both. First approvals untouched; cosmetic bulk has rebless.
+
+Changed: `/docod:loop` is now the dispatch of ONE task through the non-human
+stretch (build → external verify → QA → fix rounds → diff review), not a batch
+runner across tasks — parallel tasks are parallel dispatches. Same stop
+conditions (hand-backs, upstream root cause, repeated failing verdict, anything
+needing approval); it never approves.
+
+Docs: README gains the plugin install path and a "Where DOCOD sits" section
+(skill pack vs process framework vs raw agent — what each gives, what it
+cannot); ARCHITECTURE documents the impact-approval gate and the
+attribution-mismatch warning.
+
 ## [1.3.0] — 2026-07-23
 
 Added: the upstream-root-cause gate. QA now classifies every bug's root cause

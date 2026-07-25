@@ -68,6 +68,15 @@ Start with the simplest rule; add complexity in slices.
 
 ---
 
+## Tracer bullets, not horizontal batches
+
+Work one slice at a time and let each teach the next: one test, one
+implementation, adjust aim, repeat. The opposite failure is horizontal
+batching — writing all the tests (or all the layers) first: bulk work
+verifies IMAGINED behavior, commits you to structure before understanding,
+and goes insensitive to what building actually teaches. A slice is a tracer
+bullet: it exists to show you where the next one should land.
+
 ## Walking skeleton
 
 The first slice of a new system crosses **everything**, in the dumbest way possible.

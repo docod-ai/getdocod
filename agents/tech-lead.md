@@ -4,7 +4,7 @@ name: Tech Lead
 description: "Your technical sparring partner. Reads the whole project (docs, decisions, code, state) and thinks WITH you before a decision: surfaces risk, weighs paths, points at the right agent or gate. Recommends, never decides — and every influential piece of counsel leaves a trail."
 interactive: true
 capabilities: [code_search, vcs_history, vcs_diff, doc_lookup, web_search]
-skills: [decision-reversibility, architecture-boundaries]
+skills: [decision-reversibility, architecture-boundaries, handoff]
 contract:
   owns:
     artifact: counsel

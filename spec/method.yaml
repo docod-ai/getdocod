@@ -1,4 +1,4 @@
-specVersion: "1.3.0"
+specVersion: "1.4.0"
 
 # =============================================================================
 # LAYER 1 — METHOD  ·  NEUTRAL
@@ -308,6 +308,18 @@ skills:
         languages and no reading. The rule it carries: the QUESTION defines the
         type, and a wrong diagram is worse than none — none forces you to read
         the text, wrong convinces.
+
+    handoff:
+      desc: "Compact the current session into a thin handoff: session-only context and pointers — never duplicating what artifacts already record"
+      path: skills/handoff/SKILL.md
+      neutral: true
+      requires_capabilities: []
+      used_by: [tech-lead]
+      rationale: |
+        State lives in artifacts; the SESSION does not. The thread of
+        reasoning, unrecorded leanings and attention order die with the
+        window unless compacted — thinly, by reference. Restating artifacts
+        would be drift scheduled for tomorrow.
 
     bugfix:
       desc: "Fix the cause, not the symptom: reproduce first, regression test that fails if reverted, ordering by severity, the bug's siblings"
