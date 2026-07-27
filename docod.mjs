@@ -517,8 +517,16 @@ function cmdRebless(root, by, reason, yes, repin) {
           // Normalize BOTH sides: extension off, path relative — keys are
           // written by agents as slugs OR paths, with or without .md (third
           // sub-edge: slash-keys came without extension and endsWith failed).
+          // Fourth key shape found in the field: "project (docs/product/prd.md)"
+          // — scope-prefixed with parentheses, written by agents. A trailing
+          // parenthesized group that looks like a path IS the key; unwrap it
+          // before normalizing (extension-strip and basename both choke on the
+          // closing paren otherwise).
+          let kraw = String(inp.key);
+          const par = kraw.match(/\(([^()]+)\)\s*$/);
+          if (par) kraw = par[1].trim();
           const strip = (q) => String(q).replace(/\.(md|yaml)$/, "").replace(/^\.\//, "");
-          const kk = strip(inp.key);
+          const kk = strip(kraw);
           const kb = path.basename(kk);
           const relOf = (x) => strip(path.relative(root, x));
           for (const test of [

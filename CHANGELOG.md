@@ -5,6 +5,13 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.4.1] — 2026-07-27
+
+Fixed: rebless key resolver, fourth field-found key shape — scope-prefixed
+parenthesized keys ("project (docs/product/prd.md)") now unwrap before
+normalization. Basename choked on the closing paren and declared identified
+sources non-repinnable.
+
 ## [1.4.0] — 2026-07-24
 
 Added: Claude Code plugin packaging (.claude-plugin/ + /docod:setup-docod);
