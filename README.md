@@ -23,9 +23,9 @@ DOCOD is an agent-driven development method with a governance runtime, for any r
 
 ## The problem it solves
 
-Point an agent at an underspecified task and it makes dozens of defensible, wrong decisions. You get code that runs, looks right, and nobody can explain. That's vibe coding: generation with no direction, no checkpoint, no trail.
+Writing the spec first is the new standard, and it genuinely helps. But watch a spec-driven repo three weeks in. The spec says one thing, the code says another, and nobody can tell you exactly WHEN they stopped agreeing. The spec was approved with an "LGTM" in a chat that scrolled away, and silently outdated by the fourth pull request. A specification that doesn't enforce its own validity isn't governance — it's just a text file lying to your agents.
 
-DOCOD closes those gaps **mechanically**. Not with good intentions, but with rules that don't bend:
+The missing layer was never more spec. It is what seals the spec to the work, **mechanically**. Not with good intentions, but with rules that don't bend:
 
 - An agent delivers in **draft**; approving is a **human act**, recorded with author, timestamp and content hash.
 - Edit an approved document and the approval **invalidates itself**: everything that depended on it re-blocks.
@@ -33,7 +33,7 @@ DOCOD closes those gaps **mechanically**. Not with good intentions, but with rul
 
 The result: agents move at full speed, and every step has a name, a gate, and a receipt.
 
-> **Why not just prompt better?** Because a prompt is an intention, and intentions drift. DOCOD's guarantees are files and hashes: they hold when the session forgets, when the model changes, and when it's 2 a.m. and someone edits an approved spec.
+> **Why isn't a spec folder enough?** Because a spec is a claim, and claims drift. DOCOD's guarantees are hashes sealed to content: they hold when the session forgets, when the model changes, and when it's 2 a.m. and someone edits an approved spec — that edit invalidates the approval by itself, and everything downstream re-blocks until a human looks.
 
 ## None of this is new. That's the point
 
