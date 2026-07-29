@@ -81,7 +81,7 @@ contract:
         - "judgment: A DOMINANT pattern is kept separate from a present pattern — 80% of files is a tendency, not a rule"
         - "judgment: A real inconsistency became a QUESTION, it was not resolved by majority"
         - "judgment: No extracted rule is presented as decided — code shows habit, not intention"
-        - "deterministic: Every doc-vs-code divergence is a DIV-nn entry with evidence on BOTH sides (file:line and doc section); divergences corroborated by another reverse cross-reference each other"
+        - "deterministic: Every doc-vs-code divergence is a DIV-nn entry with evidence on BOTH sides (file:line WITH the observed fragment, and doc section); divergences corroborated by another reverse cross-reference each other"
         - "judgment: Existing legacy documents were used as a MANDATORY triangulation source when present — cited via external provenance, never imported as artifacts"
         - "judgment: Questions only an external owner can answer (staging, backend team, vendor) are classed as external-owner questions — apart from gaps and product decisions"
       note: |

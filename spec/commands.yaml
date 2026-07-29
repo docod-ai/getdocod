@@ -1,4 +1,4 @@
-specVersion: "1.4.0"
+specVersion: "1.5.0"
 
 # =============================================================================
 # LAYER 2 — COMMANDS  ·  NEUTRAL
@@ -67,6 +67,9 @@ commands:
           blocked     — actions whose requires are not satisfied, and WHY
           possible    — actions whose requires are satisfied NOW
           stale       — artifacts whose input changed (when inputs[].hash exists)
+          external    — open entries of the external-questions queue: nobody
+                        inside the project can close them, so the status
+                        chases them instead of letting them scatter
 
         Derived from the files, always. A hand-maintained index would be the
         tenth occurrence of this project's recurring failure by the next day.
@@ -140,20 +143,31 @@ commands:
 
     # -------------------------------------------------------------------------
     ws:
-      desc: "Workstream lifecycle: list, close, abandon."
+      desc: "Workstream lifecycle: list, register light, close, abandon."
       answers: "which fronts exist, and which one died?"
       behavior: |
         `ws list`            — the workstreams and their states
+        `ws add <key>`       — LIGHT registration, --reason MANDATORY (see note)
         `ws done <key>`      — active → done (the work is finished)
         `ws abandon <key>`   — active → abandoned, with a MANDATORY reason
 
-        The one who CREATES is not this command: it is the `prd` running in ws
-        scope — the entry door is the method, not the tool. This command only
-        closes.
+        The DEFAULT door for creating remains the `prd` running in ws scope —
+        the entry of a front is the method (the what and the why), not the
+        tool. `ws add` is the recorded exception, not a second default.
       note: |
         Abandonment without a reason is forbidden on purpose: a ws that
         vanishes in silence is lost work with no record — and the abandonment
         reason is [re]Define information, not bureaucracy.
+
+        `ws add` was born from the field: a front whose tasks ALREADY existed
+        — file, line, approach and criteria from a field report — would have
+        cost two artifacts (a prd round) to restate what was already stated,
+        and the honest recommendation was to bypass the method. A method
+        better served by being bypassed in a legitimate case is information
+        about the method; this door absorbs it. The price of the shortcut is
+        the record: --reason is mandatory and stored in the registry entry
+        (registered_by: ws add, registered_reason), so a front born without a
+        prd is auditable as exactly that.
 
   # ---------------------------------------------------------------------------
   # WHAT THE COMMANDS NEVER DO
@@ -163,7 +177,7 @@ commands:
     - "Maintain an index of their own. All state is derived from the files."
     - "Approve without a hash, or hide an invalidated approval."
     - "Decide between two valid paths. Present both."
-    - "Create a workstream. That belongs to the prd."
+    - "Create a workstream SILENTLY. The prd is the door; `ws add` is the recorded exception — never an unrecorded one."
 
   # ---------------------------------------------------------------------------
   # MAPPING — how each adapter materializes it (reference; the real one is the adapter's)

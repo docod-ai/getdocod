@@ -58,10 +58,10 @@ contract:
       capabilities: [code_search, ask_user]
       postconditions:
         - "evidence: Every claim carries provenance: evidence, inferred or user-supplied"
-        - "evidence: Components and links come from the code as evidence (file:line)"
+        - "evidence: Components and links come from the code as evidence (file:line plus the observed fragment)"
         - "evidence: The INTENT of a boundary is never evidence — the code shows where it is, not why"
         - "judgment: The reverse-engineered area is delimited and the limit is written down"
-        - "deterministic: Every doc-vs-code divergence is a DIV-nn entry with evidence on BOTH sides (file:line and doc section); divergences corroborated by another reverse cross-reference each other"
+        - "deterministic: Every doc-vs-code divergence is a DIV-nn entry with evidence on BOTH sides (file:line WITH the observed fragment, and doc section); divergences corroborated by another reverse cross-reference each other"
         - "judgment: Existing legacy documents were used as a MANDATORY triangulation source when present — cited via external provenance, never imported as artifacts"
         - "judgment: Questions only an external owner can answer (staging, backend team, vendor) are classed as external-owner questions — apart from gaps and product decisions"
       note: |

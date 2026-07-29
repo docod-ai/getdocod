@@ -82,11 +82,11 @@ contract:
       capabilities: [code_search, ask_user]
       postconditions:
         - "evidence: Every claim carries provenance: evidence, inferred, or user-supplied"
-        - "evidence: Existing metrics, logs, and traces come from the code as evidence (file:line)"
+        - "evidence: Existing metrics, logs, and traces come from the code as evidence (file:line plus the observed fragment)"
         - "evidence: The SLO is never evidence — the code shows what is measured, not what was promised"
         - "judgment: A journey with no instrumentation at all is an explicit finding, not silence"
         - "judgment: PII found in a log is a highlighted RISK, not an observation"
-        - "deterministic: Every doc-vs-code divergence is a DIV-nn entry with evidence on BOTH sides (file:line and doc section); divergences corroborated by another reverse cross-reference each other"
+        - "deterministic: Every doc-vs-code divergence is a DIV-nn entry with evidence on BOTH sides (file:line WITH the observed fragment, and doc section); divergences corroborated by another reverse cross-reference each other"
         - "judgment: Existing legacy documents were used as a MANDATORY triangulation source when present — cited via external provenance, never imported as artifacts"
         - "judgment: Questions only an external owner can answer (staging, backend team, vendor) are classed as external-owner questions — apart from gaps and product decisions"
       note: |

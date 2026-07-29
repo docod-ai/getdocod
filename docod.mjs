@@ -272,6 +272,24 @@ function cmdStatus(root, ws = null) {
     for (const a of avisos) console.log(a);
   }
 
+  // EXTERNAL QUESTIONS — the single queue (artifacts.yaml: external-questions).
+  // Nobody inside the project can close these; scattered across per-agent
+  // logs they are the easiest thing to lose. The status chases them.
+  {
+    const eqF = path.join(root, docsRoot(inst), "decisions", "external-questions.yaml");
+    if (fs.existsSync(eqF)) {
+      let eq = [];
+      try { eq = yload(fs.readFileSync(eqF, "utf-8")) || []; } catch { /* verify reports parse errors */ }
+      const open = (Array.isArray(eq) ? eq : []).filter(q => (q?.state ?? "open") === "open");
+      if (open.length) {
+        console.log(`\nEXTERNAL QUESTIONS — ${open.length} open (only an outside owner can close these; chase the owner):`);
+        for (const q of open.slice(0, 8))
+          console.log(`  ? [${q.id ?? "?"}] → ${q.owner ?? "?"}: ${String(q.question ?? "").split("\n")[0].slice(0, 90)}`);
+        if (open.length > 8) console.log(`  … and ${open.length - 8} more`);
+      }
+    }
+  }
+
   const [possiveis, travadas] = possibleActions(estado, agents);
   console.log("\nPOSSIBLE NOW (requires satisfied):");
   for (const p of possiveis.sort().slice(0, 14)) console.log(`  → ${p}`);
@@ -363,7 +381,7 @@ function cmdApprove(root, arquivo, by, opt) {
   return 0;
 }
 
-function cmdWs(root, sub, key = null, reason = null) {
+function cmdWs(root, sub, key = null, reason = null, name = null) {
   const { inst } = loadModel(root);
   const f = wsRegistry(root, inst);
   const wss = loadWorkstreams(root, inst);
@@ -372,6 +390,31 @@ function cmdWs(root, sub, key = null, reason = null) {
       console.log("no workstream registered (the prd creates one when run in ws scope)");
     for (const [k, w] of Object.entries(wss))
       console.log(`  ${k.padEnd(20)} ${String(w.state ?? "?").padEnd(10)} created ${w.created ?? "?"}`);
+    return 0;
+  }
+  if (sub === "add") {
+    // The LIGHT door — the recorded exception, not a second default. The prd
+    // remains the entry of a front (the what and the why); this exists for the
+    // front whose work ALREADY EXISTS with file, approach and criteria (field
+    // case: seven fix tasks that would have cost two artifacts to restate what
+    // a report had already stated). A method better served by being bypassed
+    // in a legitimate case is information about the method — this is the
+    // method absorbing it. --reason is MANDATORY and travels in the registry:
+    // a front born outside the prd without a recorded why is a front nobody
+    // can audit.
+    if (!key) die('usage: docod.mjs ws add <key> --reason "..." [--name "..."]');
+    if (key in wss) die(`✗ workstream '${key}' is already registered`);
+    if (!reason || !reason.trim())
+      die('✗ ws add requires --reason: the prd is the default door; entering without it needs a recorded why (e.g. "tasks pre-exist from the field report of <date>")');
+    wss[key] = {
+      name: name || key, state: "active",
+      created: new Date().toISOString().slice(0, 10),
+      registered_by: "ws add", registered_reason: reason.trim(),
+    };
+    fs.mkdirSync(path.dirname(f), { recursive: true });
+    fs.writeFileSync(f, ydump(wss, { sortKeys: false }));
+    console.log(`✓ ${key} → active (light registration, reason recorded)`);
+    console.log("  The prd remains the default door — a front with a what-and-why still deserves one.");
     return 0;
   }
   if (!(key in wss)) die(`✗ workstream '${key}' not registered in workstreams.yaml`);
@@ -391,10 +434,18 @@ function cmdVerify(root, file) {
   // the producer. Born from the first real test: "deterministic" enforced in
   // band degenerated into self-attestation, and it diverged (wrong hash cited,
   // wrong counts). What a machine can check, a machine checks.
-  // Deliberately NOT checked: section names (docs are written in the instance
+  // WHAT IT CHECKS: parseability, status validity, approval hash, input
+  // provenance/hashes, COMPLETENESS (section count vs the contract's declared
+  // minimum, kept frontmatter promises, presence of status) and prose
+  // references (undeclared ADR links, prose-cited hashes, file:line anchors).
+  // Completeness entered after the field case that named this command a liar:
+  // a truncated FRD — 11 requirements and 4 sections short, its promised
+  // frd.yaml missing — passed with VERIFY OK and a hundred ✓.
+  // Deliberately NOT checked: section NAMES (docs are written in the instance
   // language; matching English names would false-fail, and a false positive
-  // trains the user to ignore the alert), and judgment/evidence postconditions
-  // (not computable — they remain gated by reviewers).
+  // trains the user to ignore the alert — hence COUNT, which is language-
+  // neutral), and judgment/evidence postconditions (not computable — they
+  // remain gated by reviewers).
   const { inst, arts } = loadModel(root);
   const p = path.isAbsolute(file) ? file : path.join(root, file);
   if (!fs.existsSync(p)) die(`✗ does not exist: ${file}`);
@@ -424,9 +475,54 @@ function cmdVerify(root, file) {
   for (const [k, a] of Object.entries(arts))
     if (findInstances(a, root, inst, "*").includes(p)) { selfKey = k; selfArt = a; break; }
   if (selfKey) oks.push(`registered artifact: ${selfKey}` + (selfArt.lineage === "snapshot" ? " (snapshot — inputs are observed-at)" : ""));
+  // COMPLETENESS — the truncation detector. The contract (artifacts.yaml)
+  // declares the MINIMUM sections; a run that died mid-write leaves fewer
+  // `##` heads than the contract. COUNT, not names: instance docs are written
+  // in the instance language, and name-matching would false-fail. A declared
+  // "Title" section rides in the H1, not in an H2 — discounted.
+  if (selfKey && selfArt.sections && p.endsWith(".md")) {
+    const min = selfArt.sections.length -
+      (String(selfArt.sections[0]).toLowerCase() === "title" ? 1 : 0);
+    const got = (body0.match(/^##\s+/gm) || []).length;
+    if (got < min) fails.push(`document has ${got} section(s) ('##' headings); the '${selfKey}' contract declares ${min} minimum — truncated or incomplete run`);
+    else oks.push(`sections: ${got} ≥ ${min} declared minimum`);
+  }
+  // The incomplete-run marker: the producer stamps `status` LAST (see
+  // agent.yaml `write_order`). A registered artifact with a body and no
+  // status is an interrupted run by definition. Rules are exempt (kind: rule
+  // documents are discipline, not runs).
+  if (selfKey && p.endsWith(".md") && selfArt.kind !== "rule" && !fm.status)
+    fails.push(`registered artifact with no 'status' in the frontmatter — an interrupted run (the producer stamps status LAST; its absence IS the incomplete-run marker)`);
+  // KEPT PROMISES — a frontmatter that names a companion file promises it
+  // exists; an interrupted run leaves promises unkept and nothing noticed
+  // (field case: the truncated FRD's promised frd.yaml). inputs[] is excluded
+  // (artifact references, resolved by hash below); approval is metadata.
+  {
+    const promised = [];
+    const walk = (v, trail) => {
+      if (trail[0] === "inputs" || trail[0] === "approval") return;
+      if (trail[trail.length - 1] === "template") return; // bundle mold reference (rules), not an instance promise
+      if (typeof v === "string") {
+        if (/^[\w][\w./-]*\.(md|ya?ml)$/.test(v) && !v.includes("*")) promised.push([trail.join("."), v]);
+      } else if (Array.isArray(v)) v.forEach((x, i) => walk(x, [...trail, i]));
+      else if (v && typeof v === "object") for (const [k2, x] of Object.entries(v)) walk(x, [...trail, k2]);
+    };
+    for (const [k2, v] of Object.entries(fm)) walk(v, [k2]);
+    for (const [field, rel] of promised) {
+      if ([path.join(path.dirname(p), rel), path.join(root, rel)].some(c => fs.existsSync(c)))
+        oks.push(`frontmatter promise kept: ${field} → ${rel}`);
+      else fails.push(`frontmatter promises '${rel}' (${field}) and it does not exist — an interrupted run leaves its promises unkept`);
+    }
+  }
   // Cited-but-undeclared guard: a body that cites ADR-nnnn the frontmatter does
   // not declare is a link the machine cannot check (declared-inputs-coverage).
-  {
+  // SKIPPED for append-only logs (counsel): citing ADRs is their function —
+  // the log is the ADR's prehistory, and warning on every entry is noise by
+  // construction. And a document never cites ITSELF into staleness: the ADR's
+  // own number (its `## structure` requires the ID in the title) is excluded —
+  // an alert that fires on every ADR ever written trains the reader to skip
+  // the line where a real problem will one day be.
+  if (!selfArt?.append_only) {
     // Extract the ADR NUMBER from the key whatever its shape (slug "0004-sync"
     // or full path ".../adr/0004-sync...md") — slice(0,4) matched "docs" on
     // path keys and false-warned on EVERY declared ADR. When everything warns,
@@ -436,9 +532,91 @@ function cmdVerify(root, file) {
       const m = String(i.key ?? "").match(/(\d{3,4})/);
       if (m) declared.add(m[1].padStart(4, "0"));
     }
+    let own = null;
+    if (selfKey === "adr" || p.split(path.sep).includes("adr")) {
+      const m = path.basename(p).match(/^(\d{3,4})-/);
+      if (m) own = m[1].padStart(4, "0");
+    }
     const cited = new Set([...body0.matchAll(/ADR-(\d{3,4})/g)].map(m => m[1].padStart(4, "0")));
-    for (const n of cited) if (![...declared].some(k => k.startsWith(n)))
+    for (const n of cited) if (n !== own && ![...declared].some(k => k.startsWith(n)))
       warns.push(`body cites ADR-${n} but inputs[] does not declare it — undeclared link, invisible to staleness`);
+  }
+  // PROSE REFERENCES — the two rot vectors caught in the field, four times,
+  // four owners. (a) A hash quoted in the BODY is a claim staleness does not
+  // watch: one survived three rounds and an approval while wrong. Check it
+  // against every current instance and the declared inputs; matching nothing
+  // means it drifted or was born wrong. (b) A NAKED file:line anchor rots on
+  // any edit of the cited file and nothing tells the citer — warned on LIVE
+  // lineage only (a snapshot is a record of a moment; its anchors observe,
+  // they do not rot). NAKED is the operative word: the reverse's evidence
+  // discipline REQUIRES file:line citations of code, and a guard that fires
+  // on the method's own prescribed output is defect #3 reborn. The line is
+  // drawn by content, and CHECKED not trusted: an anchor carrying the observed
+  // fragment in backticks on the same line (`path:line` + `what was seen`) is
+  // re-read against the cited file — fragment at the line = evidence proven,
+  // fragment elsewhere = the drift caught and named, fragment gone = evidence
+  // rotted. Presence of backticks is not a free pass (that is gameable); the
+  // machine checks the fragment, the same "what a machine can check, a machine
+  // checks" the correction gate will use.
+  {
+    const citedHashes = [...body0.matchAll(/sha256:([0-9a-f]{8,64})/g)].map(m => m[1]);
+    if (citedHashes.length) {
+      const current = new Set();
+      for (const a of Object.values(arts))
+        for (const f of findInstances(a, root, inst, "*"))
+          if ((f.endsWith(".md") || f.endsWith(".yaml")) && fs.existsSync(f) && fs.statSync(f).isFile())
+            current.add(sha256Body(f).slice("sha256:".length));
+      for (const i of (fm.inputs || [])) {
+        const m = String(i.hash ?? "").match(/^sha256:([0-9a-f]+)$/);
+        if (m) current.add(m[1].slice(0, 16));
+      }
+      for (const h of new Set(citedHashes)) {
+        const pre = h.slice(0, 16);
+        if (![...current].some(c => c.startsWith(pre) || pre.startsWith(c)))
+          warns.push(`body cites hash sha256:${h.slice(0, 12)}… that matches NO current artifact and NO declared input — a prose hash nothing watches; declare it in inputs[] or drop it from the text`);
+      }
+    }
+    if (selfArt && selfArt.lineage !== "snapshot" && p.endsWith(".md")) {
+      const TLD = /^(com|org|net|io|ai|dev|co|br)$/;
+      const ANCHOR = /([\w./-]+\.([a-z]{1,4})):(\d{1,5})\b/g;
+      const norm = (s) => s.replace(/\s+/g, " ").trim();
+      const fileCache = new Map();
+      const readLines = (fp) => { if (!fileCache.has(fp)) fileCache.set(fp, fs.readFileSync(fp, "utf-8").split("\n")); return fileCache.get(fp); };
+      const resolveFile = (rel) => {
+        for (const c of [path.join(path.dirname(p), rel), path.join(root, rel)])
+          if (fs.existsSync(c) && fs.statSync(c).isFile()) return c;
+        return null;
+      };
+      const W = 2; // window around the cited line: tolerate small edits, catch real drift
+      let naked = 0, proven = 0, drifted = 0, rotted = 0, unresolvable = 0;
+      for (const line of body0.split("\n")) {
+        const anchors = [...line.matchAll(ANCHOR)].filter(m => !TLD.test(m[2]));
+        if (!anchors.length) continue;
+        // backtick spans that are NOT themselves anchors = the observed fragments
+        const frags = [...line.matchAll(/`([^`]+)`/g)].map(m => m[1])
+          .filter(s => ![...s.matchAll(ANCHOR)].some(m => !TLD.test(m[2])));
+        for (const a of anchors) {
+          if (!frags.length) { naked++; continue; }        // presence is required, but not enough
+          const file = resolveFile(a[1]);
+          if (!file) { unresolvable++; continue; }          // carries a fragment, cannot verify
+          const srcLines = readLines(file), ln = +a[3];
+          const win = norm(srcLines.slice(Math.max(0, ln - 1 - W), ln + W).join(" "));
+          const whole = norm(srcLines.join(" "));
+          let hit = false, near = false;
+          for (const fr of frags) { const nf = norm(fr); if (!nf) continue; if (win.includes(nf)) { hit = true; break; } if (whole.includes(nf)) near = true; }
+          if (hit) proven++; else if (near) drifted++; else rotted++;
+        }
+      }
+      if (proven) oks.push(`prose evidence: ${proven} file:line anchor(s) verified — the observed fragment is present at the cited line`);
+      if (naked)
+        warns.push(`body anchors ${naked} reference(s) by NAKED file:line (no observed fragment alongside) — a bare line anchor rots on any edit of the cited file and nothing tells the citer; cite the anchor WITH the observed fragment in backticks on the same line, or reference by section name and declare the source in inputs[]`);
+      if (drifted)
+        warns.push(`${drifted} file:line anchor(s) DRIFTED — the observed fragment is no longer at the cited line but still exists elsewhere in the cited file; the line moved, update the anchor`);
+      if (rotted)
+        warns.push(`${rotted} file:line anchor(s) carry an observed fragment that is GONE from the cited file — evidence rotted or was mis-transcribed; re-verify against the current code`);
+      if (unresolvable)
+        warns.push(`${unresolvable} file:line anchor(s) carry a fragment but the cited path could not be resolved to verify it — check the path is project-relative`);
+    }
   }
   for (const inp of fm.inputs || []) {
     if (inp.hash != null && !HASH_RX.test(String(inp.hash)))
@@ -494,7 +672,7 @@ function cmdRebless(root, by, reason, yes, repin) {
   // (re-pinning a record would lie about what it analyzed).
   if (!reason || !reason.trim()) die("rebless requires --reason: a batch re-approval without a recorded why IS the rubber stamp");
   const { inst, arts } = loadModel(root);
-  const plan = [];
+  const plan = [], unresolved = [];
   for (const [key, art] of Object.entries(arts)) {
     if (String(art.owner ?? "").startsWith("{")) continue;
     for (const f of findInstances(art, root, inst, "*")) {
@@ -538,21 +716,48 @@ function cmdRebless(root, by, reason, yes, repin) {
           ]) { const m = cand.filter(test); if (m.length === 1) { tgt = m[0]; break; } if (m.length > 1) break; }
         }
         if (tgt) stale.push([inp, tgt]);
+        // "I don't know how to resolve this" is an ANSWER, never a silence.
+        // Dropping the input here and later printing "nothing to rebless" let
+        // a stale input walk out looking whole — a silent failure in the worst
+        // direction a tool can fail. Record it; report it; exit non-zero.
+        else unresolved.push({
+          f, artifact: inp.artifact, key: inp.key ?? null,
+          why: cand.length === 0 ? `no current instance of '${inp.artifact}' exists`
+             : inp.key ? `key does not single out one of ${cand.length} candidate(s)`
+             : `${cand.length} candidates and no key to tell them apart`,
+        });
       }
       if (invalid || stale.length) plan.push({ f, fm, key, invalid, stale });
     }
   }
-  if (!plan.length) { console.log("nothing to rebless — no invalid approvals, no re-pinnable inputs"); return 0; }
+  const printUnresolved = () => {
+    if (!unresolved.length) return;
+    console.log(`\nCANNOT RESOLVE — ${unresolved.length} stale input(s) this tool will not guess at:`);
+    for (const u of unresolved)
+      console.log(`  ? ${path.relative(root, u.f)}: input '${u.artifact}'${u.key ? ` key '${u.key}'` : ""} — ${u.why}`);
+    console.log("  Fix the input's key (or the missing source), or re-pin by hand — but know it is pending.");
+  };
+  if (!plan.length) {
+    if (unresolved.length) {
+      printUnresolved();
+      console.log(`0 rebless-able; ${unresolved.length} unresolved. This is "I don't know how", NOT "nothing to do".`);
+      return 1;
+    }
+    console.log("nothing to rebless — no invalid approvals, no re-pinnable inputs");
+    return 0;
+  }
   console.log(`REBLESS PLAN — reason: "${reason}"`);
   for (const p of plan) {
     const rel = path.relative(root, p.f);
     console.log(`  ${p.invalid ? "re-approve" : "          "}  ${rel}` + (p.stale.length ? `  (+${p.stale.length} input re-pin)` : ""));
     if (p.invalid) console.log(`     diff: git log -p --since="${p.fm.approval.at ?? ""}" -- ${rel}`);
   }
+  printUnresolved();
   if (!yes) {
-    console.log(`${plan.filter(p => p.invalid).length} re-approval(s), ${plan.reduce((n, p) => n + p.stale.length, 0)} input re-pin(s).`);
+    console.log(`${plan.filter(p => p.invalid).length} re-approval(s), ${plan.reduce((n, p) => n + p.stale.length, 0)} input re-pin(s)` +
+      (unresolved.length ? `, ${unresolved.length} UNRESOLVED (manual)` : "") + ".");
     console.log("This was the PLAN. Read the diffs, then run again with --yes to execute.");
-    return 0;
+    return unresolved.length ? 1 : 0;
   }
   for (const p of plan) {
     for (const [inp, srcFile] of p.stale) inp.hash = sha256Body(srcFile);
@@ -561,8 +766,9 @@ function cmdRebless(root, by, reason, yes, repin) {
     if (p.invalid) { const [fm2] = readFrontmatter(p.f); fm2.approval.content_hash = sha256Body(p.f); writeFrontmatter(p.f, fm2); }
     console.log(`  ok ${path.relative(root, p.f)}`);
   }
-  console.log(`rebless done by ${by} — the reason travels inside every approval it touched.`);
-  return 0;
+  console.log(`rebless done by ${by} — the reason travels inside every approval it touched.` +
+    (unresolved.length ? ` ${unresolved.length} input(s) remain UNRESOLVED (listed above).` : ""));
+  return unresolved.length ? 1 : 0;
 }
 
 function cmdReport(root) {
@@ -682,8 +888,8 @@ function main() {
     }
     case "ws": {
       const sub = pos[0];
-      if (!["list", "done", "abandon"].includes(sub)) die("usage: docod.mjs ws list|done|abandon <key> [--reason ...]");
-      return cmdWs(root, sub, pos[1] ?? null, opt("--reason"));
+      if (!["list", "add", "done", "abandon"].includes(sub)) die("usage: docod.mjs ws list|add|done|abandon <key> [--reason ...] [--name ...]");
+      return cmdWs(root, sub, pos[1] ?? null, opt("--reason"), opt("--name"));
     }
     default:
       die("commands: status [--ws X] · continue <ws> · start · report · verify <file> · rebless · approve <file> --by <who> · ws list|done|abandon");

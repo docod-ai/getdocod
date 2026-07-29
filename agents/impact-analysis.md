@@ -42,7 +42,7 @@ contract:
         status: draft
       capabilities: [code_search, vcs_history, calculator, ask_user]
       postconditions:
-        - "evidence: Every affected area has a reason and a source (file:line, section, commit)"
+        - "evidence: Every affected area has a reason and a source (file:line with the observed fragment, section, commit)"
         - "judgment: Fact and inference are separated and labeled"
         - "deterministic: What could not be verified is declared as a gap, not omitted"
       note: |

@@ -4,6 +4,70 @@
 # -----------------------------------------------------------------------------
 migration:
   pending:
+    - id: diagnostic-mode
+      severity: major
+      issue: |
+        Market analysis from the field: greenfield sells prevention (hard),
+        legacy sells diagnosis (the pain is on the table). The reverse already
+        delivers the diagnosis — one pass produced 76 RFs and 18 DIVs, finding
+        a silent production bug, exposed PII and one-click destructive actions
+        in a repo the team considered healthy. What consumed the session was
+        NOT the reverse: it was the method overhead after it (approvals, pins,
+        cascades). The spearhead product is trapped inside the method.
+      decision: |
+        Name and package what already exists de facto: DIAGNOSTIC MODE —
+        reverse_* + triangulation + DIV table, no approvals, no pins, no
+        lineage, nothing frozen, no adoption required. "Point it at your repo;
+        get the evidenced map and the numbered list of everywhere your docs
+        lie." One command (/docod:diagnose or a documented flow), output is
+        the report. The full method is the upsell for whoever the result
+        scared. Cheap enough to demo, expensive enough to charge for.
+
+    - id: graduated-gate
+      severity: major
+      issue: |
+        Every artifact crosses the same gate with the same ceremony: fixing a
+        factual line ("3 steps" → "4", with directory evidence) costs the same
+        as approving the whole PRD scope. That is uniformity, not rigor — and
+        uniform rigor reduces compliance everywhere instead of rigor where it
+        matters. Field signal: the gate was bypassed twice with good reason in
+        one session. The method HAS the doctrine (decision-reversibility) and
+        did not apply it to itself.
+      decision: |
+        Scale what crosses the gate by blast radius, never who approves (that
+        stays human, non-negotiable). Design a CORRECTION edit class: factual,
+        evidenced, no semantic change — re-approved by confirmation instead of
+        re-review, recorded as such. rebless covers bulk-cosmetic; this covers
+        single-artifact minor. Adopted test criterion from the field: a third
+        good-reason bypass is DATA about granularity, not operator indiscipline.
+
+        The class is what the MACHINE delimits, never what the author declares
+        ("just a correction" is self-serving — the same fork 1.3.0 burned with
+        the executor's "additive, non-breaking"). Computable envelope: same
+        section count, same RF IDs, requires-graph untouched, AND the diff
+        touches no protected field — reuse the task co_writer's may_not_write
+        (overview, rules, requirements, success_criteria, task_tests). Diff SIZE
+        is the wrong leg: flipping `p95 < 100ms` to `300ms` is one character and
+        a semantic change; structural boundaries catch it, a threshold does not.
+        Inside the envelope, approve --correction confirms and fires the
+        downstream re-pin automatically; outside it, full ceremony.
+      pressure_note: |
+        Sharpened by the 1.5.0 review, and the reviewer is right on both
+        counts. (1) The two questions are separate and only one was ever
+        answered: WHO approves is this-or-nothing (human, settled); WHAT
+        crosses, in WHICH ceremony, is scalable and still uniform.
+        divergence_taxonomy is adjacent, not this: it decides whether a
+        divergence justifies an amendment, not what ceremony the amendment
+        must cross. (2) Structural irony, on record: everything 1.5.0 did
+        makes the tooling MORE honest — truncation fails, prose hashes warn,
+        broken promises fail — which means MORE catches arriving at the exact
+        bottleneck nobody widened. Honest tooling raises gate pressure; this
+        entry is the relief valve, and it is the highest-leverage open item
+        for the method surviving a team of twenty. Deliberately NOT rushed
+        into 1.5.0: gate granularity deserves rebless-grade design
+        (enforcement, not theater), and the doctrine to do it already exists
+        in decision-reversibility.
+
     - id: shared-language
       severity: minor
       issue: |

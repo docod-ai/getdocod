@@ -1,4 +1,4 @@
-specVersion: "1.4.0"
+specVersion: "1.5.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -268,6 +268,42 @@ artifacts:
       recommended on what basis, and what the human decided. The tech-lead
       appends; nobody rewrites. When an entry flags an ADR candidate, the ADR
       (once recorded) is the authority and this entry is its prehistory.
+
+  external-questions:
+    stage: define
+    owner: "{agent}"
+    format: yaml
+    append_only: true
+    optional: true
+    transversal: true
+    delivers: "The single queue of questions only an OUTSIDE owner can close — asked once, chased until answered, never scattered"
+    scope: [project]
+    path:
+      project: "{docsRoot}decisions/external-questions.yaml"
+    entry_schema:
+      id:        "EQ-nn, sequential"
+      question:  "what only the outside owner can answer"
+      owner:     "who outside the room answers (staging, backend, vendor, legal…)"
+      asked_by:  "agent that hit the wall"
+      at:        "date"
+      blocking:  "list of artifacts waiting on the answer"
+      state:     "open | answered"
+      answer:    "recorded verbatim when it arrives, with who and when"
+    note: |
+      Born from the field: EXTERNAL-OWNER questions (the class agent.yaml
+      already declares in question_classes) accumulated scattered across four
+      decision logs — the easiest kind to lose, because nobody inside the
+      project can close them and no artifact goes stale waiting. What was
+      missing was ONE place and one chaser.
+
+      Single file ON PURPOSE, unlike `decisions` (one file per agent, to avoid
+      merge conflicts): this queue's whole value is being ONE list to chase,
+      and append-only entries with sequential EQ ids keep merges trivial. Any
+      agent appends (same dynamic-owner exception as `decisions`, same
+      reason); an answered entry flips state and records the answer — it never
+      leaves the file. The `status` command surfaces the open ones on every
+      run: a question with an owner outside the room must cost something to
+      ignore.
 
   # ----- GOVERNANCE — RULES, not agents. See spec/rules.yaml -----
   #
@@ -911,7 +947,7 @@ open_questions:
     status: "resolved in design; the input version field in the frontmatter is still missing"
 
   - id: sections-como-contrato
-    severity: minor
+    severity: resolved
     issue: |
       I registered `sections:` in 24 of the 30, extracted from the prompt's
       MINIMUM SECTIONS. 6 declare no sections (JSON format or a prompt
@@ -919,4 +955,11 @@ open_questions:
       If `sections` is a contract, the validator can check whether the
       delivered document has the sections. If it is a suggestion, it is
       useless.
-    inclination: "Contract. A document missing a mandatory section does not pass the gate."
+    resolution: |
+      Contract. `verify` counts '##' headings against the declared minimum
+      and FAILS below it — count, not names, because instance docs are
+      written in the instance language and name-matching would false-fail.
+      Forced by the field: a truncated FRD, four sections and eleven
+      requirements short, passed with VERIFY OK and a hundred ✓ — the check
+      that measured provenance was read as measuring integrity, and the name
+      lied. (A declared "Title" section rides in the H1 and is discounted.)

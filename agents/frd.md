@@ -42,9 +42,9 @@ contract:
       capabilities: [code_search, ask_user]
       postconditions:
         - "evidence: Every claim carries provenance: evidence, inferred or user-supplied"
-        - "evidence: Every requirement derived from code points to file:line as evidence"
+        - "evidence: Every requirement derived from code points to file:line plus the observed fragment as evidence"
         - "evidence: Criticality is never evidence — the code doesn't know what is essential"
-        - "deterministic: Every doc-vs-code divergence is a DIV-nn entry with evidence on BOTH sides (file:line and doc section); divergences corroborated by another reverse cross-reference each other"
+        - "deterministic: Every doc-vs-code divergence is a DIV-nn entry with evidence on BOTH sides (file:line WITH the observed fragment, and doc section); divergences corroborated by another reverse cross-reference each other"
         - "judgment: Existing legacy documents were used as a MANDATORY triangulation source when present — cited via external provenance, never imported as artifacts"
         - "judgment: Questions only an external owner can answer (staging, backend team, vendor) are classed as external-owner questions — apart from gaps and product decisions"
       note: |

@@ -57,7 +57,7 @@ contract:
       postconditions:
         - "evidence: Every new surface since the last pass is listed with its source — endpoint, integration, data, or boundary"
         - "deterministic: Every accepted risk has a dated reconfirmation — who accepted it, and whether the reason still holds"
-        - "evidence: Every control in the table was looked for in the code; what no longer exists is called out with file:line"
+        - "evidence: Every control in the table was looked for in the code; what no longer exists is called out with file:line and the last observed fragment"
       note: |
         The attack surface only grows, and it grows without anyone deciding: an
         endpoint here, an integration there. A risk accepted a year ago at half
@@ -74,11 +74,11 @@ contract:
       capabilities: [code_search, ask_user]
       postconditions:
         - "evidence: Every claim carries provenance: evidence, inferred, or user-supplied"
-        - "evidence: Surface and existing controls come from the code as evidence (file:line)"
+        - "evidence: Surface and existing controls come from the code as evidence (file:line plus the observed fragment)"
         - "judgment: An ABSENT control is an explicit finding, not silence"
         - "evidence: INTENTION is never evidence — the code shows the control that exists, not the risk someone accepted"
         - "judgment: The reversed area is delimited and the limit is written down"
-        - "deterministic: Every doc-vs-code divergence is a DIV-nn entry with evidence on BOTH sides (file:line and doc section); divergences corroborated by another reverse cross-reference each other"
+        - "deterministic: Every doc-vs-code divergence is a DIV-nn entry with evidence on BOTH sides (file:line WITH the observed fragment, and doc section); divergences corroborated by another reverse cross-reference each other"
         - "judgment: Existing legacy documents were used as a MANDATORY triangulation source when present — cited via external provenance, never imported as artifacts"
         - "judgment: Questions only an external owner can answer (staging, backend team, vendor) are classed as external-owner questions — apart from gaps and product decisions"
       note: |
