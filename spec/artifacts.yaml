@@ -1,4 +1,4 @@
-specVersion: "1.5.0"
+specVersion: "1.6.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -776,6 +776,30 @@ artifacts:
     scope: [target]
     path:
       target: "{target.tasksRoot}prd-{ws}/pr.md"
+
+  diagnostic:
+    stage: confirm
+    lineage: snapshot
+    owner: tech-lead
+    optional: true
+    transversal: true
+    numbering: date
+    immutable: true
+    delivers: "The diagnostic summary: numbered DIV and RISK tables with owners, provenance census, open external questions, honest coverage"
+    scope: [project]
+    path:
+      project: "{docsRoot}quality/diagnostic/{date}-{slug}.md"
+    sections: [Scope & Coverage, Provenance Census, Divergences, Risks,
+               External Questions, What Was Not Read]
+    note: |
+      The consolidation of a DIAGNOSTIC MODE run (agent.yaml §
+      diagnostic_mode): the reverses produce the reversed artifacts; the
+      tech-lead consolidates the DIV-nn and RISK-nn registers here, each row
+      with id, owner and the evidence bar (file:line with the observed
+      fragment). Snapshot and immutable — a diagnostic is a record of a
+      moment; a new diagnosis is a NEW file, and the drift between two dated
+      diagnoses is itself a product. Never a gate, never approved by an
+      agent: the system it describes leaves pre-read, not pre-approved.
 
   # ------------------------------------------------------------- OBSERVE
   slos:

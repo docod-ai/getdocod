@@ -5,6 +5,52 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.6.0] — 2026-07-29
+
+The diagnostic release: the spearhead product unpacked from the method
+(migration.yaml `diagnostic-mode`, viability proven by the Blue City pilot
+on a foreign harness with none of the governance runtime present).
+
+Added: `/docod:diagnose` — diagnostic mode as a door. The reverse unhooked
+from governance: no approvals, no pins, no gates, no adoption required. What
+rides along, because it costs nothing and IS the value: provenance labels,
+observed-at hashes, DIV/RISK numbering with the evidence bar, an owner per
+finding, and the external-questions queue — the line between a diagnosis and
+a consultancy PDF. Everything produced is a dated snapshot: the system
+leaves PRE-READ, not PRE-APPROVED — nothing self-approves, and adopting the
+method later means a human vouching the artifacts forward.
+
+Added: the `diagnostic` artifact (39th) — the consolidation of a run, owned
+by the tech-lead (new `consolidate_diagnostic` action): numbered DIV and
+RISK tables with owners, provenance census, open external questions, honest
+coverage. Snapshot and immutable: a new diagnosis is a new file, and the
+drift between two dated diagnoses is itself a product.
+
+Changed: DIV-nn generalized from doc-vs-code to CLAIM-VS-REALITY — the claim
+side may be a legacy doc OR another code artifact's stated contract (a
+client type against the real endpoint shape is a legitimate DIV with no
+document involved; the field's DIV-17 was already this shape, homeless).
+
+Added: the RISK-nn class — the finding with no second side (exposed PII,
+one-click destructive actions, leaking surfaces): code plus the judgment
+that it is dangerous. Full parity with DIVs: numbered, same evidence bar
+(file:line with the observed fragment), an owner per item; classification
+maps to discipline the method already has (security-design Accepted Risks,
+divergence_taxonomy's unmet-target exclusion). The pilot improvised the
+label in prose; this promotes it to a class. Consequence for the offer: the
+diagnostic has TWO engines and only one needs docs — the precondition is
+"your system's parts stopped agreeing", not "you have docs you distrust".
+
+Fixed: the installer copied the bundle's own `.git` into `.docod/`, nesting a
+git repository inside the user's project and colliding with their repo. `.git`
+and `.gitignore` are now excluded from the bundle copy — the bundle installs as
+plain files, never as a repo.
+
+Docs: README's legacy section now covers `/docod:diagnose` and the
+claim-vs-reality DIV + RISK-nn model; the verification guarantee ("the rules
+nothing bends") reflects verify's completeness and prose-reference checks
+(catching up 1.5.0).
+
 ## [1.5.0] — 2026-07-29
 
 The field-report release: every change below answers a defect named by an

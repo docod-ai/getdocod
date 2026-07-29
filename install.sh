@@ -19,9 +19,10 @@
 #                                        generated here in bash. Ownership via
 #                                        the `generated-by: docod` marker; a
 #                                        namesake WITHOUT the marker: WARN AND SKIP.
-#   <project>/.claude/commands/docod/  ← the 7 orchestration commands
+#   <project>/.claude/commands/docod/  ← the 10 orchestration commands
 #                                        (status/start/continue/approve/ws/run/
-#                                        report). Our namespace; recreated on every sync.
+#                                        report/lead/loop/diagnose). Our
+#                                        namespace; recreated on every sync.
 #
 # THE MERGE RULE, one line: everything of ours lives namespaced (docod), and
 # what is not ours we never touch — not even to "help".
@@ -47,8 +48,10 @@ echo "   project: $TARGET"
 mkdir -p "$TARGET/.docod"
 # validate-layers.py is the bundle's DEV tool (validates the layers in the
 # source repo) — it is not part of what the user uses; installing it would
-# bring python along.
-EXCL="--exclude __pycache__ --exclude .DS_Store --exclude validate-layers.py --exclude install.sh --exclude report.html --exclude migration.yaml --exclude .claude-plugin --exclude plugin-commands"
+# bring python along. And .git/.gitignore are the bundle's OWN repo management:
+# copied into .docod/ they nest a git repo inside the user's project and
+# collide with theirs — the installer must never ship them.
+EXCL="--exclude __pycache__ --exclude .DS_Store --exclude .git --exclude .gitignore --exclude validate-layers.py --exclude install.sh --exclude report.html --exclude migration.yaml --exclude .claude-plugin --exclude plugin-commands"
 if command -v rsync >/dev/null 2>&1; then
   # shellcheck disable=SC2086
   rsync -a --delete $EXCL "$BUNDLE/" "$TARGET/.docod/"
@@ -62,7 +65,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.5.0"
+specVersion: "1.6.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -326,7 +329,45 @@ are parallel dispatches. It never replaces a gate.
    evidence pointers; then the exact queue awaiting the human (approvals,
    questions, decisions). Deploy and release remain human acts.
 LOOP
-echo "   ✓ 9 commands → .claude/commands/docod/  (status·start·continue·approve·ws·run·report·lead·loop)"
+cat > "$CMD/diagnose.md" <<'DIAG'
+---
+description: "Diagnostic mode: point DOCOD at the repo, get the evidenced map — DIVs, RISKs, provenance. No adoption required."
+argument-hint: "[target] [--with-docs <dir>]"
+---
+DIAGNOSTIC MODE (.docod/spec/agent.yaml § diagnostic_mode): the reverse
+unhooked from governance. No approvals, no pins, no gates — and everything
+produced is a DATED SNAPSHOT. You never write `status: approved` anywhere;
+this run more than any other: the system leaves PRE-READ, not PRE-APPROVED.
+
+1. SCOPE. Read docod.yaml (targets, language, docsRoot) and $ARGUMENTS.
+   Legacy docs found in the repo (or pointed via --with-docs) are a
+   TRIANGULATION source — cited as external provenance, never imported.
+   No docs at all is NOT a blocker: the risk engine fires on a mute repo.
+2. RUN THE REVERSES: delegate the reverse_* actions that apply —
+   docod-prd, docod-system-design, docod-data-design, docod-api-contract,
+   docod-security-design (and docod-rules-factory extract_from_code when
+   standards matter). Each honors reverse_conventions: provenance on every
+   claim (evidence = file:line with the observed fragment | inferred |
+   user-supplied), DIV-nn for claim-vs-reality divergences (the claim side
+   may be a doc OR another code artifact's contract), RISK-nn for one-way
+   risks (PII, destructive actions, exposure), EXTERNAL-OWNER questions
+   appended to {docsRoot}decisions/external-questions.yaml, an owner per
+   finding. Hand-back questions: relay them verbatim, reinvoke with answers.
+3. CONSOLIDATE: delegate docod-tech-lead consolidate_diagnostic → the
+   `diagnostic` artifact ({docsRoot}quality/diagnostic/{date}-{slug}.md,
+   sections per artifacts.yaml). Then run
+   `node .docod/docod.mjs verify <the file>` and paste its output — the
+   diagnostic submits to the same external verification it performs.
+4. REPORT: run `node .docod/docod.mjs report` and offer the dashboard.
+   Present the summary as the NUMBERS first: N DIVs, N RISKs, N open
+   external questions, provenance census — then the gravest three, with
+   their evidence.
+5. THE LINE: nothing self-approves. If the user wants the diagnosis to STAY
+   true — staleness watching the drift, gates on the amendments — that is
+   the method, and adopting it means a human vouching these artifacts
+   forward. Say exactly that when asked, and nothing more ambitious.
+DIAG
+echo "   ✓ 10 commands → .claude/commands/docod/  (status·start·continue·approve·ws·run·report·lead·loop·diagnose)"
 
 # ── 6. root instructions → CLAUDE.md + AGENTS.md (EVERY harness finds DOCOD)
 #      Slash commands only exist for Claude Code; Codex/Gemini/Cursor/Kimi read
@@ -382,4 +423,5 @@ echo "── Done. Open Claude Code in $TARGET:"
 echo "   /docod:start          → the entry doors"
 echo "   /docod:status         → where you are"
 echo "   /docod:run <agent>    → invoke an agent (subagent docod-<agent>)"
+echo "   /docod:diagnose       → diagnostic mode: DIVs + RISKs + provenance, no adoption"
 echo "   /docod:report         → HTML dashboard (documents · kanban · flow)"

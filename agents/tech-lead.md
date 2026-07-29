@@ -7,9 +7,29 @@ capabilities: [code_search, vcs_history, vcs_diff, doc_lookup, web_search]
 skills: [decision-reversibility, architecture-boundaries, handoff]
 contract:
   owns:
-    artifact: counsel
+    artifact: [counsel, diagnostic]
   triggers: [adr, tradeoffs, rfc, impact-analysis]
   actions:
+    consolidate_diagnostic:
+      stage: confirm
+      scope: [project]
+      requires: []
+      reads: [prd, frd, system-design, data-design, api-contract,
+              security-design, code, decisions, external-questions]
+      writes:
+        artifact: diagnostic
+        status: draft
+      capabilities: [code_search, vcs_history, vcs_diff]
+      postconditions:
+        - "deterministic: Every DIV and RISK row has an id, an owner, and evidence (file:line with the observed fragment)"
+        - "deterministic: Open EXTERNAL-OWNER questions are appended to the external-questions queue, never kept inline only"
+        - "evidence: The provenance census is derived from the reversed artifacts' own labels, cited per artifact"
+        - "judgment: Coverage is honest — what was NOT read is listed, and no finding claims more certainty than its provenance class"
+      note: |
+        The END of a diagnostic-mode run (agent.yaml § diagnostic_mode): the
+        reverses produce, this consolidates. Requires nothing because a
+        diagnostic asks for no adoption. Writes draft and stays there —
+        pre-read, never pre-approved.
     advise:
       stage: define
       scope: [project, ws]

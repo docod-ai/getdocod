@@ -6,6 +6,14 @@ migration:
   pending:
     - id: diagnostic-mode
       severity: major
+      progress: |
+        Machinery shipped in 1.6.0: /docod:diagnose (installer command),
+        agent.yaml § diagnostic_mode, DIV-nn generalized to claim-vs-reality,
+        RISK-nn as a first-class numbered finding, the `diagnostic` artifact
+        (tech-lead.consolidate_diagnostic). Remaining is PRODUCT, not
+        machinery: a dedicated report output profile (DIV/RISK view), the
+        offer framing in README/landing (the two-engine precondition,
+        pre-read-not-pre-approved), and pricing.
       issue: |
         Market analysis from the field: greenfield sells prevention (hard),
         legacy sells diagnosis (the pain is on the table). The reverse already
@@ -22,6 +30,65 @@ migration:
         lie." One command (/docod:diagnose or a documented flow), output is
         the report. The full method is the upsell for whoever the result
         scared. Cheap enough to demo, expensive enough to charge for.
+      design_notes: |
+        Settled across three analysis rounds (2026-07-29), each point checked
+        against the record rather than the summary of it:
+
+        VIABILITY IS ANSWERED, empirically. The Blue City pilot ran the
+        reverse on a FOREIGN harness (Kimi K3 over AGENTS.md, no docod.mjs):
+        3 reversed designs, 40 cross-corroborated DIVs, a privacy finding
+        classified as RISK, stale detection of the legacy docs and of our
+        own. The reverse survives without the method. What remains is
+        packaging, not machinery.
+
+        THE DECOMPOSITION that makes it separable: the method bundles three
+        layers the diagnostic splits — provenance labels (writing
+        discipline, zero cost, travels in the text), content hash (twenty
+        mechanical lines), governance (approval, pin, cascade — the
+        expensive part). The divergence object needs the first two and none
+        of the third. In legacy, the frozen human side is the legacy doc
+        ITSELF — vouched by existing, not by being approved. Diagnostic mode
+        is snapshot lineage applied to EVERYTHING — a record of a moment,
+        observed-at inputs, reported and never failed — a class the registry
+        already has; no weakened method needed.
+
+        TWO ENGINES, and the offer's precondition follows. (1) doc-vs-code:
+        the DIV table; dries up without docs. (2) code-against-itself: parts
+        that stopped agreeing, exposed PII, one-click destructive actions,
+        silent production bugs — fires on a mute repo (the pilot's privacy
+        RISK and the field report's production findings are this engine).
+        The precondition of the offer is therefore NOT "you have docs you do
+        not trust" — it is "your system is big enough that its parts have
+        stopped agreeing". Writing it as needs-docs gives away the sickest
+        segment (large, undocumented) for free.
+        Object-model gap to close in packaging: DIV-nn is DEFINED as
+        doc-vs-code (reverse_conventions), so the second engine's output —
+        the pilot's "RISK" — exists only in prose today. The diagnostic
+        report must carry it first-class (a numbered finding class beside
+        the DIVs, with the same both-sides evidence bar) or the strongest
+        engine ships unlabeled. Related honest nuance: cross-corroboration
+        is defined as the strongest signal TRIANGULATION produces, so a
+        cross-corroborated DIV normally still has a doc side — the
+        code-only evidence for engine 2 is the RISK/finding class, not the
+        DIV count.
+
+        THE UPSELL, said honestly: a diagnostic deposits DATED observed-at
+        hashes and provenance labels — the system is pre-READ, not
+        pre-APPROVED. Nothing self-approves; a snapshot does not become a
+        live baseline without a human vouching each artifact forward. The
+        pitch is "we have read and dated your system; adopting the method is
+        vouching that forward" — strong, and inside the product's own law.
+        "The baseline is already pinned" overclaims and contradicts the law
+        the product sells.
+
+        ZERO-COST GOVERNANCE FLOOR — the line between a diagnosis and a
+        consultancy PDF: the diagnostic is born with the external-questions
+        queue populated and an owner per finding. Both shipped in 1.5.0,
+        both costless, and they are the ONLY governance that rides along.
+
+        Remaining work, exactly: /docod:diagnose (or the documented flow), a
+        report output profile focused on DIVs + findings + provenance, and
+        the two framings above written into the offer.
 
     - id: graduated-gate
       severity: major

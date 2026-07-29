@@ -1,4 +1,4 @@
-specVersion: "1.5.0"
+specVersion: "1.6.0"
 
 # =============================================================================
 # LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
@@ -359,10 +359,28 @@ reverse_conventions:
     imported as artifacts. Where doc and code diverge, that is a FINDING, not
     noise: it shows where the old documentation already lied.
   divergences: |
-    Every divergence is a numbered DIV-nn entry: what the doc says, what the
-    code does, evidence on BOTH sides (file:line WITH the observed fragment,
-    and doc section). A divergence corroborated independently by another
-    reverse cross-references it — the strongest signal triangulation produces.
+    Every divergence is a numbered DIV-nn entry: the CLAIM, the REALITY,
+    evidence on BOTH sides (file:line WITH the observed fragment; doc section
+    when the claim side is a document). The claim side may be a legacy doc OR
+    another code artifact's stated contract — a client type against the real
+    endpoint shape is a legitimate DIV with no document involved. Generalized
+    from "doc-vs-code" to CLAIM-VS-REALITY after the field's DIV-17 showed
+    the second shape was already being produced without a home. A divergence
+    corroborated independently by another reverse cross-references it — the
+    strongest signal triangulation produces.
+  risks: |
+    Not every finding has two sides. Exposed PII, a one-click destructive
+    action, a surface leaking backend detail: code plus the judgment that it
+    is dangerous — nothing to contradict against. These are RISK-nn entries,
+    with full parity to DIVs: numbered, the same evidence bar (file:line with
+    the observed fragment), an owner per item. Classification uses discipline
+    the method already has: a risk someone accepts on record belongs in
+    security-design's Accepted Risks; an unmet hardening GOAL is
+    divergence_taxonomy's UNMET TARGET, not a finding. The pilot improvised
+    this class as "RISK" in prose; this promotes the label to a class. In
+    regulated segments it is the diagnostic's strongest output — PII,
+    destructive actions, exposure are audit currency, and an audit accepts a
+    numbered, evidenced, owned register.
   question_classes: |
     Three classes, never mixed: GAP (nobody knows yet), PRODUCT DECISION
     (the human decides), EXTERNAL-OWNER (only staging/backend/vendor can
@@ -376,6 +394,36 @@ reverse_conventions:
     of a divergence — cited as external provenance, honestly marked as having
     no content hash. A ghost premise (a workaround documented for code that no
     longer exists) is BURIED ON RECORD, so nobody fixes what is not there.
+
+# -----------------------------------------------------------------------------
+# DIAGNOSTIC MODE — the reverse unhooked from governance (field-proven)
+# -----------------------------------------------------------------------------
+diagnostic_mode: |
+  The reverse_* actions run WITHOUT the method: no approvals, no pins, no
+  gates, no adoption required — viability proven on a foreign harness (the
+  Blue City pilot ran the reverses with none of the governance runtime
+  present). What stays, because it costs nothing and IS the value: provenance
+  labels on every claim, the content hash of everything read (observed-at,
+  dated), DIV-nn and RISK-nn numbering with the evidence bar, an owner per
+  finding, and EXTERNAL-OWNER questions appended to the external-questions
+  queue — the only governance that rides along, and the line between a
+  diagnosis and a consultancy PDF.
+
+  Everything produced is snapshot lineage BY DEFINITION — a diagnostic is a
+  record of a moment. Nothing it writes self-approves, and nothing it writes
+  becomes a live baseline without a human vouching each artifact forward:
+  the system leaves PRE-READ, never PRE-APPROVED. That sentence is the
+  honest upsell — "we have read and dated your system; adopting the method
+  is vouching that forward" — and the dishonest one ("your baseline is
+  already pinned") contradicts the law the product sells.
+
+  Two engines feed it, and only one needs docs: claim-vs-reality divergences
+  (DIVs — dry up without a claim side) and one-way risks (RISKs — fire on a
+  repo with no docs at all). The offer's precondition is therefore not "you
+  have docs you do not trust" but "your system is big enough that its parts
+  have stopped agreeing". The tech-lead consolidates the run into the
+  `diagnostic` artifact; the /docod:diagnose command (adapter layer) is the
+  door.
 
 # -----------------------------------------------------------------------------
 # WRITE ORDER — the incomplete-run marker (field-learned)
