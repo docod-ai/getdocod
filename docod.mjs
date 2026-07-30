@@ -236,6 +236,21 @@ function cmdStatus(root, ws = null) {
   console.log(`DOCOD · ${inst?.project?.name ?? "?"} · ${path.basename(root)}`);
   console.log("═".repeat(70));
 
+  // CONFIG GAP — the product language was never chosen. install.sh writes it
+  // `unset` on purpose (rules.yaml: no invented value; an unanswered field is a
+  // declared GAP). Any agent about to PRODUCE must resolve it FIRST — ask the
+  // user, record it in docod.yaml — whatever door they entered. Surfaced here
+  // because status is the state every door derives from: one trigger, door-blind.
+  {
+    const lang = String(inst?.language ?? "").trim().toLowerCase();
+    if (!lang || lang === "unset" || lang === "ask") {
+      console.log("\n⚠ CONFIG GAP: docod.yaml `language:` is UNSET — the product language was never chosen.");
+      console.log("  Before producing ANY artifact, inquiry or report, ask the user which language");
+      console.log("  (the method reasons in English; the product speaks theirs: en, pt-BR, es, de…)");
+      console.log("  and record it in docod.yaml. No door skips this; there is no silent default.");
+    }
+  }
+
   if (Object.keys(wss).length) {
     console.log("\nWORKSTREAMS");
     for (const [k, w] of Object.entries(wss)) {
@@ -618,6 +633,26 @@ function cmdVerify(root, file) {
         warns.push(`${unresolvable} file:line anchor(s) carry a fragment but the cited path could not be resolved to verify it — check the path is project-relative`);
     }
   }
+  // ABSOLUTE-ABSENCE guard — a produced narrative that claims no rationale/decision
+  // exists at all ("not one why", "no decision on file", "never recorded") over-reads
+  // a metric: a zero in ONE census class is not absence of the concept. The field
+  // flatten was "0 user-supplied / 0 decided → not one why was ever recorded" — false,
+  // because legacy rationale lives in `external`, recorded not ratified (see agent.yaml
+  // reverse_conventions.census). Flag it so the author confirms against the sibling
+  // classes or qualifies it. Snapshot narratives only; what a machine can check, it checks.
+  if (p.endsWith(".md") && selfArt?.lineage === "snapshot") {
+    const ABS = [
+      /\bnot one\b[^.]{0,40}\b(?:why|rationale|reason|decision|recorded)/i,
+      /\bno\b[^.,;]{0,30}\b(?:why|rationale|reason|decision)\b[^.,;]{0,30}\b(?:recorded|documented|exists?|on file|ever)/i,
+      /\b(?:never|not once)\b[^.,;]{0,25}\b(?:recorded|decided|ratified|documented)\b/i,
+      /\bnenhum[ao]?\b[^.,;]{0,45}\b(?:porqu|raz[aã]o|decis|registrad|documentad)/i,
+    ];
+    const hits = [];
+    for (const line of body0.split("\n"))
+      for (const rx of ABS) { const m = line.match(rx); if (m) { hits.push(m[0].replace(/\s+/g, " ").trim().slice(0, 56)); break; } }
+    if (hits.length)
+      warns.push(`${hits.length} absolute-absence claim(s) about rationale/decisions (e.g. "${hits[0]}…") — a zero in one census class is NOT absence of the concept; legacy rationale lives in 'external' (recorded, not ratified). Confirm each against the sibling classes, or qualify it ("recorded but never re-ratified")`);
+  }
   for (const inp of fm.inputs || []) {
     if (inp.hash != null && !HASH_RX.test(String(inp.hash)))
       warns.push(`input ${inp.artifact}: hash field holds a NON-HASH value ('${String(inp.hash).slice(0, 40)}') — placeholder written instead of a computed hash`);
@@ -852,6 +887,37 @@ function cmdReport(root) {
   return 0;
 }
 
+function cmdDiagnosticReport(root) {
+  // The SELLABLE surface of diagnostic mode. Same discipline as `report`: static,
+  // self-contained, zero opinion of its own — it renders the `report:` data block
+  // the tech-lead's consolidate_diagnostic already emitted (artifacts.yaml §
+  // diagnostic, REPORT DATA CONTRACT). The template is dumb; the data is the work.
+  const { inst } = loadModel(root);
+  const dir = path.join(root, docsRoot(inst), "quality", "diagnostic");
+  const files = fs.existsSync(dir)
+    ? fs.readdirSync(dir).filter(f => f.endsWith(".md") && !f.endsWith("-report.md")).map(f => path.join(dir, f))
+    : [];
+  if (!files.length)
+    die(`✗ no diagnostic artifact in ${path.relative(root, dir)} — run /docod:diagnose first`);
+  files.sort((a, b) => (a < b ? 1 : -1)); // latest by dated {date}-{slug} name
+  const dxFile = files[0];
+  const [fm] = readFrontmatter(dxFile);
+  const report = fm.report;
+  if (!report || typeof report !== "object")
+    die(`✗ ${path.relative(root, dxFile)} has no \`report:\` block — consolidate_diagnostic must emit the data contract (artifacts.yaml § diagnostic)`);
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const tpl = fs.readFileSync(path.join(here, "diagnostic-template.html"), "utf-8");
+  // < prevents a `</script>` inside any observed fragment from closing the block;
+  // function replacement so $&, $`, $' in a fragment are not read as patterns.
+  const payload = JSON.stringify(report).replace(/</g, "\\u003c");
+  const out = dxFile.replace(/\.md$/, "-report.html");
+  fs.writeFileSync(out, tpl.replace("__DIAGNOSTIC_JSON__", () => payload));
+  console.log(`✓ diagnostic report → ${path.relative(root, out)}`);
+  console.log(`  open it in the browser: open ${path.relative(root, out)}`);
+  console.log("  (static, self-contained, dated snapshot — pre-read, not pre-approved)");
+  return 0;
+}
+
 /* ─────────────────────────────────────────────────────────────────────── cli */
 
 function main() {
@@ -871,7 +937,7 @@ function main() {
       return cmdStatus(root, pos[0]);
     }
     case "start":    return cmdStart(root);
-    case "report":   return cmdReport(root);
+    case "report":   return argv.includes("--diagnostic") ? cmdDiagnosticReport(root) : cmdReport(root);
     case "rebless": {
       const by = opt("--by"), reason = opt("--reason");
       if (!by) die('usage: docod.mjs rebless --by <who> --reason "..." [--repin-inputs] [--yes]');

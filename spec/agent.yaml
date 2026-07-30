@@ -1,4 +1,4 @@
-specVersion: "1.6.0"
+specVersion: "1.7.0"
 
 # =============================================================================
 # LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
@@ -394,6 +394,21 @@ reverse_conventions:
     of a divergence — cited as external provenance, honestly marked as having
     no content hash. A ghost premise (a workaround documented for code that no
     longer exists) is BURIED ON RECORD, so nobody fixes what is not there.
+  census: |
+    The provenance census counts every claim by class, and it has TWO AXES that
+    must never be collapsed: RECORDED (the claim or rationale exists in a source
+    — evidence, external, git-history) vs RATIFIED this run (a human vouched it
+    now — user-supplied, or decided via an ADR). `user-supplied: 0` means NOBODY
+    RATIFIED during this delegated run; it does NOT mean no rationale exists.
+    Legacy rationale — a PRD's explicit "Why:", a techspec's decision — is
+    `external`: recorded, not ratified. A zero in one class is NEVER absence of
+    the concept, and no summary may say so ("not one why was recorded" is the
+    flatten to refuse). The defensible reading is also the sharper one, and it
+    sells: rationale that lives only in documents THIS diagnosis contradicts is a
+    quotation from a CONTESTED source — recorded, never re-ratified, not
+    evidence. Defendant and witness cannot be the same document. The census
+    surfaces `external` beside the zeros for exactly this reason; the narrative
+    reads the whole set, never a subset.
 
 # -----------------------------------------------------------------------------
 # DIAGNOSTIC MODE — the reverse unhooked from governance (field-proven)

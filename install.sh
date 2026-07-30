@@ -65,7 +65,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.6.0"
+specVersion: "1.7.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -79,7 +79,11 @@ adapter: claude-code
 # The language of everything the method PRODUCES in this repo: artifacts,
 # inquiry questions, reports. The method itself speaks English; the product
 # speaks this. (e.g.: en, pt-BR, es, de)
-language: en
+# Left unset ON PURPOSE: an invented default is what rules.yaml forbids
+# (no invented value; an unanswered field is a declared GAP). The first agent
+# to produce — at ANY door — asks you and records the choice here; the status
+# command shows it as a gap until then.
+language: unset
 
 # The root for the method's artifacts in this repo. The stage (define/observe/…)
 # NEVER becomes a folder — stage is metadata; grouping inside is by nature:
@@ -217,7 +221,10 @@ It is your prompt: contract, postconditions (with the nature of each one),
    point out that it needs an ADR — the \`adr\` agent records ADRs, never you.
 5. THE PRODUCT'S LANGUAGE: write everything you produce — artifacts, inquiry
    questions, reports — in the \`language\` set in docod.yaml. The method speaks
-   English; the product speaks the instance's language.
+   English; the product speaks the instance's language. If \`language\` is
+   \`unset\`, STOP before producing: ask the user which language and record it
+   in docod.yaml first — no entry door skips this, and an invented default is
+   forbidden.
 6. A missing external tool (browser MCP, docs MCP) is NOT a license to
    improvise: degrade per the adapter and RECORD "not verified".
 7. Hooks do NOT fire in subagents. For the COMPUTABLE class (frontmatter,
@@ -355,13 +362,19 @@ this run more than any other: the system leaves PRE-READ, not PRE-APPROVED.
    finding. Hand-back questions: relay them verbatim, reinvoke with answers.
 3. CONSOLIDATE: delegate docod-tech-lead consolidate_diagnostic → the
    `diagnostic` artifact ({docsRoot}quality/diagnostic/{date}-{slug}.md,
-   sections per artifacts.yaml). Then run
-   `node .docod/docod.mjs verify <the file>` and paste its output — the
-   diagnostic submits to the same external verification it performs.
-4. REPORT: run `node .docod/docod.mjs report` and offer the dashboard.
-   Present the summary as the NUMBERS first: N DIVs, N RISKs, N open
-   external questions, provenance census — then the gravest three, with
-   their evidence.
+   sections per artifacts.yaml) — WITH the machine-readable `report:` block in
+   its frontmatter (the REPORT DATA CONTRACT, artifacts.yaml § diagnostic:
+   census with the recorded/ratified axes, DIV/RISK rows, gravest, questions).
+   Then run `node .docod/docod.mjs verify <the file>` and paste its output —
+   the diagnostic submits to the same external verification it performs, and
+   verify flags any absolute-absence claim ("no why recorded") for you to
+   qualify before it ships.
+4. REPORT: run `node .docod/docod.mjs report --diagnostic` — the sellable,
+   self-contained dossier rendered from the `report:` block (this is THE
+   deliverable). Present the summary NUMBERS first: N DIVs, N RISKs, N open
+   external questions, and the census read as recorded-vs-ratified (a zero in
+   one class is NOT absence — legacy rationale lives in external) — then the
+   gravest, with their evidence.
 5. THE LINE: nothing self-approves. If the user wants the diagnosis to STAY
    true — staleness watching the drift, gates on the amendments — that is
    the method, and adopting it means a human vouching these artifacts

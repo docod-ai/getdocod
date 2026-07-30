@@ -5,6 +5,35 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.7.0] — 2026-07-29
+
+The diagnostic-as-product release: three fronts that make the diagnostic
+honest, sellable, and free of silent defaults.
+
+Added: the sellable report profile. `docod.mjs report --diagnostic` renders a
+static, self-contained, theme-aware dossier from the `report:` data block the
+tech-lead's `consolidate_diagnostic` now emits (the REPORT DATA CONTRACT in
+artifacts.yaml § diagnostic). Shock-first, evidence-dense (file:line with the
+observed fragment), the honest "pre-read, not pre-approved" line kept as the
+trust signal; the template is dumb, the consolidation is the intelligence.
+Wired into /docod:diagnose as THE deliverable.
+
+Added: the product language is asked, never defaulted. install.sh writes
+`language: unset` (an invented default is what rules.yaml forbids); `status`
+shows a CONFIG GAP until it is set, at ANY entry door; the shared agent preamble
+stops before producing and records the choice. One trigger on the root file,
+not per-command.
+
+Changed: the provenance census reads on TWO AXES — recorded (evidence +
+external + git-history) vs ratified this run (user-supplied + decided). A zero
+in one class is never absence of the concept: legacy rationale lives in
+`external`, recorded not ratified. `verify` now flags absolute-absence claims
+("not one why was recorded", "no decision on file") in produced narratives so
+the flatten cannot ship. Born on record: a brief that read "0 user-supplied →
+no why exists" while the legacy PRD carried explicit rationale.
+
+specVersion → 1.7.0 in lockstep (5 spec files + install.sh + plugin.json).
+
 ## [1.6.0] — 2026-07-29
 
 The diagnostic release: the spearhead product unpacked from the method

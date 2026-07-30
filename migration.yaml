@@ -10,10 +10,13 @@ migration:
         Machinery shipped in 1.6.0: /docod:diagnose (installer command),
         agent.yaml § diagnostic_mode, DIV-nn generalized to claim-vs-reality,
         RISK-nn as a first-class numbered finding, the `diagnostic` artifact
-        (tech-lead.consolidate_diagnostic). Remaining is PRODUCT, not
-        machinery: a dedicated report output profile (DIV/RISK view), the
-        offer framing in README/landing (the two-engine precondition,
-        pre-read-not-pre-approved), and pricing.
+        (tech-lead.consolidate_diagnostic). 1.7.0 shipped the SELLABLE REPORT
+        PROFILE: `report --diagnostic` renders a static dossier from the
+        `report:` data contract (diagnostic-template.html), the census reads
+        recorded-vs-ratified, and verify flags absolute-absence claims so the
+        "no why" flatten cannot ship. Remaining is pure GO-TO-MARKET: the offer
+        framing in README/landing (two-engine precondition,
+        pre-read-not-pre-approved) and pricing — no machinery left.
       issue: |
         Market analysis from the field: greenfield sells prevention (hard),
         legacy sells diagnosis (the pain is on the table). The reverse already

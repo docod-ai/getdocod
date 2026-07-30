@@ -22,6 +22,8 @@ contract:
       capabilities: [code_search, vcs_history, vcs_diff]
       postconditions:
         - "deterministic: Every DIV and RISK row has an id, an owner, and evidence (file:line with the observed fragment)"
+        - "deterministic: The frontmatter carries the `report:` data block (census with recorded/ratified, DIV/RISK rows, gravest, questions) per artifacts.yaml § diagnostic — the report profile renders the sellable dossier from it"
+        - "judgment: The census is read as two axes, never collapsed — a zero in user-supplied/decided is NOT absence of rationale; legacy why lives in `external`, recorded not ratified. No summary says 'no why exists'"
         - "deterministic: Open EXTERNAL-OWNER questions are appended to the external-questions queue, never kept inline only"
         - "evidence: The provenance census is derived from the reversed artifacts' own labels, cited per artifact"
         - "judgment: Coverage is honest — what was NOT read is listed, and no finding claims more certainty than its provenance class"

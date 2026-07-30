@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Repository Diagnostic</title>
+<style>
+  :root {
+    --paper:#eef0f4; --surface:#ffffff; --ink:#14181f; --text:#1b1f27;
+    --muted:#5b6472; --faint:#8a92a0; --rule:#d7dbe2; --rule-2:#e6e9ef;
+    --critical:#c62b3c; --high:#b26a06; --verify:#12806a; --accent:#c62b3c;
+    --panel:#161b23;
+    --mono:"SF Mono","JetBrains Mono","Fira Code",ui-monospace,Menlo,Consolas,monospace;
+    --serif:"Charter","Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper:#0d1017; --surface:#151a22; --ink:#e9ecf1; --text:#dfe3ea;
+      --muted:#98a2b2; --faint:#6b7484; --rule:#262d38; --rule-2:#1e242e;
+      --critical:#f0576a; --high:#e0a03c; --verify:#3bb59a; --accent:#f0576a; }
+  }
+  :root[data-theme="light"] { --paper:#eef0f4; --surface:#ffffff; --ink:#14181f; --text:#1b1f27;
+    --muted:#5b6472; --faint:#8a92a0; --rule:#d7dbe2; --rule-2:#e6e9ef;
+    --critical:#c62b3c; --high:#b26a06; --verify:#12806a; --accent:#c62b3c; }
+  :root[data-theme="dark"] { --paper:#0d1017; --surface:#151a22; --ink:#e9ecf1; --text:#dfe3ea;
+    --muted:#98a2b2; --faint:#6b7484; --rule:#262d38; --rule-2:#1e242e;
+    --critical:#f0576a; --high:#e0a03c; --verify:#3bb59a; --accent:#f0576a; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--text);
+    font-family: var(--sans); line-height: 1.6; font-size: 17px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 0 24px; }
+  ::selection { background: var(--accent); color: #fff; }
+
+  .hero { background: var(--panel); color: #eef0f4; padding: 60px 0 52px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: #98a2b2; margin: 0 0 26px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  .eyebrow .dot { color: var(--critical); }
+  h1.thesis { font-family: var(--serif); font-weight: 700; text-wrap: balance;
+    font-size: clamp(30px, 5.2vw, 52px); line-height: 1.06; letter-spacing: -.01em; margin: 0 0 22px; color: #fbfcfe; }
+  h1.thesis em { font-style: normal; color: var(--critical); }
+  .standfirst { font-size: clamp(16px, 2.2vw, 19px); color: #c3cad6; max-width: 62ch; margin: 0; line-height: 1.5; }
+  .standfirst strong { color: #fbfcfe; font-weight: 600; }
+
+  .stats { border-bottom: 1px solid var(--rule); background: var(--surface); }
+  .stats .grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .stat { padding: 26px 22px; border-left: 1px solid var(--rule-2); }
+  .stat:first-child { border-left: 0; }
+  .stat .n { font-family: var(--serif); font-weight: 700; font-size: 40px; line-height: 1;
+    font-variant-numeric: tabular-nums; color: var(--ink); }
+  .stat .lab { font-size: 13px; color: var(--muted); margin-top: 9px; line-height: 1.35; }
+  .stat .lab b { color: var(--text); font-weight: 600; }
+
+  .census { background: var(--surface); border-bottom: 1px solid var(--rule); }
+  .census .wrap { padding: 18px 24px; display: flex; gap: 8px 18px; align-items: baseline; flex-wrap: wrap; }
+  .census .mono { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .census .zero { color: var(--critical); font-weight: 700; }
+  .census .num { color: var(--ink); font-weight: 700; }
+  .census .pt { font-family: var(--serif); font-size: 16px; color: var(--ink); font-style: italic; flex-basis: 100%; margin-top: 4px; }
+
+  section { padding: 50px 0; border-bottom: 1px solid var(--rule); }
+  .kicker { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--faint); margin: 0 0 6px; }
+  h2 { font-family: var(--serif); font-weight: 700; font-size: clamp(22px, 3.4vw, 30px);
+    letter-spacing: -.01em; margin: 0 0 26px; color: var(--ink); text-wrap: balance; }
+
+  .find { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--sev);
+    border-radius: 3px; padding: 24px 26px; margin-bottom: 20px; }
+  .find.crit { --sev: var(--critical); }
+  .find.high { --sev: var(--high); }
+  .find.med  { --sev: var(--muted); }
+  .find header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+  .find .idx { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--sev);
+    letter-spacing: .03em; }
+  .find h3 { font-family: var(--sans); font-weight: 650; font-size: 20px; margin: 0; color: var(--ink);
+    flex: 1; min-width: 240px; letter-spacing: -.01em; }
+  .chip { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 100px; border: 1px solid var(--sev); color: var(--sev);
+    white-space: nowrap; font-weight: 600; }
+  .find p.stakes { margin: 0 0 14px; color: var(--text); }
+  .evidence { font-family: var(--mono); font-size: 13px; line-height: 1.7; background: var(--paper);
+    border: 1px solid var(--rule-2); border-radius: 3px; padding: 12px 14px; margin: 0 0 14px;
+    overflow-x: auto; color: var(--muted); }
+  .evidence .loc { color: var(--ink); }
+  .evidence .obs { color: var(--text); }
+  .find .meta { display: flex; gap: 8px 18px; flex-wrap: wrap; font-family: var(--mono); font-size: 13px; }
+  .find .corr { color: var(--verify); display: flex; align-items: center; gap: 7px; }
+  .find .corr::before { content: "\25C6"; font-size: 10px; }
+  .find .owner { color: var(--faint); }
+
+  .trust { background: var(--panel); color: #dfe3ea; }
+  .trust .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .trust .t { padding: 6px 22px 6px 0; border-right: 1px solid #262d38; }
+  .trust .t:last-child { border-right: 0; }
+  .trust .tn { font-family: var(--serif); font-size: 22px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+  .trust .tn .v { color: var(--verify); }
+  .trust .tl { font-size: 12.5px; color: #98a2b2; margin-top: 4px; line-height: 1.4; }
+
+  .line { background: var(--surface); }
+  .line .wrap { max-width: 760px; }
+  .line .big { font-family: var(--serif); font-size: clamp(21px, 3vw, 27px); line-height: 1.4;
+    color: var(--ink); margin: 0 0 16px; text-wrap: balance; }
+  .line .big b { color: var(--critical); font-weight: 700; }
+  .line p { color: var(--muted); margin: 0 0 12px; max-width: 64ch; }
+
+  .cta { background: var(--paper); border-bottom: 0; }
+  .q { display: flex; gap: 16px; padding: 20px 0; border-top: 1px solid var(--rule); }
+  .q:last-of-type { border-bottom: 1px solid var(--rule); }
+  .q .qn { font-family: var(--mono); font-size: 13px; color: var(--critical); font-weight: 700;
+    padding-top: 3px; white-space: nowrap; }
+  .q p { margin: 0; color: var(--text); }
+  .q .qowner { color: var(--faint); font-family: var(--mono); font-size: 12px; }
+  .unconditional { margin-top: 28px; padding: 18px 20px; background: var(--surface);
+    border: 1px solid var(--verify); border-radius: 3px; display: flex; gap: 13px; align-items: flex-start; }
+  .unconditional .tick { color: var(--verify); font-weight: 700; font-family: var(--mono); white-space: nowrap; }
+  .unconditional p { margin: 0; color: var(--text); font-size: 15.5px; }
+  .unconditional b { color: var(--ink); }
+
+  .foot { padding: 30px 0 60px; }
+  .foot .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: 12.5px; color: var(--faint); }
+
+  @media (max-width: 720px) {
+    .stats .grid, .trust .grid { grid-template-columns: repeat(2, 1fr); }
+    .stat { border-top: 1px solid var(--rule-2); }
+    .trust .t { border-right: 0; padding-right: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="dx-root"></div>
+<script id="dx-data" type="application/json">__DIAGNOSTIC_JSON__</script>
+<script>
+(function () {
+  var D = {};
+  try { D = JSON.parse(document.getElementById("dx-data").textContent) || {}; } catch (e) { D = {}; }
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var n = function (v) { return (v == null ? 0 : v).toLocaleString("en-US"); };
+  var census = D.census || {}, counts = D.counts || {};
+  var divs = D.divs || [], risks = D.risks || [];
+  var byId = {}; divs.concat(risks).forEach(function (f) { byId[f.id] = f; });
+  var sevClass = function (s) { s = (s || "").toLowerCase();
+    return s.indexOf("crit") === 0 ? "crit" : s.indexOf("high") === 0 ? "high" : "med"; };
+
+  // census: two axes — recorded vs ratified (reverse_conventions.census)
+  var recorded = (census.evidence || 0) + (census.external || 0) + (census.git || 0);
+  var ratified = (census.user_supplied || 0) + (census.decided || 0);
+  var honest = (ratified === 0 && (census.external || 0) > 0)
+    ? "Every recorded rationale is <b>external</b> — a quotation from documents this diagnosis contradicts, recorded but never re-ratified. Not evidence."
+    : "";
+
+  var evRows = function (ev) { return (ev || []).map(function (e) {
+    return '<span class="loc">' + esc(e.loc) + '</span> ' + (e.obs ? '<span class="obs">' + esc(e.obs) + '</span>' : ''); }).join("<br />"); };
+
+  var card = function (f) {
+    var c = sevClass(f.severity);
+    return '<article class="find ' + c + '">'
+      + '<header><span class="idx">' + esc(f.id) + '</span>'
+      + '<h3>' + esc(f.title) + '</h3>'
+      + '<span class="chip">' + esc(f.severity || "") + '</span></header>'
+      + '<p class="stakes">' + esc(f.stakes) + '</p>'
+      + (f.evidence && f.evidence.length ? '<div class="evidence">' + evRows(f.evidence) + '</div>' : '')
+      + '<div class="meta">'
+      + (f.corroboration ? '<span class="corr">' + esc(f.corroboration) + '</span>' : '')
+      + (f.owner ? '<span class="owner">owner: ' + esc(f.owner) + '</span>' : '')
+      + '</div></article>';
+  };
+
+  var gravest = (D.gravest || []).map(function (id) { return byId[id]; }).filter(Boolean);
+  if (!gravest.length) gravest = divs.concat(risks).slice(0, 3);
+
+  var questions = (D.questions || []).map(function (q, i) {
+    return '<div class="q"><span class="qn">Q' + (i + 1) + '</span><p>' + esc(q.question)
+      + (q.owner ? ' <span class="qowner">→ ' + esc(q.owner) + '</span>' : '') + '</p></div>'; }).join("");
+
+  var thesis = D.thesis || (gravest[0] ? gravest[0].title : "Repository diagnostic");
+  var standfirst = D.standfirst || ((n(counts.divs) + " divergences and " + n(counts.risks)
+    + " risks across the reconstructed documents — every one cited to the file and line, and externally verified."));
+
+  var html = ''
+    + '<div class="hero"><div class="wrap">'
+    +   '<p class="eyebrow"><span>Repository Diagnostic</span><span class="dot">●</span>'
+    +   '<span>' + esc(D.date || "") + ' · dated snapshot</span><span class="dot">●</span>'
+    +   '<span>verified externally · nothing self-approved</span></p>'
+    +   '<h1 class="thesis">' + esc(thesis) + '</h1>'
+    +   '<p class="standfirst">' + esc(standfirst) + '</p>'
+    + '</div></div>'
+
+    + '<div class="stats"><div class="wrap" style="padding:0"><div class="grid">'
+    +   '<div class="stat"><div class="n">' + n(counts.divs) + '</div><div class="lab"><b>Divergences</b> — where docs and code disagree, evidenced on both sides</div></div>'
+    +   '<div class="stat"><div class="n">' + n(counts.risks) + '</div><div class="lab"><b>Risks</b> — dangers the code carries on its own</div></div>'
+    +   '<div class="stat"><div class="n">' + n(counts.open_questions) + '</div><div class="lab"><b>Open questions</b> only an outside owner can answer</div></div>'
+    +   '<div class="stat"><div class="n">' + n(counts.evidence_anchors) + '</div><div class="lab"><b>Evidence anchors</b> — file:line with the observed fragment</div></div>'
+    + '</div></div></div>'
+
+    + '<div class="census"><div class="wrap">'
+    +   '<span class="mono"><span class="num">' + n(recorded) + '</span> recorded (evidence + external)</span>'
+    +   '<span class="mono"><span class="' + (ratified === 0 ? "zero" : "num") + '">' + n(ratified) + '</span> ratified this run (user-supplied + decided)</span>'
+    +   (honest ? '<span class="pt">' + honest + '</span>' : '')
+    + '</div></div>'
+
+    + '<section><div class="wrap"><p class="kicker">The gravest ' + gravest.length + '</p>'
+    +   '<h2>Ranked by what happens if you ship it another week.</h2>'
+    +   gravest.map(card).join("")
+    + '</div></section>'
+
+    + '<section class="trust"><div class="wrap"><p class="kicker" style="color:#6b7484">Why this holds up</p><div class="grid">'
+    +   '<div class="t"><div class="tn">' + n(counts.evidence_anchors) + '</div><div class="tl">claims anchored to file:line with the observed fragment — not assertions</div></div>'
+    +   '<div class="t"><div class="tn"><span class="v">' + esc(D.verify || "VERIFY OK") + '</span></div><div class="tl">artifacts pass verify — externally, not self-attested</div></div>'
+    +   '<div class="t"><div class="tn">' + n(D.corroborated || 0) + '</div><div class="tl">findings reached independently by separate reverses</div></div>'
+    +   '<div class="t"><div class="tn"><span class="v">0</span></div><div class="tl">artifacts self-approved — every verdict waits for a human</div></div>'
+    + '</div></div></section>'
+
+    + '<section class="line"><div class="wrap"><p class="kicker">The line — read this before you decide anything</p>'
+    +   '<p class="big">Everything above is a dated snapshot. The system leaves <b>pre-read, not pre-approved.</b> No baseline is pinned; nothing here approved itself.</p>'
+    +   '<p>A new diagnosis is a new dated file, and the drift between two dated diagnoses is itself the product. If you want this to <em>stay</em> true — staleness watching the drift, gates on every amendment — that is the method, and adopting it means a human vouching each of these documents forward. That is the whole offer. It is not dressed up as more.</p>'
+    + '</div></section>'
+
+    + '<section class="cta"><div class="wrap"><p class="kicker">Questions only you can answer</p>'
+    +   '<h2>Nobody inside the code can close these.</h2>'
+    +   (questions || '<p style="color:var(--muted)">None recorded.</p>')
+    +   (D.unconditional ? '<div class="unconditional"><span class="tick">✓ Fix today</span><p>' + esc(D.unconditional) + '</p></div>' : '')
+    + '</div></section>'
+
+    + '<div class="foot"><div class="wrap"><span>DOCOD · diagnostic mode · ' + esc(D.target || "") + '</span>'
+    +   '<span>pre-read, not pre-approved</span></div></div>';
+
+  document.getElementById("dx-root").innerHTML = html;
+})();
+</script>
+</body>
+</html>

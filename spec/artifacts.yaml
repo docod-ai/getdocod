@@ -1,4 +1,4 @@
-specVersion: "1.6.0"
+specVersion: "1.7.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -800,6 +800,23 @@ artifacts:
       moment; a new diagnosis is a NEW file, and the drift between two dated
       diagnoses is itself a product. Never a gate, never approved by an
       agent: the system it describes leaves pre-read, not pre-approved.
+
+      REPORT DATA CONTRACT — what the sellable report profile consumes. Beyond
+      the prose sections, the frontmatter carries a machine-readable `report:`
+      block so `docod.mjs report --diagnostic` renders the dossier without
+      re-parsing prose. The template is dumb; the tech-lead's consolidation is
+      the intelligence.
+        report:
+          date, target
+          census: {evidence, inferred, user_supplied, decided, external}
+            # TWO AXES, never collapsed (reverse_conventions.census):
+            # RECORDED = evidence + external + git-history; RATIFIED this run =
+            # user_supplied + decided. A zero in one class is NOT absence — the
+            # `external` count holds legacy rationale (recorded, not ratified).
+          counts: {divs, risks, open_questions, evidence_anchors}
+          gravest: [id, ...]   # top findings by severity then corroboration — computed, not curated
+          divs:  [{id, severity, title, stakes, evidence: [{loc, obs}], corroboration, owner}]
+          risks: [{id, severity, class, title, stakes, evidence: [{loc, obs}], owner}]
 
   # ------------------------------------------------------------- OBSERVE
   slos:
