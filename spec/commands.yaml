@@ -1,4 +1,4 @@
-specVersion: "1.7.1"
+specVersion: "1.8.0"
 
 # =============================================================================
 # LAYER 2 — COMMANDS  ·  NEUTRAL
@@ -51,6 +51,12 @@ commands:
         The doors are the ones the model already declares — start invents no
         flow, it READS the contracts' requires. A new door in the model = a new
         door in start, without touching the command.
+
+        start and continue show the MECHANICAL doors. The JUDGMENT of which
+        door, why, and how — for a user lost in the method — lives in the
+        tech-lead's `guide` action: it derives the same state and hands back
+        next step + why in method terms + the exact command. The command
+        informs; the guide orients; the human decides. Same law, two layers.
 
     # -------------------------------------------------------------------------
     status:

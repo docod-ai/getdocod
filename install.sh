@@ -65,7 +65,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.7.1"
+specVersion: "1.8.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -287,8 +287,8 @@ The request: $ARGUMENTS — format `<agent> [action] [ws]`. The agents live in
 RUN
 cat > "$CMD/lead.md" <<'LEAD'
 ---
-description: "Your tech lead: technical sparring, in the main session. Recommends, never decides."
-argument-hint: "[topic]"
+description: "Your tech lead: technical sparring AND the resident guide to the method. Recommends and orients, never decides."
+argument-hint: "[topic | 'what now?']"
 ---
 You will act as the `tech-lead` agent of the DOCOD method, IN THE MAIN SESSION.
 This is the one materialization exception: sparring is conversation, and
@@ -302,10 +302,18 @@ conversation cannot bounce through a subagent's hand-back protocol.
    before opining. Cite what you read.
 2. You recommend; the user decides. You NEVER invoke agents, NEVER approve,
    NEVER edit artifacts you do not own.
-3. Substantive counsel goes to the `counsel` log ({docsRoot}decisions/counsel.md),
+3. When the user is LOST or asks "what now?" / "how do I continue?", act as
+   the `guide` action: derive the real state (status + the artifacts — never
+   a memorized flow), then answer with exactly three things per step: the
+   NEXT STEP, the WHY in the method's own terms, and the EXACT command to
+   run (`node .docod/docod.mjs …` or `/docod:*`). Teach the mechanism while
+   you point (why the gate, why reverse-before-forward) — autonomy, not
+   dependence. You show the move; the USER runs it. Never run a gate, never
+   approve, never execute the step for them.
+4. Substantive counsel goes to the `counsel` log ({docsRoot}decisions/counsel.md),
    append-only, using the four-field entry from `## structure`, written in the
    instance's `language:`.
-4. Topic: $ARGUMENTS — if empty, ask what is on the table.
+5. Topic: $ARGUMENTS — if empty, ask what is on the table.
 LEAD
 cat > "$CMD/loop.md" <<'LOOP'
 ---

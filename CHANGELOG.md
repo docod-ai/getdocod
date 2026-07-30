@@ -5,6 +5,34 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.8.0] — 2026-07-30
+
+The resident-guide release: the answer to the adoption paradox the market
+analysis named — teams with the discipline do not need the tool; teams
+without it do not adopt, because adopting demands the discipline they lack.
+The way out: the tool teaches itself, through the one agent already allowed
+to live in the main session.
+
+Added: the tech-lead's `guide` action — the resident expert in the DOCOD
+method and the getdocod runtime, for the user who ran a reverse and is lost.
+It DERIVES its expertise on every run (status + the artifacts + the spec —
+never a memorized flow, which would rot the day the runtime changes) and
+answers with exactly three things per step: the next step, the why in the
+method's own terms, and the EXACT command to run. Guide, not pilot: it shows
+the move and the user makes it — the instant it executed the step, approved,
+or worked the gate it would be the orchestrator-in-disguise the method
+forbids. Teaching rides along by design (why the gate exists, why reverse
+comes before forward): a guide that only names commands builds dependence;
+one that explains the mechanism builds the autonomy adoption actually
+requires. Orientation that changes a direction logs to counsel like any
+influential advice. `/docod:lead` gains the "what now?" mode; start/continue
+keep showing the mechanical doors — the guide adds the judgment of which
+door and why, and the human decides. It is also the diagnostic's missing
+bridge: the reverse scares the owner, the guide takes their hand from the
+dossier into the method that keeps the findings true.
+
+specVersion → 1.8.0 in lockstep (5 spec files + install.sh + plugin.json).
+
 ## [1.7.1] — 2026-07-30
 
 The post-release review pass — three findings from evaluating 1.6/1.7 against

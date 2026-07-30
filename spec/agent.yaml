@@ -1,4 +1,4 @@
-specVersion: "1.7.1"
+specVersion: "1.8.0"
 
 # =============================================================================
 # LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
@@ -438,7 +438,10 @@ diagnostic_mode: |
   have docs you do not trust" but "your system is big enough that its parts
   have stopped agreeing". The tech-lead consolidates the run into the
   `diagnostic` artifact; the /docod:diagnose command (adapter layer) is the
-  door.
+  door. And the way OUT of a diagnostic is also the tech-lead: its `guide`
+  action takes the owner the findings scared from the dossier into the
+  method — next step, why, exact command — which is the adoption bridge the
+  spearhead needed.
 
 # -----------------------------------------------------------------------------
 # WRITE ORDER — the incomplete-run marker (field-learned)
