@@ -5,6 +5,36 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.7.1] — 2026-07-30
+
+The post-release review pass — three findings from evaluating 1.6/1.7 against
+a live fixture, each one a small honesty gap in the release that made honesty
+the product.
+
+Fixed: the REPORT DATA CONTRACT now declares EVERYTHING the template consumes.
+The dossier read `questions`, `thesis`, `standfirst`, `verify`, `corroborated`,
+`unconditional` and `census.git` — none of them in the declared contract (and
+the tech-lead's postcondition promised `questions` the contract omitted). A
+consumer reading keys the contract does not name is the recurring failure this
+repo documents nine-plus times, shipped inside the release that created the
+contract. Also made explicit: `inferred` belongs to NEITHER census axis — a
+deduction is not recorded rationale and nobody vouched it.
+
+Fixed: snapshot anchors are now RE-READ and tallied as an as-of-now
+OBSERVATION (never a warning, never a failure). The dossier's trust strip
+prints "N anchors verified" — but the diagnostic is snapshot lineage, and the
+fragment check exempted snapshots entirely, so the product's flagship number
+was the one thing the machine never checked: self-attestation inside the trust
+section. Now verify reports the tally (match / moved / gone / unresolvable)
+and the reader dates it: fresh snapshot ⇒ fix the transcription; old snapshot
+⇒ the measured drift a new diagnosis prices.
+
+Fixed: the Portuguese absolute-absence pattern required no absence verb —
+"nenhuma decisão pendente" fired. A false positive trains the reader to ignore
+the alert (house law); the pattern now demands concept AND record-verb, with a
+separate nunca/jamais + verb form. And the CONFIG GAP warning now also prints
+at `start` — the one door a brand-new user hits before ever running `status`.
+
 ## [1.7.0] — 2026-07-29
 
 The diagnostic-as-product release: three fronts that make the diagnostic

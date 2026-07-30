@@ -1,4 +1,4 @@
-specVersion: "1.7.0"
+specVersion: "1.7.1"
 
 # =============================================================================
 # LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
@@ -486,8 +486,13 @@ reference_discipline: |
   a fragment is checked against the cited file (present at the line passes,
   moved is flagged as drift, gone as rotted evidence). Presence of the fragment
   is not a free pass; the machine checks it. Snapshot records (evidencias,
-  reviews, postmortem, DIV entries) are exempt either way: a record of a moment
-  observes; it does not rot.
+  reviews, postmortem, DIV entries, the diagnostic) never WARN — a record of a
+  moment observes; it does not rot — but the machine still re-reads their
+  anchors and reports the tally as-of-now, as an OBSERVATION: a fresh snapshot
+  whose fragment is not at the cited line is mis-transcribed evidence to fix
+  before it ships; an old one is the measured drift a new diagnosis prices. A
+  dossier that prints "N anchors verified" must print a number the machine
+  checked — anything else is the self-attestation verify exists to kill.
 
   A hash quoted in PROSE is a claim the frontmatter does not carry and
   staleness does not watch — one survived three rounds and an approval while

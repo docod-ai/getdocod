@@ -228,6 +228,22 @@ function possibleActions(estado, agents) {
 
 /* ──────────────────────────────────────────────────────────────────  comandos */
 
+// CONFIG GAP — the product language was never chosen. install.sh writes it
+// `unset` on purpose (rules.yaml: no invented value; an unanswered field is a
+// declared GAP). Any agent about to PRODUCE must resolve it FIRST — ask the
+// user, record it in docod.yaml — whatever door they entered. Surfaced from
+// status (the state every door derives from) AND from start (the one door a
+// brand-new user hits before ever running status): one trigger, door-blind.
+function warnConfigGap(inst) {
+  const lang = String(inst?.language ?? "").trim().toLowerCase();
+  if (!lang || lang === "unset" || lang === "ask") {
+    console.log("\n⚠ CONFIG GAP: docod.yaml `language:` is UNSET — the product language was never chosen.");
+    console.log("  Before producing ANY artifact, inquiry or report, ask the user which language");
+    console.log("  (the method reasons in English; the product speaks theirs: en, pt-BR, es, de…)");
+    console.log("  and record it in docod.yaml. No door skips this; there is no silent default.");
+  }
+}
+
 function cmdStatus(root, ws = null) {
   const { inst, arts, agents } = loadModel(root);
   const wss = loadWorkstreams(root, inst);
@@ -236,20 +252,7 @@ function cmdStatus(root, ws = null) {
   console.log(`DOCOD · ${inst?.project?.name ?? "?"} · ${path.basename(root)}`);
   console.log("═".repeat(70));
 
-  // CONFIG GAP — the product language was never chosen. install.sh writes it
-  // `unset` on purpose (rules.yaml: no invented value; an unanswered field is a
-  // declared GAP). Any agent about to PRODUCE must resolve it FIRST — ask the
-  // user, record it in docod.yaml — whatever door they entered. Surfaced here
-  // because status is the state every door derives from: one trigger, door-blind.
-  {
-    const lang = String(inst?.language ?? "").trim().toLowerCase();
-    if (!lang || lang === "unset" || lang === "ask") {
-      console.log("\n⚠ CONFIG GAP: docod.yaml `language:` is UNSET — the product language was never chosen.");
-      console.log("  Before producing ANY artifact, inquiry or report, ask the user which language");
-      console.log("  (the method reasons in English; the product speaks theirs: en, pt-BR, es, de…)");
-      console.log("  and record it in docod.yaml. No door skips this; there is no silent default.");
-    }
-  }
+  warnConfigGap(inst);
 
   if (Object.keys(wss).length) {
     console.log("\nWORKSTREAMS");
@@ -323,6 +326,7 @@ function cmdStart(root) {
   const { inst, arts } = loadModel(root);
   const estado = projectState(root, inst, arts);
   const wss = loadWorkstreams(root, inst);
+  warnConfigGap(inst);
   console.log("ENTRY DOORS — given what exists here:\n");
   if (Object.keys(estado).length || Object.keys(wss).length) {
     console.log("  Artifacts already exist — this is not start, it is a continuation.");
@@ -563,7 +567,13 @@ function cmdVerify(root, file) {
   // means it drifted or was born wrong. (b) A NAKED file:line anchor rots on
   // any edit of the cited file and nothing tells the citer — warned on LIVE
   // lineage only (a snapshot is a record of a moment; its anchors observe,
-  // they do not rot). NAKED is the operative word: the reverse's evidence
+  // they do not rot — but see below: snapshots still get the fragment check,
+  // reported as OBSERVATION, because the dossier's trust strip counts
+  // "anchors verified" and a number the machine never checked would be the
+  // exact self-attestation this command exists to kill; a FRESH snapshot
+  // whose fragment is not at the line is mis-transcribed evidence, an OLD
+  // one is the drift the method would have watched — the reader dates it,
+  // the machine only reports as-of-now). NAKED is the operative word: the reverse's evidence
   // discipline REQUIRES file:line citations of code, and a guard that fires
   // on the method's own prescribed output is defect #3 reborn. The line is
   // drawn by content, and CHECKED not trusted: an anchor carrying the observed
@@ -591,7 +601,8 @@ function cmdVerify(root, file) {
           warns.push(`body cites hash sha256:${h.slice(0, 12)}… that matches NO current artifact and NO declared input — a prose hash nothing watches; declare it in inputs[] or drop it from the text`);
       }
     }
-    if (selfArt && selfArt.lineage !== "snapshot" && p.endsWith(".md")) {
+    if (selfArt && p.endsWith(".md")) {
+      const snap = selfArt.lineage === "snapshot";
       const TLD = /^(com|org|net|io|ai|dev|co|br)$/;
       const ANCHOR = /([\w./-]+\.([a-z]{1,4})):(\d{1,5})\b/g;
       const norm = (s) => s.replace(/\s+/g, " ").trim();
@@ -622,15 +633,25 @@ function cmdVerify(root, file) {
           if (hit) proven++; else if (near) drifted++; else rotted++;
         }
       }
-      if (proven) oks.push(`prose evidence: ${proven} file:line anchor(s) verified — the observed fragment is present at the cited line`);
-      if (naked)
-        warns.push(`body anchors ${naked} reference(s) by NAKED file:line (no observed fragment alongside) — a bare line anchor rots on any edit of the cited file and nothing tells the citer; cite the anchor WITH the observed fragment in backticks on the same line, or reference by section name and declare the source in inputs[]`);
-      if (drifted)
-        warns.push(`${drifted} file:line anchor(s) DRIFTED — the observed fragment is no longer at the cited line but still exists elsewhere in the cited file; the line moved, update the anchor`);
-      if (rotted)
-        warns.push(`${rotted} file:line anchor(s) carry an observed fragment that is GONE from the cited file — evidence rotted or was mis-transcribed; re-verify against the current code`);
-      if (unresolvable)
-        warns.push(`${unresolvable} file:line anchor(s) carry a fragment but the cited path could not be resolved to verify it — check the path is project-relative`);
+      if (snap) {
+        // Snapshot: OBSERVATION, never a warning and never a failure — the
+        // record observed a moment; only the reader knows if this snapshot is
+        // fresh (mismatch = mis-transcription) or old (mismatch = the drift
+        // the method would have watched). The machine reports as-of-now so
+        // the dossier's "anchors verified" is a checked number, not a claim.
+        if (proven || drifted || rotted || unresolvable)
+          oks.push(`snapshot evidence, as of NOW: ${proven} anchor(s) match the cited line, ${drifted} moved elsewhere in the file, ${rotted} no longer in the file, ${unresolvable} unresolvable path(s) — fresh snapshot ⇒ fix the transcription; old snapshot ⇒ drift since the record (expected; a new diagnosis measures it)`);
+      } else {
+        if (proven) oks.push(`prose evidence: ${proven} file:line anchor(s) verified — the observed fragment is present at the cited line`);
+        if (naked)
+          warns.push(`body anchors ${naked} reference(s) by NAKED file:line (no observed fragment alongside) — a bare line anchor rots on any edit of the cited file and nothing tells the citer; cite the anchor WITH the observed fragment in backticks on the same line, or reference by section name and declare the source in inputs[]`);
+        if (drifted)
+          warns.push(`${drifted} file:line anchor(s) DRIFTED — the observed fragment is no longer at the cited line but still exists elsewhere in the cited file; the line moved, update the anchor`);
+        if (rotted)
+          warns.push(`${rotted} file:line anchor(s) carry an observed fragment that is GONE from the cited file — evidence rotted or was mis-transcribed; re-verify against the current code`);
+        if (unresolvable)
+          warns.push(`${unresolvable} file:line anchor(s) carry a fragment but the cited path could not be resolved to verify it — check the path is project-relative`);
+      }
     }
   }
   // ABSOLUTE-ABSENCE guard — a produced narrative that claims no rationale/decision
@@ -645,7 +666,11 @@ function cmdVerify(root, file) {
       /\bnot one\b[^.]{0,40}\b(?:why|rationale|reason|decision|recorded)/i,
       /\bno\b[^.,;]{0,30}\b(?:why|rationale|reason|decision)\b[^.,;]{0,30}\b(?:recorded|documented|exists?|on file|ever)/i,
       /\b(?:never|not once)\b[^.,;]{0,25}\b(?:recorded|decided|ratified|documented)\b/i,
-      /\bnenhum[ao]?\b[^.,;]{0,45}\b(?:porqu|raz[aã]o|decis|registrad|documentad)/i,
+      // pt: concept word AND an absence/record verb — "nenhuma razão foi
+      // registrada" fires; "nenhuma decisão pendente" must NOT (a false
+      // positive trains the reader to ignore the alert — house law).
+      /\bnenhum[ao]?\b[^.,;]{0,45}\b(?:porqu\w*|raz[aã]o|racional|decis\w{2,})\b[^.,;]{0,40}\b(?:registrad\w*|documentad\w*|gravad\w*|anotad\w*|existe\w*|em arquivo)/i,
+      /\b(?:nunca|jamais)\b[^.,;]{0,30}\b(?:registrad\w*|documentad\w*|decidid\w*|ratificad\w*)\b/i,
     ];
     const hits = [];
     for (const line of body0.split("\n"))

@@ -1,4 +1,4 @@
-specVersion: "1.7.0"
+specVersion: "1.7.1"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -808,15 +808,27 @@ artifacts:
       the intelligence.
         report:
           date, target
-          census: {evidence, inferred, user_supplied, decided, external}
+          census: {evidence, inferred, user_supplied, decided, external, git}
             # TWO AXES, never collapsed (reverse_conventions.census):
-            # RECORDED = evidence + external + git-history; RATIFIED this run =
-            # user_supplied + decided. A zero in one class is NOT absence — the
-            # `external` count holds legacy rationale (recorded, not ratified).
+            # RECORDED = evidence + external + git; RATIFIED this run =
+            # user_supplied + decided (`inferred` belongs to NEITHER — a
+            # deduction is not recorded rationale and nobody vouched it).
+            # A zero in one class is NOT absence — the `external` count holds
+            # legacy rationale (recorded, not ratified).
           counts: {divs, risks, open_questions, evidence_anchors}
           gravest: [id, ...]   # top findings by severity then corroboration — computed, not curated
           divs:  [{id, severity, title, stakes, evidence: [{loc, obs}], corroboration, owner}]
           risks: [{id, severity, class, title, stakes, evidence: [{loc, obs}], owner}]
+          questions: [{question, owner}]   # the open EXTERNAL-OWNER entries, mirrored from the queue
+          # Presentation fields — OPTIONAL, the template defaults sanely when
+          # absent, but every key the template consumes is DECLARED here (a
+          # consumer reading keys the contract does not name is the recurring
+          # failure this file exists to kill):
+          thesis: "one-sentence headline; default = the gravest finding's title"
+          standfirst: "one-paragraph standfirst under the thesis; default = counts summary"
+          verify: "the verify verdict string shown in the trust strip (e.g. VERIFY OK)"
+          corroborated: "count of findings reached independently by separate reverses"
+          unconditional: "the fix-today recommendation shown after the questions (omit if none)"
 
   # ------------------------------------------------------------- OBSERVE
   slos:
