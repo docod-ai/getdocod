@@ -69,6 +69,7 @@ Filesystem layout is by NATURE, never by stage (a revisited document must not ch
 - `lineage: snapshot` on the nine record artifacts (design-review, impact-analysis, codereview, qa, evidencias, postmortem, adr, release-notes, counsel): inputs are observed-at, reported but never failed, because refreshing them would lie about what was analyzed.
 - inputs pointing at an `append_only` artifact (the `decisions` sidecar): observed state of a file that grows by design, not live-checked.
 - input entries may carry `external: true` (imported .docx provenance): recorded, not resolvable. An unregistered input WITHOUT `external` is still a failure; that is how typos get caught.
+- input entries may carry `lineage: snapshot` (EDGE-level, 1.10.0): the relation to one input is not always the artifact's relation to all of them — security-design vs data-design is live (model changes ⇒ threat model may be wrong), but the api-contract derives FROM the security-design, so a contract change asks for another look, not invalidation. One artifact-level value forced a false choice, and the field workaround (dropping the input, citing in prose) erased machine-readable provenance. Edge snapshot keeps the relation written and the alarm honest: observed-at, never failed, revisited by impact-analysis. Downgrade only — inside a snapshot artifact every edge is observed-at regardless (`lineage: live` there is ignored with a warning), and rebless never re-pins an observed-at edge.
 
 ## 4. Hashes, approval, and the status machine
 

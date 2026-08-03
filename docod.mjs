@@ -733,11 +733,32 @@ function cmdVerify(root, file) {
     if (!art) { fails.push(`input '${inp.artifact}' is not a registered artifact (mark it external: true if it is outside the registry)`); continue; }
     if (selfArt?.lineage === "snapshot") {
       // a RECORD points at the versions it analyzed; "refreshing" them would lie
+      if (inp.lineage === "live")
+        warns.push(`input ${inp.artifact}: edge lineage 'live' inside a SNAPSHOT artifact is ignored — a record of a moment never fails; refreshing what it read would lie about what was analyzed`);
       oks.push(`input ${inp.artifact}: observed-at ${inp.hash} (snapshot lineage — not live-checked)`);
       continue;
     }
     if (art.append_only) {
       oks.push(`input ${inp.artifact}: observed state of an append-only source (grows by design — not live-checked)`);
+      continue;
+    }
+    // EDGE-LEVEL lineage — the relation to ONE input is not always the
+    // artifact's relation to ALL of them. Field case: security-design vs
+    // data-design is a LIVE dependency (the model changes ⇒ the threat model
+    // may be WRONG), but the api-contract DERIVES from the security-design —
+    // a contract change asks for another look, not invalidation. One
+    // artifact-level value forced a false choice (both permanently red, or
+    // no alarm at all), and the field workaround — dropping the input and
+    // citing it in prose — erased machine-readable provenance: six months
+    // later the file reads as "written without looking at the contract".
+    // `lineage: snapshot` ON THE ENTRY keeps the relation WRITTEN and the
+    // alarm honest: observed-at, reported, never failed — impact-analysis,
+    // not staleness, revisits it. Downgrade only; a live edge inside a
+    // snapshot artifact stays ignored (above).
+    if (inp.lineage != null && !["live", "snapshot"].includes(String(inp.lineage)))
+      warns.push(`input ${inp.artifact}: unknown edge lineage '${String(inp.lineage).slice(0, 20)}' — use live | snapshot; treating as live`);
+    if (inp.lineage === "snapshot") {
+      oks.push(`input ${inp.artifact}: observed-at ${inp.hash} (EDGE-level snapshot — the relation is recorded; when this input changes, impact-analysis revisits it, staleness stays quiet)`);
       continue;
     }
     const cand = findInstances(art, root, inst, "*").filter(f => (f.endsWith(".md") || f.endsWith(".yaml")) && fs.statSync(f).isFile());
@@ -789,6 +810,7 @@ function cmdRebless(root, by, reason, yes, repin) {
       const stale = [];
       if (repin && art.lineage !== "snapshot") for (const inp of fm.inputs || []) {
         if (inp.external) continue;
+        if (inp.lineage === "snapshot") continue; // observed-at EDGE: re-pinning would lie about what was read
         const src = arts[inp.artifact];
         if (!src || src.append_only) continue;
         const cand = findInstances(src, root, inst, "*").filter(x => (x.endsWith(".md") || x.endsWith(".yaml")) && fs.statSync(x).isFile());

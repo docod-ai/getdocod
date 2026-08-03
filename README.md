@@ -7,9 +7,15 @@
 
 **D**efine · **O**rchestrate · **C**onfirm · **O**bserve · [re]**D**efine
 
-**Agents write code fast. Speed was never the bottleneck. Context and governance were.**
+**Agents write code fast. Speed was never the bottleneck. Continuity was.**
 
-DOCOD is an agent-driven development method with a governance runtime, for any repo, language, IDE, model, and harness. Its agents take your product **from "why" to shipped code**: they specify, design, extract tasks, **write the code**, test it against the requirements, and review the diff, all under rules derived from *your* project. And everything written (document or code) has an owner, declared inputs, a gate, and evidence. The human orchestrates; the agents deliver; **nothing approves itself**.
+DOCOD is executable governance for AI-native software engineering: a method and a small runtime that keep intent, specifications, design, tasks, code, evidence, and approvals aligned as the project changes.
+
+It works with any repo, language, IDE, model, and harness. Agents can help specify, design, extract tasks, write code, run QA, and review diffs, but every artifact has an owner, declared inputs, a gate, and evidence. The human orchestrates and approves. Agents produce and verify. **Nothing approves itself.**
+
+DOCOD does not make language models deterministic. It makes the engineering process verifiable when they are not.
+
+DOCOD is not spec-driven development with more files. It is a governance runtime that keeps the spec, decisions, code, and evidence from drifting apart.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 [![Runtime: node ≥18](https://img.shields.io/badge/runtime-node%20%E2%89%A518-brightgreen.svg)](#requirements)
@@ -23,15 +29,21 @@ DOCOD is an agent-driven development method with a governance runtime, for any r
 
 ## The problem it solves
 
-Writing the spec first is the new standard, and it genuinely helps. But watch a spec-driven repo three weeks in. The spec says one thing, the code says another, and nobody can tell you exactly WHEN they stopped agreeing. The spec was approved with an "LGTM" in a chat that scrolled away, and silently outdated by the fourth pull request. A specification that doesn't enforce its own validity isn't governance — it's just a text file lying to your agents.
+A spec is not a method.
 
-The missing layer was never more spec. It is what seals the spec to the work, **mechanically**. Not with good intentions, but with rules that don't bend:
+Writing the spec first helps, but a spec-driven repo can still fail three weeks later: the spec says one thing, the code says another, an ADR is missing, a PR changed behavior without updating the contract, and nobody can tell exactly when the project stopped agreeing with itself.
 
-- An agent delivers in **draft**; approving is a **human act**, recorded with author, timestamp and content hash.
-- Edit an approved document and the approval **invalidates itself**: everything that depended on it re-blocks.
-- **Evidence is cited, not asserted**: a deterministic check demands command + output, and whoever verifies is never whoever did the work.
+That is the failure DOCOD targets.
 
-The result: agents move at full speed, and every step has a name, a gate, and a receipt.
+The missing layer was never more prose. It is the machinery that keeps claims attached to the work:
+
+- An agent delivers in `draft`; approval is a human act recorded with author, timestamp, and content hash.
+- Edit an approved document and the approval invalidates itself; everything that depended on it re-blocks.
+- Evidence is cited, not asserted: deterministic checks require command + output.
+- The verifier is not the producer.
+- A changed upstream artifact requires impact analysis or an explicit waiver.
+
+The result is not a bigger spec folder. It is a project whose state can be derived from files: what exists, what is valid, what is stale, what is blocked, and why.
 
 > **Why isn't a spec folder enough?** Because a spec is a claim, and claims drift. DOCOD's guarantees are hashes sealed to content: they hold when the session forgets, when the model changes, and when it's 2 a.m. and someone edits an approved spec — that edit invalidates the approval by itself, and everything downstream re-blocks until a human looks.
 
@@ -221,6 +233,14 @@ DOCOD takes the opposite bet on all three axes at once. Craft stays **composable
 ### Bring your own skills
 
 DOCOD's 13 skills are method-neutral, and the method is not a walled garden: install any skill from anywhere (a TDD skill, a debugging loop, your team's review checklist) and use it inside a `/docod:run` task or a `/docod:loop` dispatch. The executor writes code with whatever craft you hand it; DOCOD governs what surrounds the craft: inputs declared and hashed, success criteria the executor cannot edit, adversarial QA, verified delivery. Your favorite skills and DOCOD compose. That is the design, not an accident.
+
+## Not ready to adopt it? Diagnose first.
+
+DOCOD can start in diagnostic mode. It reads an existing codebase and any legacy docs, then produces a dated snapshot: reconstructed artifacts, provenance, DIV findings where claims and reality disagree, RISK findings where the code carries danger on its own, and questions only an outside owner can answer.
+
+No approvals. No gates. No adoption required.
+
+You get an evidenced map of where the system already stopped agreeing with itself.
 
 ## Working in a legacy codebase
 

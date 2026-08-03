@@ -5,6 +5,33 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.10.0] — 2026-08-03
+
+The edge-lineage release — one field critique, correct end to end: lineage
+was a property of the ARTIFACT, applied to every input alike, and the
+relation to each input is not alike. The security-design's edge to the
+data-design is live (the model changes ⇒ the threat model may be WRONG); its
+edge to the api-contract is not — the contract DERIVES from it, so a
+contract change asks for another look, not invalidation. One value forced a
+false choice: live made both edges permanently red (the cycle that appeared
+in the field); snapshot silenced the legitimate data-design alarm. And the
+workaround — dropping the input, citing it in prose — resolved by ERASING
+the information: six months later the file reads as "written without looking
+at the contract". False, and machine-illegible.
+
+Added: `lineage: snapshot` on the INPUT ENTRY (edge-level). The relation
+stays written, the hash stays observed-at, and the alarm rings only where it
+should: verify reports the edge (never fails it), impact-analysis — not
+staleness — is who revisits it, and `rebless --repin-inputs` skips it
+(re-pinning an observed-at would lie about what was read). Downgrade only,
+two guards: an unknown edge value warns and is treated as live; `lineage:
+live` on an edge inside a snapshot artifact warns and is ignored — a record
+of a moment never fails, whatever its edges claim. Absent `lineage` on an
+entry keeps exactly the old behavior: the artifact-level class remains the
+default, so no existing frontmatter changes meaning.
+
+specVersion → 1.10.0 in lockstep (5 spec files + install.sh + plugin.json).
+
 ## [1.9.0] — 2026-07-31
 
 The coverage release — born from the sharpest field case yet: at task 6 of
