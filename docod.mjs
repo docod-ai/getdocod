@@ -129,12 +129,20 @@ function loadModel(root) {
   // specification. A retyped list is the same mirror-without-a-validator the
   // 1.9.0 sections fix killed, and the cure is the same, one step further:
   // do not validate the mirror — DELETE it and read the source.
+  // The fallback below is the ONE surviving mirror of the status machine, and
+  // a silent fallback fails PERMISSIVE: a spec that restricted the vocabulary
+  // would be ignored without a word. So the degradation is never quiet — both
+  // paths (unreadable file, missing status: block) announce themselves.
   let statuses = ["draft", "review", "approved", "rejected", "superseded"];
   try {
     const met = yload(fs.readFileSync(path.join(specDir, "method.yaml"), "utf-8"));
     if (met?.status && typeof met.status === "object" && Object.keys(met.status).length)
       statuses = Object.keys(met.status);
-  } catch { /* method.yaml unreadable: the fallback above matches the shipped spec */ }
+    else
+      console.error("⚠ spec/method.yaml has no `status:` machine — status vocabulary degraded to the shipped five (permissive fallback; the spec is NOT being read)");
+  } catch {
+    console.error("⚠ spec/method.yaml unreadable — status vocabulary degraded to the shipped five (permissive fallback; the spec is NOT being read)");
+  }
   return { inst, arts, agents, statuses };
 }
 
@@ -741,7 +749,7 @@ function cmdVerify(root, file) {
       const missing = [...defined].filter(([id]) => !corpus.includes(id));
       if (missing.length)
         warns.push(`COVERAGE: ${missing.length} ID(s) defined upstream have NO task citing them — ${missing.slice(0, 6).map(([id, src]) => `${id} (${src})`).join(", ")}${missing.length > 6 ? ", …" : ""}. Every component/requirement maps to >=1 task, or the gap is DECLARED in the index; extracting a component's nouns while losing its verb is how an auth layer goes missing until task 6`);
-      else oks.push(`coverage: all ${defined.size} upstream-defined ID(s) are cited by at least one task (or declared in the ledger)`);
+      else oks.push(`coverage (visibility): all ${defined.size} upstream-defined ID(s) are cited by at least one task or declared as a gap — citation proves each ID was SEEN by extraction, not that it was built; the verb remains extraction's judgment`);
     }
   }
   for (const inp of fm.inputs || []) {

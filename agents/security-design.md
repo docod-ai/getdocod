@@ -35,11 +35,20 @@ contract:
         - "deterministic: Norms, checklists, and general principles are NOT here — they are `security-rules`"
         - "judgment: A mechanism choice with a real alternative became an `adr` — it was not decided here"
         - "deterministic: All sections of ## structure present"
+        - "deterministic: Inputs read for CONTEXT rather than depended on — the api-contract above all, since the contract DERIVES from this document's controls — are declared with `lineage: snapshot` on their entry in inputs[]. A contract change asks for another look, not invalidation; a live edge there turns both documents permanently stale against each other. And an input actually read is NEVER dropped from inputs[] to silence staleness — that erases the machine-readable record that it was read"
       note: |
         `system-design` is waivable only because a small project may have no
         formal design — but without a boundary you have nowhere to anchor a
         threat, and then the threat model degenerates into the generic list. If
         it doesn't exist, draw the minimal boundary and declare the assumption.
+
+        THE EDGES ARE NOT ALIKE (field-learned, the mutual-staleness cycle):
+        data-design is a LIVE input — the model changes and this threat model
+        may be WRONG; no edge marker, staleness must bite. The api-contract is
+        the opposite: it consumes this document's controls, so its changes ask
+        for a REASSESS, not an invalidation — `lineage: snapshot` on that
+        entry. One artifact-level class cannot say both; the entry-level one
+        can, and the relation stays written either way.
 
     reassess:
       stage: confirm

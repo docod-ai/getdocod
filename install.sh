@@ -65,7 +65,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.10.1"
+specVersion: "1.10.2"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -214,6 +214,13 @@ It is your prompt: contract, postconditions (with the nature of each one),
    The hash is COMPUTED (sha256:<hex>), never a placeholder — if you cannot
    compute it (source still draft, file absent), say so in the entry instead
    of inventing a string that looks like data.
+   And declare the NATURE of each edge: a LIVE dependency (it changes ⇒ your
+   document may be WRONG) gets nothing extra; an input you read for CONTEXT —
+   typically one that DERIVES from your artifact downstream (a change there
+   asks for another look, not invalidation) — gets \`lineage: snapshot\` on
+   its entry. The relation stays recorded, staleness stays quiet, and
+   impact-analysis revisits it. NEVER drop an input you actually read just to
+   silence staleness — that erases machine-readable provenance.
 4. Record product answers in the \`decisions\` artifact — the path is the one in
    artifacts.yaml ({docsRoot}decisions/log/$key.yaml at project scope; inside
    workstreams/{ws}/decisions/ on a front). Append, never overwrite.

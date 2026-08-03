@@ -5,6 +5,39 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.10.2] — 2026-08-03
+
+The finishing pass on the review of 1.9.0–1.10.1 — three notes, one of them
+the method's own medicine: the spec had gained the noun (`lineage: snapshot`
+on an input entry) and NO producer had gained the verb. No agent knew to
+emit it — the security-design, the literal field case that motivated the
+feature, had no instruction to mark its api-contract edge. A mechanism
+nobody triggers does not reach the field; it is the COVERAGE failure one
+layer up, shipped by the people who named it.
+
+Fixed: the producers now know the verb. The shared subagent preamble
+(install.sh, rule 3 — every generated agent reads it) teaches the edge
+discipline: live dependency ⇒ nothing extra; input read for context,
+typically one that derives from your artifact downstream ⇒ `lineage:
+snapshot` on the entry; and an input actually read is NEVER dropped to
+silence staleness — that erases provenance. The security-design gains the
+concrete contract: a deterministic postcondition marking the api-contract
+edge snapshot, and the doctrine in its note (data-design must bite;
+api-contract asks for a reassess — one artifact-level class cannot say
+both, the entry-level one can).
+
+Fixed: the status-vocabulary fallback no longer degrades in silence. It is
+the one surviving mirror, and it fails PERMISSIVE — a spec restricting the
+vocabulary would be ignored without a word. Both fallback paths (method.yaml
+unreadable, `status:` block missing) now announce themselves on stderr.
+
+Fixed: the coverage OK names what it proves. The check measures VISIBILITY
+— cited by at least one task or declared as a gap — not construction; a
+green that reads as "everything has a task" would be the flatten the census
+fix just killed, in a new spot. The message now says: citation proves each
+ID was SEEN by extraction, not that it was built; the verb remains
+extraction's judgment.
+
 ## [1.10.1] — 2026-08-03
 
 Fixed: `verify` now reads the status vocabulary from method.yaml's state
