@@ -5,6 +5,66 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.9.0] — 2026-07-31
+
+The coverage release — born from the sharpest field case yet: at task 6 of
+dozens, the question "where is the auth task?" had no answer. The
+system-design had defined "COMP-07 — Identidade & Autorização"; extraction
+produced the component's NOUNS (user tables, enrollment, role mutation) and
+lost its VERB (authenticate a request). Every downstream gate passed,
+CORRECTLY: each gate checks its artifact against its input, and no gate
+checked the input was completely carried forward. The invariant "every
+design component has a task" lived nowhere it could be enforced.
+
+Added: the COVERAGE guard in `verify` — external, run by the caller, because
+the RF-coverage postcondition already existed in the extraction contract and
+did not save (a deterministic postcondition in band is self-attestation; the
+lesson that created verify, one level up). On a `tasks` index: every ID
+defined upstream (definition-shaped lines — headings, bold entries — in the
+system-design and the FRD) must be cited by at least one task file, or
+verify warns naming the orphans and where they were defined. A citation,
+including a declared gap, is visibility; zero citations is a hole nobody has
+looked at. This check would have caught the auth hole on extraction day.
+
+Changed: task-extraction gains the component→task edge as a deterministic
+postcondition and the doctrine that names the failure — a component's nouns
+are not the component; when its tasks are done, read the component's NAME
+and ask whether some task DOES what it is FOR. The tasks.md template gains a
+Coverage section (design names → tasks, or the gap declared). The machine
+checks the citation edge; only extraction can check the verb.
+
+Recorded (migration.yaml `coverage-invariants`): coverage is a CHECK CLASS —
+the sibling edges (prd goals → RFs, boundaries → contract operations, slos →
+alerts) get wired one real miss at a time; an invariant without a field case
+behind it is a checklist item, and checklists rot.
+
+Fixed (caught in the field, pre-tag): the registry's `sections:` had DRIFTED
+from four agents' `## structure` — adr said 8 (the v1 prompt's list, with
+Status and Authors the rewrite moved into the frontmatter) while the
+structure defines 6, so EVERY real ADR failed verify's count, including
+fifteen approved ones; the agent that refused to invent a seventh section to
+please a counter was right. Same drift on test-plan (8 vs 6),
+integration-guide (10 vs 9) and postmortem (11 vs 9). All four registry
+mirrors realigned to their structures — the structure is the source
+(agent.yaml ruled it: the body IS the prompt, `## structure` IS the minimum
+sections, one place). And the reference gained its validator, per house law:
+validate-layers.py now compares every `sections:` mirror against the owner's
+structure ('##' count vs declared minimum, Title discounted; skipped for
+multi-artifact owners where attribution is ambiguous) — tested by planting
+the ADR drift first. A mirror without a validator is how fifteen approved
+documents fail at once, eleven releases in.
+
+Changed: the `report` dashboard, restyled and reorganized. Same dossier language
+as `report --diagnostic` (serif/mono/sans, ink panels, semantic status colors),
+plus a manual light/dark toggle that overrides the OS theme and persists. Tasks
+are grouped by PRD — collapsible, in numeric SEQUENCE order (the plan order, not
+lexical: 2 before 10), with per-group progress and done/doing/todo counts, and
+drill-down into any task. The Flow tab groups the possible/blocked actions by
+method STAGE (define → orchestrate → confirm → observe → [re]define), the SDLC
+phases the README maps — each action now carries its stage in the report data.
+
+specVersion → 1.9.0 in lockstep (5 spec files + install.sh + plugin.json).
+
 ## [1.8.0] — 2026-07-30
 
 The resident-guide release: the answer to the adoption paradox the market

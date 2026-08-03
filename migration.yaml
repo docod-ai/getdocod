@@ -93,8 +93,38 @@ migration:
         report output profile focused on DIVs + findings + provenance, and
         the two framings above written into the offer.
 
-    - id: graduated-gate
+    - id: coverage-invariants
       severity: major
+      issue: |
+        Field case (the auth hole, found at task 6 of dozens): system-design
+        defined "COMP-07 — Identidade & Autorização"; task-extraction produced
+        the component's NOUNS (user tables, enrollment, role mutation) and
+        lost its VERB (authenticate a request). Nothing in any target built
+        the mechanism; RF-SEC-001 ("no anonymous action") had no implementer.
+        EVERY downstream gate passed, correctly: design-review checks design
+        vs ADRs, code-review and QA judge against the task, project-management
+        sequences what exists. The general form: every gate checks its
+        artifact against its INPUT; NO gate checks the input was completely
+        CARRIED FORWARD. The invariant "every design component has a task"
+        lived nowhere it could be enforced. Aggravator: the RF-coverage
+        postcondition ALREADY EXISTED in task-extraction's contract and did
+        not save — a deterministic postcondition in band is self-attestation
+        (the same lesson that created `verify` in 1.2.x, one level up), and
+        coverage-by-citation can satisfy it while the verb goes unbuilt.
+      decision: |
+        Coverage is a CHECK CLASS, not a one-off. Shipped in 1.9.0 for the
+        sharpest edge: verify (external, run by the caller) warns when an ID
+        defined upstream (definition-shaped lines in system-design/frd) is
+        cited by ZERO task files — citation, including a declared gap in the
+        index's new Coverage section, is visibility; zero citations is a hole
+        nobody has looked at. task-extraction gained the component→task
+        postcondition and the nouns-are-not-the-verb doctrine (the machine
+        checks the citation edge; only extraction can check the verb).
+        REMAINING EDGES, same family, not yet wired: prd goals → frd RFs;
+        design boundaries → api-contract operations; slos → alerts/runbooks;
+        test-plan already has its matrix (RF → case) but nothing external
+        re-checks it. Wire them one field case at a time — an invariant added
+        without a real miss behind it is a checklist item, and checklists rot.
       issue: |
         Every artifact crosses the same gate with the same ceremony: fixing a
         factual line ("3 steps" → "4", with directory evidence) costs the same

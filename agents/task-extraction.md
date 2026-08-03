@@ -32,6 +32,7 @@ contract:
         - "judgment: Every task is a VERTICAL slice: delivers value on its own, cutting through as many layers as it needs"
         - "judgment: Every task traces to at least one RF — a task without a requirement is invented work"
         - "deterministic: Every RF in scope has a task — or the gap is flagged"
+        - "deterministic: Every component and boundary the design NAMES maps to >=1 task — or the gap is DECLARED in the index's Coverage section. Coverage means the component's FUNCTION, not only its nouns: a component named 'Identity & Authorization' whose tasks build tables, enrollment and roles but never 'authenticate a request' is NOT covered. The runtime checks this edge externally (IDs defined upstream vs citations across the task files)"
         - "deterministic: Every ADR or design the task's body cites is DECLARED in its frontmatter inputs[] with a computed hash — where the artifact does not declare, verify cannot see, and impact-analysis degrades to judgment"
         - "judgment: Every success criterion is verifiable without consulting the author"
         - "judgment: Every dependency points to a task by ID, never prose"
@@ -77,6 +78,19 @@ That is why **there is no task type.** `development`, `testing`, `infrastructure
 **You do not estimate hours.** Not 8, not 16. You measured nothing, nobody measured anything, and an invented number that looks like data becomes a commitment in the mouth of someone who wasn't here. Size is order of magnitude — **S, M, L** — and it serves one purpose only: **L is a sign that the slice wasn't sliced.** If an estimate is needed, it belongs to the human or to `project-management`, declared as an estimate.
 
 **Tasks come from the design, not from verb-hunting.** Searching the text for "must", "needs", "implement" produces one task per sentence — which is a list of sentences, not a build plan. Tasks come out of the `system-design` (what exists), the `api-contract` (what it exposes), the `data-design` (what it stores), the FRD (what it needs to do). **The order comes from the real dependencies between them**, not from the order the sentences appear in the document.
+
+**A component's nouns are not the component.** Measured in a real project, at
+task 6 of dozens: the design named "Identity & Authorization"; extraction
+produced the component's NOUNS — user tables, enrollment, role mutation,
+revocation — and lost its VERB: *authenticate a request*. Nothing in any
+target built the mechanism, and every downstream gate passed, because every
+gate was right inside its own frame (review judges against the task; the task
+asked for no auth). When you finish a component's tasks, read the component's
+NAME again and ask: **does some task DO what this component is FOR?** Cadastro
+is not autenticação; storage is not the function. Then close the loop in the
+index's Coverage section: every component and boundary the design names, →
+its tasks — or the gap, declared. The runtime checks the citation edge
+mechanically; only you can check the verb.
 
 **Success criteria verifiable without you.** Apply `verifiable-requirements`. Whoever executes will not be able to ask you. "Working correctly" is not a criterion; "`security` job green and a PR with a fake secret is blocked" is.
 
@@ -191,6 +205,17 @@ The likely ones. The executor confirms; if it diverges a lot, the scope was wron
 
 **The order of this table is the build order.** It is the product: a list without order is a backlog, and a backlog is not a plan.
 
+## Coverage
+
+Every component and boundary the design names → its tasks, or the declared gap.
+This section is where a hole becomes VISIBLE instead of silent — the runtime
+warns on any upstream-defined ID no task file cites.
+
+| Design names | Covered by | Or the gap, declared |
+|---|---|---|
+| COMP-01 — Ingestão | 1, 4 | — |
+| COMP-02 — Identidade & Autorização | 3.5, 4, 9 (nouns) | **GAP: the VERB (authenticate a request) has no task — blocked on mechanism ADR** |
+
 ---
 
 ## inquiry
@@ -266,6 +291,7 @@ Record in `decisions/task-extraction.yaml`. The `task-executor` executes from he
 | "Tests: not applicable" | "Unit: not applicable — this is pipeline configuration; the existing suite keeps passing" |
 | tasks 1..12 without order | table ordered by real dependency, walking skeleton first |
 | new task at the end of the list | new task in the position the dependency requires |
+| "Identity & Authorization" → tasks for tables, enrollment, roles | those PLUS the task that authenticates a request — the verb, not just the nouns |
 
 ## Test before delivering
 1. Does each task deliver something that works on its own? Or is it a layer?
@@ -277,3 +303,4 @@ Record in `decisions/task-extraction.yaml`. The `task-executor` executes from he
 7. Does the order reflect real dependencies, or the document's order?
 8. Did I write "not applicable" about anything I did not go read?
 9. Did I reproduce design instead of referencing it?
+10. For every component the design NAMES: does some task DO what it is FOR — its verb, not just its nouns? Is the Coverage section complete, gaps declared?

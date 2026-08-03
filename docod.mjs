@@ -678,6 +678,53 @@ function cmdVerify(root, file) {
     if (hits.length)
       warns.push(`${hits.length} absolute-absence claim(s) about rationale/decisions (e.g. "${hits[0]}…") — a zero in one census class is NOT absence of the concept; legacy rationale lives in 'external' (recorded, not ratified). Confirm each against the sibling classes, or qualify it ("recorded but never re-ratified")`);
   }
+  // COVERAGE — the invariant that lived nowhere. Every gate checks its
+  // artifact against its INPUT; nothing checked the input was fully CARRIED
+  // FORWARD. Field case (the auth hole, found at task 6 of dozens): the
+  // system-design defined "COMP-07 — Identidade & Autorização"; extraction
+  // produced the component's NOUNS (tables, enrollment, roles) and lost its
+  // VERB (authenticate a request). Every reviewer passed because every
+  // reviewer was right inside its own frame — design-review checks design
+  // vs ADRs, code-review and QA judge against the task, and the task asked
+  // for no auth. And the RF-coverage postcondition ALREADY EXISTED in the
+  // extraction contract — in band, where deterministic checks degenerate
+  // into self-attestation (the exact lesson that created this command). So
+  // the invariant lives HERE, external, run by the caller: every ID DEFINED
+  // upstream (definition-shaped lines — headings, bold entries — in the
+  // system-design and the FRD) must be CITED by at least one task file. A
+  // citation, including a declared gap in the index, is visibility; zero
+  // citations is a hole nobody has looked at.
+  if (selfKey === "tasks") {
+    const defRx = /^\s*(?:#{1,6}\s|>+\s*\*\*|\*\*|[-*]\s+\*\*|\|\s*\*\*)/;
+    const idRx = /\b([A-Z]{2,6}(?:-[A-Z]{2,6})*-\d{1,4})\b/;
+    const defined = new Map(); // id -> defining file (relative)
+    for (const srcKey of ["system-design", "frd"]) {
+      const art = arts[srcKey]; if (!art) continue;
+      for (const f of findInstances(art, root, inst, "*")) {
+        if (!f.endsWith(".md") || !fs.existsSync(f) || !fs.statSync(f).isFile()) continue;
+        const [, sbody] = readFrontmatter(f);
+        for (const line of sbody.split("\n")) {
+          if (!defRx.test(line)) continue;
+          const m = line.match(idRx);
+          if (m && !m[1].startsWith("ADR-") && !defined.has(m[1]))
+            defined.set(m[1], path.relative(root, f));
+        }
+      }
+    }
+    if (defined.size) {
+      let corpus = "";
+      for (const k of ["tasks", "task"]) {
+        const art = arts[k]; if (!art) continue;
+        for (const f of findInstances(art, root, inst, "*"))
+          if (f.endsWith(".md") && fs.existsSync(f) && fs.statSync(f).isFile())
+            corpus += readFrontmatter(f)[1] + "\n";
+      }
+      const missing = [...defined].filter(([id]) => !corpus.includes(id));
+      if (missing.length)
+        warns.push(`COVERAGE: ${missing.length} ID(s) defined upstream have NO task citing them — ${missing.slice(0, 6).map(([id, src]) => `${id} (${src})`).join(", ")}${missing.length > 6 ? ", …" : ""}. Every component/requirement maps to >=1 task, or the gap is DECLARED in the index; extracting a component's nouns while losing its verb is how an auth layer goes missing until task 6`);
+      else oks.push(`coverage: all ${defined.size} upstream-defined ID(s) are cited by at least one task (or declared in the ledger)`);
+    }
+  }
   for (const inp of fm.inputs || []) {
     if (inp.hash != null && !HASH_RX.test(String(inp.hash)))
       warns.push(`input ${inp.artifact}: hash field holds a NON-HASH value ('${String(inp.hash).slice(0, 40)}') — placeholder written instead of a computed hash`);
@@ -889,13 +936,18 @@ function cmdReport(root) {
     .map(g => ({ group: g, items: docsByGroup[g] }));
 
   const [possible, blocked] = possibleActions(estado, agents);
+  // stage per action, so Flow groups by method stage (define → orchestrate →
+  // confirm → observe → redefine) — the SDLC phases the README maps.
+  const stageOf = (s) => { const m = String(s).match(/^([\w-]+)\.(\w+)/);
+    return m ? (agents[m[1]]?.contract?.actions?.[m[2]]?.stage ?? null) : null; };
 
   const data = {
     project: inst?.project?.name ?? path.basename(root),
     language: inst?.language ?? "en",
     docsRoot: dr, generatedAt: new Date().toISOString().replace("T", " ").slice(0, 16),
     node: process.version, workstreams: wss, docs, tasks,
-    possible: possible.sort(), blocked: blocked.sort((x, y) => x[0] < y[0] ? -1 : 1),
+    possible: possible.sort().map(p => ({ label: p, stage: stageOf(p) })),
+    blocked: blocked.sort((x, y) => x[0] < y[0] ? -1 : 1).map(([name, why]) => ({ name, why, stage: stageOf(name) })),
   };
 
   const here = path.dirname(fileURLToPath(import.meta.url));

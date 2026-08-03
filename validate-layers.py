@@ -189,7 +189,7 @@ def check_agents():
     reg = (yaml.safe_load(open(method_f, encoding="utf-8")).get("skills") or {}).get("registry") or {}
     artifacts = yaml.safe_load(open(arts_f, encoding="utf-8")).get("artifacts") or {}
 
-    agents, declared = {}, {}
+    agents, declared, corpos = {}, {}, {}
     for f in sorted(glob.glob(os.path.join(BASE, "agents", "*.md"))):
         rel = os.path.relpath(f, BASE)
         raw = open(f, encoding="utf-8").read()
@@ -206,6 +206,7 @@ def check_agents():
             ERRORS.append(f"[{rel}] no `key`")
             continue
         agents[key] = (rel, d)
+        corpos[key] = raw.split("---", 2)[2] if raw.count("---") >= 2 else ""
 
         # Body roles. The v1 `knowledge` had 77 sources, 4 implicit roles and
         # 30+ free-form names — question_bank vs questions_bank vs
@@ -398,9 +399,46 @@ def check_agents():
             if cw.get("agent") == owner:
                 ERRORS.append(f"[spec/artifacts.yaml] '{name}': co_writer is the owner itself")
 
+    # SECTIONS × STRUCTURE — the registry's `sections:` mirrors what the owner
+    # agent's ## structure already defines, and a mirror without a validator
+    # drifts (this project's recurring failure, found live: EVERY approved ADR
+    # in a real repo failed verify's section count at once — the registry said
+    # 8, the v1 prompt's list, with Status and Authors that the rewrite moved
+    # into the frontmatter; the structure says 6, and the agent rightly refused
+    # to invent a seventh section to please a counter). agent.yaml already
+    # ruled it: the body IS the prompt and ## structure IS the minimum
+    # sections — one place. The registry mirrors it only so the runtime can
+    # count without parsing agent bodies; THIS check is what keeps the mirror
+    # honest. Skipped when the owner owns more than one artifact: one
+    # ## structure cannot be attributed mechanically (tech-lead's structure is
+    # counsel's; the diagnostic's sections live only in the registry — a
+    # single source, nothing to drift from).
+    for name, a in artifacts.items():
+        secs, owner = a.get("sections"), a.get("owner")
+        if not secs or not owner or owner.startswith("{") or owner not in agents:
+            continue
+        _, d = agents[owner]
+        owned = ((d.get("contract") or {}).get("owns") or {}).get("artifact")
+        owned = [x for x in (owned if isinstance(owned, list) else [owned]) if x]
+        if len(owned) != 1:
+            continue
+        m = re.search(r"^## structure\s*\n(.*?)(?=^## (?:inquiry|style|schema)\b|\Z)",
+                      corpos.get(owner, ""), re.S | re.M)
+        if not m:
+            continue
+        h2 = re.findall(r"^## +\S", m.group(1), re.M)
+        minimo = len(secs) - (1 if str(secs[0]).strip().lower() == "title" else 0)
+        if len(h2) < minimo:
+            ERRORS.append(
+                f"[spec/artifacts.yaml] '{name}': sections declares {minimo} minimum, but the "
+                f"owner's ## structure defines {len(h2)} '##' sections — every REAL document "
+                f"born from the structure fails verify's count (the ADR case: 15 approved ADRs "
+                f"failing at once). The structure is the source; fix the registry mirror"
+            )
+
     print(f"\nLAYER 2 · AGENTS — {len(agents)} written, {len(reg)} skills, {len(artifacts)} artifacts")
     print("-" * 78)
-    print(f"  {'✗' if ERRORS else '✓'} declared skills resolve · used_by matches · every artifact has an owner and the owner confirms")
+    print(f"  {'✗' if ERRORS else '✓'} declared skills resolve · used_by matches · every artifact has an owner and the owner confirms · sections mirror the owner's structure")
 
 
 def main():

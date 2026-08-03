@@ -1,4 +1,4 @@
-specVersion: "1.8.0"
+specVersion: "1.9.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -248,8 +248,12 @@ artifacts:
       engineering decides engineering.
     path:
       project: "{docsRoot}decisions/adr/{seq}-{slug}.md"
+    # Mirrors the owner agent's ## structure EXACTLY (validated by
+    # validate-layers.py since 1.9.0): Title is the H1; Status and Authors
+    # live in the FRONTMATTER, not as sections — the v1 list said 8 and every
+    # real ADR (all six-sectioned, per the structure) failed verify's count.
     sections: [Title, Context / Motivation, Decision, Alternatives Considered,
-               Consequences, Status, Authors, References]
+               Consequences, Review conditions, References]
 
   counsel:
     stage: define
@@ -672,8 +676,8 @@ artifacts:
     scope: [target]
     path:
       target: "{target.tasksRoot}prd-{ws}/test-plan.md"
-    sections: [Scope, Out of Scope, Traceability Matrix, Test Cases,
-               Data & Environment, Edge Cases, Entry and Exit Criteria, Gaps]
+    sections: [Scope, Traceability, Cases, Distribution,
+               Data & environment, Gaps]
 
   codereview:
     stage: confirm
@@ -917,8 +921,9 @@ artifacts:
     scope: [project]
     path:
       project: "{docsRoot}releases/integration-guide.md"
-    sections: [Quickstart, Concepts, Authentication, Environments, Flows by Use Case,
-               Error Handling, Limits, Webhooks, Versioning, Troubleshooting]
+    sections: [Start here, Concepts, Authentication, Environments,
+               Flows by use case, Errors, Limits, Changes & migration,
+               When it does not work]
 
   # ------------------------------------------------------------ REDEFINE
   postmortem:
@@ -931,9 +936,9 @@ artifacts:
     immutable: true
     path:
       project: "{docsRoot}ops/postmortems/{date}-{slug}.md"
-    sections: [Summary, Impact, Timeline, Root Cause, Contributing Factors, Trigger,
-               Detection & Response, What Worked, Counterfactuals, Corrective Actions,
-               Artifacts to Update]
+    sections: [Summary, Impact, Timeline, "Trigger, root cause, contributors",
+               What made it look right at the time, Detection & response,
+               Actions, Pointers, Luck]
 
   release-notes:
     stage: redefine
