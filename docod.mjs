@@ -120,7 +120,22 @@ function loadModel(root) {
     const [d] = readFrontmatter(f);
     if (d.key) agents[d.key] = d;
   }
-  return { inst, arts, agents };
+  // The STATUS VOCABULARY comes from the spec, never retyped here. Field case
+  // (the third always-red alarm in one week): verify hardcoded
+  // draft|review|approved and failed every `superseded` document — a state
+  // method.yaml itself defines as legal and terminal ("replaced by another
+  // artifact; kept for history") — and would have failed `rejected` too. The
+  // document described the world correctly; the checker did not know its own
+  // specification. A retyped list is the same mirror-without-a-validator the
+  // 1.9.0 sections fix killed, and the cure is the same, one step further:
+  // do not validate the mirror — DELETE it and read the source.
+  let statuses = ["draft", "review", "approved", "rejected", "superseded"];
+  try {
+    const met = yload(fs.readFileSync(path.join(specDir, "method.yaml"), "utf-8"));
+    if (met?.status && typeof met.status === "object" && Object.keys(met.status).length)
+      statuses = Object.keys(met.status);
+  } catch { /* method.yaml unreadable: the fallback above matches the shipped spec */ }
+  return { inst, arts, agents, statuses };
 }
 
 function docsRoot(inst) {
@@ -465,7 +480,7 @@ function cmdVerify(root, file) {
   // trains the user to ignore the alert — hence COUNT, which is language-
   // neutral), and judgment/evidence postconditions (not computable — they
   // remain gated by reviewers).
-  const { inst, arts } = loadModel(root);
+  const { inst, arts, statuses } = loadModel(root);
   const p = path.isAbsolute(file) ? file : path.join(root, file);
   if (!fs.existsSync(p)) die(`✗ does not exist: ${file}`);
   const oks = [], fails = [], warns = [];
@@ -481,9 +496,13 @@ function cmdVerify(root, file) {
     try { fm = yload(raw.slice(3, i2)) || {}; oks.push("frontmatter parses"); }
     catch (e) { fails.push("frontmatter does not parse: " + String(e.message).split("\n")[0]); }
   } else fails.push("no frontmatter (--- block) at the top");
+  // The valid set is READ from method.yaml's status machine, never retyped:
+  // the retyped trio failed every `superseded` document (legal, terminal,
+  // "kept for history") and would have failed `rejected` — the third
+  // always-red alarm, and an alarm that always rings stops being an alarm.
   if (fm.status) {
-    if (["draft", "review", "approved"].includes(fm.status)) oks.push(`status '${fm.status}' valid`);
-    else fails.push(`status '${fm.status}' not in draft|review|approved`);
+    if (statuses.includes(fm.status)) oks.push(`status '${fm.status}' valid`);
+    else fails.push(`status '${fm.status}' not in ${statuses.join("|")} (the machine in spec/method.yaml)`);
   }
   if (fm.status === "approved") {
     if (!fm.approval?.content_hash) fails.push("approved without approval.content_hash");

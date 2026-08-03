@@ -5,6 +5,24 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.10.1] — 2026-08-03
+
+Fixed: `verify` now reads the status vocabulary from method.yaml's state
+machine instead of a retyped list. The hardcoded trio (draft|review|approved)
+failed every `superseded` document — a state the spec itself defines as legal
+and terminal ("replaced by another artifact; kept for history") — and would
+have failed `rejected` the same way. The field case: ADR-0004, correctly
+superseded by its replacement, red forever; and the tempting "fix" (flipping
+it back to approved to please the tool) would have reintroduced the exact
+defect supersession exists to prevent — an executor reading a stale ADR as
+current. The document describes the world; the checker checks the document;
+when they disagree and the document is right, the checker is wrong. Third
+always-red alarm in one week (sections drift, the mutual-staleness cycle,
+this), all one disease: an alarm that always rings stops being an alarm.
+Same cure as 1.9.0's sections fix, one step further — do not validate the
+mirror, DELETE it and read the source (with a matching fallback only for a
+bundle whose method.yaml is unreadable).
+
 ## [1.10.0] — 2026-08-03
 
 The edge-lineage release — one field critique, correct end to end: lineage
