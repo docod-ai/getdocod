@@ -831,8 +831,11 @@ function cmdRebless(root, by, reason, yes, repin, only = []) {
   // tax. Two semantics, both deliberate: the scope filters which FILES are
   // TOUCHED (re-approvals and re-pins), and CANNOT RESOLVE reports only
   // in-scope files — an out-of-scope orphan is the next sweep's problem, or
-  // the --only did not free you from looking at what you scoped out. The
-  // plan header names the scope so the record shows the sweep was partial.
+  // the --only did not free you from looking at what you scoped out. The plan
+  // header names the scope live, and — the console scrolls away — each touched
+  // approval PERSISTS `rebless_scope`, so the record itself, not just the
+  // terminal, shows the sweep was partial and where its boundary was (the
+  // bundle's own rule: announced in the console is not recorded on disk).
   if (!reason || !reason.trim()) die("rebless requires --reason: a batch re-approval without a recorded why IS the rubber stamp");
   const { inst, arts } = loadModel(root);
   const scope = only.map(o => path.normalize(String(o)).replace(/^\.\//, "").replace(/\/+$/, ""))
@@ -931,7 +934,7 @@ function cmdRebless(root, by, reason, yes, repin, only = []) {
   }
   for (const p of plan) {
     for (const [inp, srcFile] of p.stale) inp.hash = sha256Body(srcFile);
-    if (p.invalid) p.fm.approval = { by, at: new Date().toISOString().slice(0, 10), content_hash: null, rebless_reason: reason };
+    if (p.invalid) p.fm.approval = { by, at: new Date().toISOString().slice(0, 10), content_hash: null, rebless_reason: reason, ...(scope.length ? { rebless_scope: scope } : {}) };
     writeFrontmatter(p.f, p.fm);
     if (p.invalid) { const [fm2] = readFrontmatter(p.f); fm2.approval.content_hash = sha256Body(p.f); writeFrontmatter(p.f, fm2); }
     console.log(`  ok ${path.relative(root, p.f)}`);

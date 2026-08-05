@@ -5,6 +5,31 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.11.1] — 2026-08-04
+
+Two gaps found reviewing 1.11.0, both the week's own disease (announced is
+not recorded; a rule with no owner).
+
+Fixed: `rebless --only` now RECORDS its scope, not just announces it. The
+plan header named the scope on the console — which scrolls away — while the
+only durable record, the touched approval, carried just `rebless_reason`. Six
+months on, a reader could not tell a full sweep from a scoped one, losing
+exactly the negative a partial sweep must keep: which files were not examined.
+Each touched approval now persists `rebless_scope` (structured, not concat'd
+into the prose reason — the same don't-bury-provenance-in-prose lesson as the
+edge-lineage work). Absent `--only`, nothing is added.
+
+Fixed: `finding_urgency` now says WHO answers "would it change what is about
+to be built?" — the agent that found it, which is the one with the least
+downstream visibility, and the error is asymmetric ("no" when it was "yes"
+builds on a known-wrong foundation). The closing rule: an agent may answer
+"no" only if it can NAME the downstream work and show the finding does not
+touch it; otherwise it records the finding UNCLASSIFIED and the human decides
+at the drain. No throughput added — the human decides only where the agent
+admits it cannot see.
+
+specVersion → 1.11.1 in lockstep (5 spec files + install.sh + plugin.json).
+
 ## [1.11.0] — 2026-08-04
 
 The cascade-week release — the buildable slice of a week-long diagnosis

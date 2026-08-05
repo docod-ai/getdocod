@@ -1,4 +1,4 @@
-specVersion: "1.11.0"
+specVersion: "1.11.1"
 
 # =============================================================================
 # LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
@@ -521,6 +521,19 @@ finding_urgency: |
   Tested against the field week: DR-009 (key retention) changed what was
   being built ⇒ now — correct; the 8 derived anchors did not ⇒ next pass —
   correct. The old test left both open.
+
+  WHO answers the question, and the asymmetry that fixes the default: the
+  agent that FOUND it answers — and it is precisely the one with the LEAST
+  downstream visibility (a security-design knows its own artifact, not whether
+  task-extraction runs tomorrow). The error is not symmetric: "yes" when it
+  was "no" costs an unnecessary cascade — expensive but visible; "no" when it
+  was "yes" lets downstream build on a foundation known-wrong later — the exact
+  converge-early sin this block exists to prevent. So the rule that closes it,
+  testable: an agent may answer "no" ONLY if it can NAME the downstream work
+  and show the finding does not touch it. Cannot name it ⇒ it records the
+  finding as UNCLASSIFIED and the human decides at the drain (already a named
+  human act). This adds no throughput — the default becomes "the human
+  decides" only where the agent admits it cannot see.
 
   The line that keeps this honest: what is deferred is the RE-RUN, never the
   KNOWLEDGE. The finding is written down the moment it is found; the
