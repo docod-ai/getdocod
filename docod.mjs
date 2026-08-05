@@ -816,7 +816,7 @@ function cmdVerify(root, file) {
   return fails.length ? 1 : 0;
 }
 
-function cmdRebless(root, by, reason, yes, repin) {
+function cmdRebless(root, by, reason, yes, repin, only = []) {
   // The cascade-cost answer: a batched re-approval that shows its plan and
   // records its reason — never a silent rubber stamp. Born from a real case:
   // a product rename touched 361 prose points and invalidated 32 approvals.
@@ -825,13 +825,25 @@ function cmdRebless(root, by, reason, yes, repin) {
   // input re-pins only for live-lineage inputs resolving to exactly one
   // current instance; snapshot/append-only/external inputs are never touched
   // (re-pinning a record would lie about what it analyzed).
+  // --only <path> (repeatable) scopes the SWEEP. Field case: closing the
+  // design body required sweeping the task files too, because rebless was
+  // all-or-nothing — 128 re-pins, zero intellectual content, pure pointer
+  // tax. Two semantics, both deliberate: the scope filters which FILES are
+  // TOUCHED (re-approvals and re-pins), and CANNOT RESOLVE reports only
+  // in-scope files — an out-of-scope orphan is the next sweep's problem, or
+  // the --only did not free you from looking at what you scoped out. The
+  // plan header names the scope so the record shows the sweep was partial.
   if (!reason || !reason.trim()) die("rebless requires --reason: a batch re-approval without a recorded why IS the rubber stamp");
   const { inst, arts } = loadModel(root);
+  const scope = only.map(o => path.normalize(String(o)).replace(/^\.\//, "").replace(/\/+$/, ""))
+                    .filter(Boolean);
+  const inScope = (rel) => !scope.length || scope.some(s => rel === s || rel.startsWith(s + path.sep));
   const plan = [], unresolved = [];
   for (const [key, art] of Object.entries(arts)) {
     if (String(art.owner ?? "").startsWith("{")) continue;
     for (const f of findInstances(art, root, inst, "*")) {
       if (!f.endsWith(".md") || !fs.existsSync(f) || !fs.statSync(f).isFile()) continue;
+      if (!inScope(path.relative(root, f))) continue;
       const [fm] = readFrontmatter(f);
       const invalid = fm.status === "approved" && fm.approval?.content_hash && fm.approval.content_hash !== sha256Body(f);
       const stale = [];
@@ -899,10 +911,12 @@ function cmdRebless(root, by, reason, yes, repin) {
       console.log(`0 rebless-able; ${unresolved.length} unresolved. This is "I don't know how", NOT "nothing to do".`);
       return 1;
     }
-    console.log("nothing to rebless — no invalid approvals, no re-pinnable inputs");
+    console.log(`nothing to rebless${scope.length ? ` within scope ${scope.join(", ")}` : ""} — no invalid approvals, no re-pinnable inputs`);
     return 0;
   }
   console.log(`REBLESS PLAN — reason: "${reason}"`);
+  if (scope.length)
+    console.log(`  scope: ${scope.join(", ")} — files outside the scope were NOT examined (partial sweep, on record)`);
   for (const p of plan) {
     const rel = path.relative(root, p.f);
     console.log(`  ${p.invalid ? "re-approve" : "          "}  ${rel}` + (p.stale.length ? `  (+${p.stale.length} input re-pin)` : ""));
@@ -1066,8 +1080,10 @@ function main() {
     case "report":   return argv.includes("--diagnostic") ? cmdDiagnosticReport(root) : cmdReport(root);
     case "rebless": {
       const by = opt("--by"), reason = opt("--reason");
-      if (!by) die('usage: docod.mjs rebless --by <who> --reason "..." [--repin-inputs] [--yes]');
-      return cmdRebless(root, by, reason, argv.includes("--yes"), argv.includes("--repin-inputs"));
+      const only = [];
+      for (let i = 1; i < argv.length; i++) if (argv[i] === "--only" && argv[i + 1]) only.push(argv[i + 1]);
+      if (!by) die('usage: docod.mjs rebless --by <who> --reason "..." [--only <path>]... [--repin-inputs] [--yes]');
+      return cmdRebless(root, by, reason, argv.includes("--yes"), argv.includes("--repin-inputs"), only);
     }
     case "verify": {
       if (!pos[0]) die("usage: docod.mjs verify <file>");

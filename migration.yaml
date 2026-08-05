@@ -93,6 +93,78 @@ migration:
         report output profile focused on DIVs + findings + provenance, and
         the two framings above written into the offer.
 
+    - id: section-granularity
+      severity: major
+      issue: |
+        Staleness hashes at FILE granularity, so the declared graph is
+        coarser than the real one: an edit to one RF invalidates all 33 of
+        the frd's consumers, though each consumer depends on a handful of
+        RFs. Field week: the frd — the most-depended artifact — was edited 4
+        times; 4 cascades, ~128 re-pins, near-zero intellectual content. The
+        Stable Dependencies Principle is violated by the FILE (most depended,
+        most edited) but respected by the RF (individually stable) — pinning
+        per section IS depending toward stability.
+      decision: |
+        DESIGN FIRST (ADR-A grade), and MEASURE THE PREMIUM BEFORE the
+        design — the "15 rule", named after the week's own unmeasured number:
+        against the 4 real frd edits, count how many of the 33 consumers were
+        pinned to an RF that actually changed. Concentrated edits (5/33) ⇒
+        section pinning is gold; diffuse edits (25/33) ⇒ the convention +
+        new drift class do not pay. Do not let the biggest idea enter the ADR
+        the way auth entered bucket 2.
+        The REAL cost is not boundary drift — it is FALSE GREEN: file hash
+        over-invalidates (noisy, conservative, never misses); section hash
+        under-invalidates (precise, can MISS — a shared definition above the
+        block changes, the block's hash does not, the consumer goes silently
+        stale). On a threat-model edge false green is worse than false red,
+        in direct tension with house law (permissive fallbacks fail loud).
+        Resolution direction, if the premium justifies: OPT-IN per edge,
+        risk-weighted, with a coupling escape hatch (pin block + preamble
+        hash, or declare the coupling) — presented as ONE coordinate system
+        with edge lineage: each edge now has knobs (lineage: live/snapshot;
+        granularity: file/section) and the RISK of the edge chooses both.
+        Security edges default to conservative file-grain.
+
+    - id: cascade-economy
+      severity: major
+      issue: |
+        Field week: 5 real findings generated ~20 agent rounds. Each finding
+        went straight to its owner agent, each owner edit re-opened the
+        cascade — the api-contract opened 3× when the 2nd and 3rd rounds'
+        items were already known in the 1st (BUG-02/04 in qa.md since
+        31/07). With ONE human on every gate, cascades serialize: same
+        intellectual cost as a team of ten, five times the clock. The
+        structural frame that decides the solution: the single human is the
+        AMPLIFIER (serialization), not the cause — the cause is the graph.
+        "I am alone" leads to hiring; "the graph is expensive and I
+        serialize" leads to fixing the graph and the tax, which is doable
+        today.
+      decision: |
+        The wave reform (ADR-B grade), deferred until section-granularity's
+        premium is MEASURED — fixing the mechanism first re-prices the
+        workflow reform (converging on the workflow before measuring what
+        the mechanism bought is the exact sin the field week exposed). Three
+        open decisions, named so they do not dissolve:
+        (1) WHERE THE QUEUE LIVES — findings accumulate in a registry
+        (append-only precedent: external-questions/DIV), likely owned by
+        impact-analysis, the propagation owner; artifacts open once per
+        wave, not once per finding.
+        (2) WHO FIRES THE WAVE — a named human act (a `ws wave`, analogous
+        to approve). Anything automatic is an orchestrator in disguise.
+        (3) HONEST RED IN THE WINDOW — while a re-pin waits for the wave,
+        verify must distinguish "stale — QUEUED (wave N)" from "stale —
+        nobody has seen this", by cross-referencing the queue; otherwise the
+        reform manufactures the fourth always-red alarm.
+        Doctrine already shipped (1.11.0, agent.yaml finding_urgency): the
+        sorting question is "would it change what is about to be built?"
+        (not "does it block execution?" — vague, left both field cases
+        undecided); what is deferred is the RE-RUN, never the KNOWLEDGE; the
+        batch target is not "fewer waves" (the waterfall limit) but wave
+        boundaries aligned to real decision points.
+        INTERACTS with graduated-gate: two halves of the same gate economy —
+        that one cuts ceremony per item, this one cuts trips to the gate.
+        Design them aware of each other or redo one.
+
     - id: coverage-invariants
       severity: major
       issue: |
@@ -125,6 +197,28 @@ migration:
         test-plan already has its matrix (RF → case) but nothing external
         re-checks it. Wire them one field case at a time — an invariant added
         without a real miss behind it is a checklist item, and checklists rot.
+        THE FOURTH CASE (measured 04/08, field): the check catches
+        defined-but-uncited; it is BLIND to defined-cited-badly-extracted.
+        The auth component was defined 41× upstream and cited 16× by tasks —
+        green — while the verb (authenticate a request) had no task. The
+        check is a FLOOR ("did anyone look?"), never a ceiling ("did they
+        look right?") — the ok message says so since 1.10.2, the
+        task-extraction doctrine names the four cases since 1.11.0. The
+        fourth case is the NEXT coverage iteration's spec: where a component
+        decomposes into child IDs, "component cited but 4 of 7 children are
+        not" is detectable — but it WAITS for a decomposition convention
+        (what makes an ID a child of COMP-07?) that the spec does not have;
+        a heuristic without the convention fires false, and false positives
+        are the house's forbidden currency. Where the component is atomic
+        prose, it stays gate judgment, irreducibly.
+
+    # (restored 1.11.0: this header was eaten by the 1.9.0 coverage-invariants
+    #  insert — graduated-gate's keys became silent duplicates inside the entry
+    #  above. PyYAML swallows duplicate keys, so the validator stayed green;
+    #  the runtime's YAML 1.2 parser is what finally refused. The checker that
+    #  parses this file now does so with the strict parser, on purpose.)
+    - id: graduated-gate
+      severity: major
       issue: |
         Every artifact crosses the same gate with the same ceremony: fixing a
         factual line ("3 steps" → "4", with directory evidence) costs the same

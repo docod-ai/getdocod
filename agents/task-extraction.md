@@ -92,6 +92,25 @@ index's Coverage section: every component and boundary the design names, →
 its tasks — or the gap, declared. The runtime checks the citation edge
 mechanically; only you can check the verb.
 
+Know exactly what that check proves, because there are FOUR cases and it
+catches one:
+
+| The component was… | What catches it |
+|---|---|
+| defined upstream, cited by no task | the runtime's coverage check ✓ |
+| defined, cited, badly extracted (nouns in, verb lost) | only YOU, asking "does some task DO what it is FOR?" |
+| never defined upstream (incomplete design) | only the design gate, asking "is the drawing complete?" |
+| defined and genuinely carried | nothing to catch |
+
+Measured in the field: the auth component was defined 41 times and cited 16
+times by tasks — the check was green, and the verb was still missing. The
+coverage check is a FLOOR ("did anyone look?"), never a CEILING ("did they
+look right?"). A green is not "everything has its task"; it is "nothing was
+invisible". The second case is the next check's spec — where a component
+decomposes into child IDs, "component cited but 4 of its 7 children are
+not" becomes detectable; where it is atomic prose, it stays your judgment,
+irreducibly.
+
 **Success criteria verifiable without you.** Apply `verifiable-requirements`. Whoever executes will not be able to ask you. "Working correctly" is not a criterion; "`security` job green and a PR with a fake secret is blocked" is.
 
 **A dependency is an ID, never prose.** `depends_on: [T-003]`. Not "depends on the contract being defined" — that resolves nothing, validates nothing, and nobody knows whether it already happened.

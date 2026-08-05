@@ -1,4 +1,4 @@
-specVersion: "1.10.2"
+specVersion: "1.11.0"
 
 # =============================================================================
 # LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
@@ -501,6 +501,35 @@ reference_discipline: |
   staleness does not watch — one survived three rounds and an approval while
   wrong. Either it belongs in inputs[] (watched) or it does not belong in the
   text. `verify` warns on both vectors.
+
+# -----------------------------------------------------------------------------
+# FINDING URGENCY — one question, two buckets (field-learned, the cascade week)
+# -----------------------------------------------------------------------------
+finding_urgency: |
+  A finding lands in one of two buckets, and the question that sorts them is
+  NOT "does it block execution?" — that test is vague; it left both real
+  cases of the week undecided. The question is:
+
+    WOULD IT CHANGE WHAT IS ABOUT TO BE BUILT?
+
+    yes  ⇒ NOW: the owner runs, the cascade is paid — it is cheaper than
+           building on a foundation known to be wrong. Security findings are
+           always in this bucket.
+    no   ⇒ NEXT PASS: recorded where it cannot be lost (a registry entry, a
+           declared debt with a trigger) and drained deliberately, in batch.
+
+  Tested against the field week: DR-009 (key retention) changed what was
+  being built ⇒ now — correct; the 8 derived anchors did not ⇒ next pass —
+  correct. The old test left both open.
+
+  The line that keeps this honest: what is deferred is the RE-RUN, never the
+  KNOWLEDGE. The finding is written down the moment it is found; the
+  producer just does not re-run until the deliberate pass. Deferring the
+  knowledge itself — building on while pretending not to know — is the
+  converge-early-and-patch sin this method exists to prevent. And the
+  deliberate pass is a HUMAN act, named and chosen; nothing fires it
+  automatically (a scheduler that decides when to cascade is an orchestrator
+  in disguise).
 
 # -----------------------------------------------------------------------------
 # DIVERGENCE TAXONOMY — unmet is not false (field-learned, the CS-7 case)

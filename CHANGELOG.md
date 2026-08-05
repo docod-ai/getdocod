@@ -5,6 +5,48 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.11.0] — 2026-08-04
+
+The cascade-week release — the buildable slice of a week-long diagnosis
+(five real findings, ~20 agent rounds; the amplification was sequencing and
+tooling, not rigor). What was inequivocal ships; what needs measurement
+first is recorded in migration.yaml (`section-granularity`,
+`cascade-economy`) with its open decisions named, so it waits for design
+instead of evaporating.
+
+Added: `rebless --only <path>` (repeatable) — the pointer-tax squeegee.
+Closing the design body used to require sweeping the task files too,
+because rebless was all-or-nothing: 128 re-pins, zero intellectual content.
+Two deliberate semantics: the scope filters which files are TOUCHED, and
+CANNOT RESOLVE reports only in-scope orphans — otherwise the flag would not
+free you from looking at what you scoped out. The plan header names the
+scope: a partial sweep is on record as partial.
+
+Added: `finding_urgency` in spec/agent.yaml — the sorting doctrine for
+findings, tested against the field week. The question is "WOULD IT CHANGE
+WHAT IS ABOUT TO BE BUILT?" (not "does it block execution?", which left
+both real cases undecided): yes ⇒ now, the cascade is paid; no ⇒ recorded
+and drained in a deliberate, HUMAN-fired batch. What is deferred is the
+re-run, never the knowledge — deferring knowledge is the
+converge-early-and-patch sin. Security findings are always "now".
+
+Fixed: migration.yaml had carried a silent duplicate-key corruption since
+1.9.0 — the coverage-invariants insert ate the `- id: graduated-gate`
+header, folding that entry's keys into the one above. The dev validator's
+parser swallows duplicates (last wins), so it stayed green; the runtime's
+strict YAML 1.2 parser is what refused. Header restored, with the incident
+annotated in place — the mirror-drift disease struck the very file that
+catalogs it.
+
+Added: the four-case coverage taxonomy in task-extraction, with the
+measured field case. The auth component was defined 41× and cited 16× —
+the coverage check was GREEN and the verb was still missing. The check
+catches defined-but-uncited; badly-extracted needs the extractor's own
+question ("does some task DO what it is FOR?"); never-defined needs the
+design gate. Coverage is a FLOOR (did anyone look?), never a ceiling (did
+they look right?) — and the child-ID iteration that could lower the ceiling
+waits, in migration, for a decomposition convention.
+
 ## [1.10.2] — 2026-08-03
 
 The finishing pass on the review of 1.9.0–1.10.1 — three notes, one of them
