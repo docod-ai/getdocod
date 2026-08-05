@@ -647,3 +647,25 @@ migration:
         (was requirements-specialist) and `diagram-as-code` (was diagrams). Both
         delivered a craft, not a document.
 
+    - id: migration-dupkey
+      was: major
+      issue: |
+        The 1.9.0 coverage-invariants insert ate the `- id: graduated-gate`
+        list header: that entry's keys folded into the entry above as SILENT
+        duplicates. `validate-layers.py` stayed green — PyYAML takes last-wins
+        on duplicate mapping keys — so a corrupted governance ledger passed
+        every check for three releases (1.9.0 → 1.10.2). The mirror-drift
+        disease this file catalogs struck the file that catalogs it.
+      root_cause: |
+        "Validate the mirror" without a strict parser. The dev validator's
+        loader (PyYAML) accepts duplicate keys silently; a green validator was
+        never proof the file was well-formed, only that it was loadable-with-
+        loss. The runtime's YAML 1.2 parser (js-yaml) is what finally refused.
+      resolution: |
+        DONE (1.11.0): graduated-gate header restored, incident annotated in
+        place. Discipline going forward: migration.yaml — and any hand-edited
+        YAML where an append can land inside the entry above — is STRICT-parsed
+        after editing, by a loader that REFUSES duplicate keys, never trusted to
+        the lenient validator alone. Verify by parsing, and by the parser that
+        refuses.
+
