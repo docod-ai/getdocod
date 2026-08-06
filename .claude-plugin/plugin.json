@@ -1,6 +1,6 @@
 {
   "name": "docod",
-  "version": "1.11.1",
+  "version": "1.12.0",
   "description": "DOCOD as an installable Claude Code plugin. Run /docod:setup-docod once per repo: it installs the governed bundle (.docod/, subagents, commands, AGENTS.md block) with the merge-safe installer. You subscribe to the method; your instance stays yours.",
   "author": {
     "name": "Fabio Valencio",

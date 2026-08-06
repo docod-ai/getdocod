@@ -1,4 +1,4 @@
-specVersion: "1.11.1"
+specVersion: "1.12.0"
 
 # =============================================================================
 # LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
@@ -100,6 +100,26 @@ agent:
       A craft that more than one agent needs. See the registry in method.yaml.
       Two agents died becoming skills: requirements-specialist and diagrams.
       The test: does it deliver a DOCUMENT, or does it deliver a CRAFT?
+
+    conductor: |
+      The main session between commands: reads state, dispatches agents, hands
+      results back to the human. It fails the agent test on the first clause —
+      it delivers NO document — and forcing one on it would be `diagrams`
+      again: inventing a file in order to be an agent. It is the third
+      non-agent kind, after rule and skill.
+
+      Yet it was the only ungoverned actor in the method, and the field bill
+      came due: every contracted subagent behaved; the uncontracted conductor
+      improvised — inline verifiers with parse bugs, invented steps, decisions
+      taken for the user (see `verifier_discipline`). Its contract is
+      CONDUCTOR.md at the bundle root — always on, wired by the discovery
+      block every harness reads. What binds an agent is its postconditions on
+      a document; what binds the conductor is its Never list on the
+      conversation — judgment-class by nature (a conversation has no hash),
+      which is soft enforcement, and STILL infinitely more than the nothing it
+      had. commands.yaml's prohibition is untouched: an orchestrator that
+      DECIDES stays forbidden; the conductor contract is the piece that keeps
+      the one actor who could decide from deciding.
 
   # ---------------------------------------------------------------------------
   # RESOLVED in the rewrite
@@ -501,6 +521,40 @@ reference_discipline: |
   staleness does not watch — one survived three rounds and an approval while
   wrong. Either it belongs in inputs[] (watched) or it does not belong in the
   text. `verify` warns on both vectors.
+
+# -----------------------------------------------------------------------------
+# VERIFIER DISCIPLINE — the verifier is also a claim (field-learned, the
+# review-loop week)
+# -----------------------------------------------------------------------------
+verifier_discipline: |
+  Two field cases, one law: a verification is only worth what verifies IT.
+
+  The improvised verifier. Four review rounds, four throwaway scripts written
+  on the spot to check the same traceability invariant — and four different
+  parse bugs (expanded ranges, parentheses, trailing label lines). One bug
+  read a mention inside parentheses as an assignment, the sets matched by
+  accident, and the ONE real divergence stayed invisible to the very
+  instrument presented as proof. "The document was correct; the instrument
+  was not." The catch came from the reviewer who did NOT write the script.
+  The ladder, in order:
+
+    1. a self-written check is an ASSERTION and is labeled as such — never
+       presented in the same voice as the runtime's `verify`;
+    2. an assertion worth trusting is re-run by someone who did not write it;
+    3. an invariant improvised TWICE has earned promotion into `verify` or
+       the owning agent's contract — a method change: proposed and recorded
+       (external-questions or counsel), decided by the method's author, never
+       self-served by the session. And promotion is vocabulary-first: the
+       COVERAGE check walked exactly this ladder — field-improvised, then its
+       ID grammar generalized, THEN mechanized. Mechanizing a private
+       convention just ships the parse bug with a badge.
+
+  The refused rule. A team wrote a TDD rule; the model still declined to
+  write some of the tests, and only watching the measured coverage caught it.
+  A rule the producer holds is an intention; only a check the producer does
+  not control is a fact. This is why a metric is MEASURED by the verifier and
+  never TRUSTED from the producer — an agent saying a check passed is not
+  evidence; the check's own output is.
 
 # -----------------------------------------------------------------------------
 # FINDING URGENCY — one question, two buckets (field-learned, the cascade week)

@@ -261,6 +261,93 @@ migration:
         into 1.5.0: gate granularity deserves rebless-grade design
         (enforcement, not theater), and the doctrine to do it already exists
         in decision-reversibility.
+      field_proof: |
+        (2026-08-06, the review-loop transcript.) A one-cell table fix on a
+        design in `approved_with_comments` re-triggered the FULL ceremony:
+        hash invalidated the verdict, re-review, re-verdict, and the
+        downstream gate still demanded a waiver because it compares literally
+        with 'approved'. The user's words: "um vai e vem que confunde e faz o
+        usuario querer desistir". This entry is the named relief valve; the
+        transcript is its price tag. Interim shipped in 1.12.0: the runtime
+        now NAMES the limbo where it bites (status: "verdict is
+        'approved_with_comments' → the waiver is the designed path, not a
+        bypass") — message honesty only; the gate semantics wait for this
+        design. Open question that belongs to this entry: does
+        approved_with_comments SATISFY a downstream gate with the comments as
+        recorded debt, or does it always require the waiver envelope? Today it
+        is the second, by literal comparison; deciding it on purpose is part
+        of the graduated design.
+
+    - id: traceability-invariant
+      severity: major
+      issue: |
+        Field week (the review-loop transcript, 2026-08-06): the SAME
+        traceability invariant on system-design — set-equality between each
+        component's declared requirement links and the transposed
+        requirements table, with "inside a parenthesis is a mention, not an
+        assignment" — was improvised as a throwaway script FOUR times across
+        review rounds, with four different parse bugs (expanded ranges,
+        parentheses, trailing label lines). One bug made the sets match by
+        accident and hid the single real divergence from the very instrument
+        presented as proof. Most of the loop the user experienced as
+        exhausting was the method debugging its own improvised instruments,
+        not the design being wrong. Doctrine shipped in 1.12.0
+        (agent.yaml verifier_discipline + CONDUCTOR.md): label self-written
+        checks as assertions, propose promotion after the second
+        improvisation. This entry is the promotion itself.
+      decision: |
+        Promote into `verify` as the COVERAGE precedent walked: VOCABULARY
+        FIRST. The invariant's grammar today is a private convention of one
+        instance's table (the `·`-separated assignment cells, the
+        parenthesis-is-mention rule, the Rastreia:/traces: line shape).
+        Mechanizing it as-is ships the parse bug with a badge. Steps, in
+        order: (1) the table convention becomes method vocabulary — declared
+        in the system-design owner's ## structure (and mirrored in the
+        registry only if the runtime must count it); (2) THEN verify gains
+        the set-equality check, external and caller-run like COVERAGE —
+        in-band deterministic postconditions are self-attestation, the
+        1.9.0 lesson; (3) the check reports set DIFFERENCES (which ID, which
+        side), never a bare count — a count that matches by accident is this
+        entry's founding bug. Scope note: this is the third member of the
+        coverage check-class family (defined→cited, sections×structure,
+        now declared-links×table) — wire it with a real miss behind it,
+        which this transcript supplies.
+
+    - id: health-delta
+      severity: minor
+      issue: |
+        Absorption analysis of the field's "four mandatory tests" (load,
+        coverage ≥85%, complexity, dependency structure), 2026-08-06. Three
+        of the four the method already carries in a stronger idiom
+        (project-derived thresholds via rules-factory, load as an honest
+        qa-executor requirement, complexity/coupling as code-review
+        findings), and the absolute-threshold framing is rejected on Goodhart
+        grounds — deliberately, in testing-guidelines. The genuine gap: the
+        method checks the artifact against its INPUTS but never measures the
+        code-health DELTA against the pre-change baseline. "Coverage dropped
+        4 points, max complexity 12→19, +3 cross-module edges" is the creep
+        the source actually fears, and today it is nobody's finding. The
+        source's field case — a TDD rule written, the model still declining
+        some tests, only the measured coverage catching it — shipped as
+        doctrine in 1.12.0 (verifier_discipline: the refused rule).
+      decision: |
+        Absorb as an `evidence:` postcondition in code-review/qa — the delta
+        MEASURED and attached (command + output), never trusted from the
+        producer; the ceiling derived by rules-factory (e.g. "no regression"
+        or an ADR-decided budget), never invented. Goodhart-resistant
+        because it flags regression, not an absolute target. THREE OPEN
+        DECISIONS before build, named so they do not dissolve:
+        (1) WHERE THE BASELINE LIVES — a baseline is a snapshot artifact:
+        it needs a home, a producer, and staleness semantics (the lineage
+        vocabulary exists; the artifact does not).
+        (2) WHO MEASURES — layer-2 neutrality forbids naming the tool in
+        agent bodies; the measurer binds in the adapter/instance, the
+        contract names only the FORM (`<coverage command> → delta vs
+        baseline`).
+        (3) THE CEILING'S DERIVATION — rules-factory needs a derivation
+        recipe ("no worse" is too rigid for legitimate refactors; a budget
+        needs an ADR trail). Panel view (the four signals side by side in
+        `report`) is cheap and may ship with or before the postcondition.
 
     - id: shared-language
       severity: minor

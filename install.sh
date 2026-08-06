@@ -65,7 +65,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.11.1"
+specVersion: "1.12.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -419,6 +419,13 @@ This project runs the DOCOD method. Regardless of which coding agent you are:
   file IN FULL and follow it: contract, postconditions, `## structure`,
   `## inquiry`, `## style`. The instance (`docod.yaml`) sets language, docsRoot
   and targets; `.docod/spec/artifacts.yaml` sets every artifact's path.
+- **Conducting the session**: between and around commands YOU are the
+  conductor, and the conductor has a contract too: `.docod/CONDUCTOR.md`.
+  Read it IN FULL and hold it for the whole session — it is what governs the
+  prose no command covers: route to owning agents, never produce or review
+  inline, never improvise checks or steps (a script you wrote is an assertion,
+  not proof — label it), and translate every hand-back (severity floor · act
+  by default · label your own checks · two registers).
 - **Non-negotiable**: never write `status: approved` (approving is the human's
   act); deliver in draft/review. If an inquiry answer is missing, ask — never
   invent. Record computed hashes, never placeholders. Run

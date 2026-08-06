@@ -1,4 +1,4 @@
-specVersion: "1.11.1"
+specVersion: "1.12.0"
 
 # =============================================================================
 # LAYER 2 — COMMANDS  ·  NEUTRAL
@@ -13,6 +13,18 @@ specVersion: "1.11.1"
 # method AND the orchestrator together, without knowing which one failed. The
 # answer is to give the human what they need to orchestrate without hunting:
 # where am I, what can I do, what is blocked.
+#
+# That prohibition STANDS — and it left one actor uncovered. The main session
+# (the model the user talks to between commands) conducts de facto: it reads
+# state, dispatches agents, hands results back. Field-proven failure: every
+# producer was contracted and behaved; the ungoverned conductor improvised —
+# inline verifiers with parse bugs, invented steps, decisions taken for the
+# user. The answer is the INVERSE of the forbidden agent: CONDUCTOR.md at the
+# bundle root — not an agent (owns no document, decides nothing; agent.yaml
+# § nao_e_agente.conductor), but the always-on contract that keeps the one
+# actor who could decide from deciding. The forbidden orchestrator decides;
+# the conductor contract exists to forbid deciding. Same law, no ungoverned
+# seat left at the table.
 #
 # THE CENTRAL SCENARIO (the product's use case #1):
 #   I open the IDE with the bundle installed. I have a PRD — mine or someone

@@ -5,6 +5,78 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.12.0] — 2026-08-06
+
+The conductor release — from the review-loop field transcript ("um vai e vem
+que confunde e faz o usuario querer desistir"). Diagnosis, verified against
+the bundle: every producer runs contracted and isolated and behaves; the main
+session — the actor the user actually talks to, the one that reads state,
+dispatches and hands back — ran on a discovery block that only governed
+"acting as an agent". The only ungoverned actor in the method was the one
+touching every interaction, and it improvised: four throwaway verifier
+scripts with four different parse bugs, one of which hid the single real
+divergence from the instrument presented as proof.
+
+Added: `CONDUCTOR.md` at the bundle root — the always-on contract of the main
+session, deliberately NOT an agent. It fails the agent test (delivers no
+document), and per the method's own precedent (requirements-specialist,
+diagrams) what fails the test is expelled to its own kind, never bent in:
+agent.yaml § nao_e_agente gains the `conductor` entry, the third non-agent
+kind after rule and skill. The agent law ("an agent that delivers no document
+binds nothing") stays untouched — no carve-out. The contract: route, surface,
+record; dispatch owners, never produce inline; never improvise a check, a
+step, or vocabulary; and a hand-back style law with four rules — SEVERITY
+FLOOR (below-minor goes to a declared debt list, and the floor filters where
+a finding is REPORTED, never what severity it GETS), ACT BY DEFAULT (one
+clearly better path → take it and name why, never on what the user owns),
+LABEL YOUR OWN CHECKS (runtime-verified vs self-scripted are different
+claims), TWO REGISTERS (the record stays dense and complete; the hand-back
+translates — claim first, IDs demoted to citations, output summarized never
+dumped). Its checks are declared judgment-class: a conversation has no hash;
+the verifier is the human noticing — said in the contract itself, so the
+contract does not violate the self-attestation doctrine it carries.
+
+Wired: the discovery block install.sh writes into CLAUDE.md/AGENTS.md gains a
+"Conducting the session" bullet — plain prose, harness-neutral on purpose (an
+@-reference would be one harness's syntax; the block is read by all of them).
+commands.yaml's "NOT an orchestrator agent" law is reconciled in place: the
+prohibition stands — the forbidden orchestrator DECIDES; the conductor
+contract exists to forbid deciding. validate-layers gains a conductor check
+(exists, limbs present, body stack-neutral) instead of an agents/ exemption —
+the reference is validated because a declared reference with nothing on the
+other side is this project's recurring failure.
+
+Added: `verifier_discipline` in spec/agent.yaml — the verifier is also a
+claim. Two field cases: the improvised verifier (four scripts, four parse
+bugs, the accidental set-match that hid the real divergence; the catch came
+from the reviewer who did NOT write the script) with the three-step ladder —
+label as assertion, re-run by a non-author, promote vocabulary-first after
+the second improvisation; and the refused rule (a TDD rule written, the model
+still declining tests, only the measured coverage catching it) — a rule the
+producer holds is an intention; only a check the producer does not control is
+a fact.
+
+Fixed: the `approved_with_comments` limbo is now NAMED where it bites. The
+downstream gate compares literally with 'approved', so a with-comments
+verdict can never satisfy it without a fresh clean re-review — which turned
+every such state into a user-paid arbitration ("is the waiver a shortcut?").
+status now says it at the decision point: the waiver is the DESIGNED path,
+comments stay as declared debt, not a bypass. Message honesty only; the gate
+semantics are graduated-gate's design (migration.yaml, now carrying this
+transcript as field_proof and the open edge-definition question).
+
+Recorded in migration.yaml, with open decisions named: `traceability-invariant`
+(promote the four-times-improvised COMP-/RF- set-equality into verify, the
+COVERAGE path — vocabulary first: the table convention becomes method
+vocabulary before the machine enforces it; report set differences, never a
+bare count) and `health-delta` (the one genuine gap in the field's "four
+mandatory tests": measure code-health delta against the pre-change baseline
+as an evidence postcondition — three open decisions: where the baseline
+lives, who measures under layer-2 neutrality, how rules-factory derives the
+ceiling).
+
+specVersion → 1.12.0 in lockstep (5 spec files + install.sh + plugin.json).
+
 ## [1.11.1] — 2026-08-04
 
 Two gaps found reviewing 1.11.0, both the week's own disease (announced is

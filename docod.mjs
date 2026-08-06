@@ -185,16 +185,20 @@ function findInstances(art, root, inst, ws = null) {
 
 function effectiveStatus(p) {
   // The status that does NOT lie: approved only counts if the approval hash matches.
+  // Third element: the frontmatter's verdict, when one exists — the gate-limbo
+  // message needs it (see possibleActions), and re-reading the file there
+  // would be a second parse of the same frontmatter.
   const [fm] = readFrontmatter(p);
   const st = fm.status || "draft";
   const ap = fm.approval;
+  const verd = fm.verdict || null;
   if (st === "approved") {
     if (!ap || !ap.content_hash)
-      return ["approved?", "⚠ approved with no approval record — who approved it?"];
+      return ["approved?", "⚠ approved with no approval record — who approved it?", verd];
     if (ap.content_hash !== sha256Body(p))
-      return ["review", `⚠ INVALID approval — content changed after the approve by ${ap.by ?? "?"} on ${ap.at ?? "?"}`];
+      return ["review", `⚠ INVALID approval — content changed after the approve by ${ap.by ?? "?"} on ${ap.at ?? "?"}`, verd];
   }
-  return [st, null];
+  return [st, null, verd];
 }
 
 function wsRegistry(root, inst) {
@@ -216,8 +220,8 @@ function projectState(root, inst, arts, ws = null) {
       if (!(a.endsWith(".md") || a.endsWith(".yaml"))) continue;
       if (!fs.statSync(a).isFile()) continue;
       if (a.endsWith("workstreams.yaml")) continue;
-      const [st, aviso] = a.endsWith(".md") ? effectiveStatus(a) : ["—", null];
-      itens.push([path.relative(root, a), st, aviso]);
+      const [st, aviso, verd] = a.endsWith(".md") ? effectiveStatus(a) : ["—", null, null];
+      itens.push([path.relative(root, a), st, aviso, verd]);
     }
     if (itens.length) estado[key] = itens;
   }
@@ -225,8 +229,11 @@ function projectState(root, inst, arts, ws = null) {
 }
 
 function possibleActions(estado, agents) {
-  const okStatus = {};
-  for (const [k, v] of Object.entries(estado)) okStatus[k] = new Set(v.map(([, st]) => st));
+  const okStatus = {}, verdicts = {};
+  for (const [k, v] of Object.entries(estado)) {
+    okStatus[k] = new Set(v.map(([, st]) => st));
+    verdicts[k] = new Set(v.map(([, , , verd]) => verd).filter(Boolean));
+  }
   const possiveis = [], travadas = [];
   for (const [ag, d] of Object.entries(agents)) {
     for (const [an, a] of Object.entries(d.contract?.actions || {})) {
@@ -235,7 +242,15 @@ function possibleActions(estado, agents) {
         const aceitos = new Set(r.status || []);
         const tem = okStatus[r.artifact] || new Set();
         if (![...tem].some(s => aceitos.has(s))) {
-          const falta = `${r.artifact} in [${[...aceitos].sort().map(s => `'${s}'`).join(", ")}]` + (r.waivable ? " (waivable)" : "");
+          let falta = `${r.artifact} in [${[...aceitos].sort().map(s => `'${s}'`).join(", ")}]` + (r.waivable ? " (waivable)" : "");
+          // The approved_with_comments limbo, named instead of paid in user
+          // attention: the gate compares literally with 'approved', so a
+          // with-comments verdict can never satisfy it without a fresh clean
+          // re-review. When that is the state, the waiver is the DESIGNED
+          // path — debt recorded, gate honest — not a shortcut the user has
+          // to arbitrate. Say so, once, where the decision is made.
+          if (r.waivable && aceitos.has("approved") && (verdicts[r.artifact] || new Set()).has("approved_with_comments"))
+            falta += " — verdict is 'approved_with_comments': the gate compares literally, so the WAIVER is the designed path here (record it; the comments stay as declared debt), not a bypass";
           faltas.push([falta, Boolean(r.waivable)]);
         }
       }

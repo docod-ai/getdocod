@@ -441,6 +441,44 @@ def check_agents():
     print(f"  {'✗' if ERRORS else '✓'} declared skills resolve · used_by matches · every artifact has an owner and the owner confirms · sections mirror the owner's structure")
 
 
+def check_conductor():
+    """The conductor contract — the one NON-AGENT contract in the bundle.
+
+    CONDUCTOR.md is referenced by commands.yaml (the reconciliation note),
+    agent.yaml (nao_e_agente.conductor) and the discovery block install.sh
+    writes into CLAUDE.md/AGENTS.md. A declared reference with nothing on the
+    other side is this project's recurring failure — so the reference is
+    validated. It is NOT in agents/ on purpose: it owns no document, and the
+    agent law ("an agent that delivers no document binds nothing") stays
+    untouched instead of gaining a carve-out. What is checked here is the
+    little that CAN be: the file exists, its limbs are present, and its body
+    honors layer-2 neutrality like every agent body does.
+    """
+    f = os.path.join(BASE, "CONDUCTOR.md")
+    if not os.path.exists(f):
+        ERRORS.append(
+            "[CONDUCTOR.md] missing — commands.yaml, agent.yaml and the discovery "
+            "block reference the conductor contract; a declared reference with "
+            "nothing on the other side is this project's recurring failure"
+        )
+        return
+    corpo = open(f, encoding="utf-8").read()
+    for sec in ("## what you do", "## never", "## style", "## the hand-back, checked"):
+        if sec not in corpo:
+            ERRORS.append(
+                f"[CONDUCTOR.md] missing `{sec}` — the conductor contract lost a limb; "
+                f"an incomplete contract governs less than it claims to"
+            )
+    for hit in sorted(set(m.group(0).lower() for m in STACK.finditer(corpo))):
+        ERRORS.append(
+            f"[CONDUCTOR.md] stack in the body: '{hit}' — the contract is layer 2; "
+            f"the example must be the FORM, not the tool"
+        )
+    print(f"\nLAYER 2 · CONDUCTOR — the non-agent contract")
+    print("-" * 78)
+    print(f"  {'✗' if any('CONDUCTOR' in e for e in ERRORS) else '✓'} CONDUCTOR.md exists · limbs present · body neutral")
+
+
 def main():
     spec = sorted(glob.glob(os.path.join(BASE, "spec", "**", "*.yaml"), recursive=True))
     adapters = sorted(glob.glob(os.path.join(BASE, "adapters", "*.yaml")))
@@ -470,6 +508,7 @@ def main():
             ERRORS.append("[spec/method.yaml] no stage feeds back into another — without a loop, DOCOD becomes waterfall")
 
     check_agents()
+    check_conductor()
 
     print("\nLAYER 3 · ADAPTERS — capability coverage")
     print("-" * 78)
