@@ -1,80 +1,116 @@
 <div align="center">
 
-<div align="center">
-<img src="assets/logo.png" alt="DOCOD report: documents, kanban, flow" width="100">
-<br><sub>DOCOD</sub>
-</div>
+<img src="assets/logo.png" alt="DOCOD" width="100">
 
-**D**efine · **O**rchestrate · **C**onfirm · **O**bserve · [re]**D**efine
+<br>
 
-**Agents write code fast. Speed was never the bottleneck. Continuity was.**
+**Define · Orchestrate · Confirm · Observe · [re]Define**
 
-DOCOD is executable governance for AI-native software engineering: a method and a small runtime that keep intent, specifications, design, tasks, code, evidence, and approvals aligned as the project changes.
+### Agents write code fast.  
+### DOCOD keeps the project from losing agreement with itself.
 
-It works with any repo, language, IDE, model, and harness. Agents can help specify, design, extract tasks, write code, run QA, and review diffs, but every artifact has an owner, declared inputs, a gate, and evidence. The human orchestrates and approves. Agents produce and verify. **Nothing approves itself.**
+DOCOD is executable governance for AI-native software engineering.
 
-DOCOD does not make language models deterministic. It makes the engineering process verifiable when they are not.
+It combines a method, a small runtime, agent contracts and human gates to keep intent, requirements, design, decisions, tasks, code, evidence and approvals aligned as the project changes.
 
-DOCOD is not spec-driven development with more files. It is a governance runtime that keeps the spec, decisions, code, and evidence from drifting apart.
+**The human orchestrates and approves. Agents produce and verify. Nothing approves itself.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
-[![Runtime: node ≥18](https://img.shields.io/badge/runtime-node%20%E2%89%A518-brightgreen.svg)](#requirements)
-[![Install: pure bash](https://img.shields.io/badge/install-pure%20bash-lightgrey.svg)](#install)
+[![Runtime: Node ≥18](https://img.shields.io/badge/runtime-node%20%E2%89%A518-brightgreen.svg)](#requirements)
+[![Install: Pure Bash](https://img.shields.io/badge/install-pure%20bash-lightgrey.svg)](#install)
 
-📖 [The book](https://docod.ai/book) · ✉️ [Daily challenge in 6 languages](https://docod.ai/challenge) · 🌐 [docod.ai](https://docod.ai)
+📖 [Read the book](https://docod.ai/book) ·  
+✉️ [Take the daily challenge](https://docod.ai/challenge) ·  
+🌐 [Explore DOCOD](https://docod.ai)
 
 </div>
 
 ---
 
-## The problem it solves
+## What DOCOD changes
 
-A spec is not a method.
+AI made code generation cheap.
 
-Writing the spec first helps, but a spec-driven repo can still fail three weeks later: the spec says one thing, the code says another, an ADR is missing, a PR changed behavior without updating the contract, and nobody can tell exactly when the project stopped agreeing with itself.
+It did not make software engineering cheap.
 
-That is the failure DOCOD targets.
+The difficult work moved elsewhere:
 
-The missing layer was never more prose. It is the machinery that keeps claims attached to the work:
+- deciding what should be built;
+- preserving context across sessions;
+- separating product intent from technical decisions;
+- verifying behavior instead of trusting plausible output;
+- understanding what became stale after a change;
+- preserving responsibility when agents perform the execution.
 
-- An agent delivers in `draft`; approval is a human act recorded with author, timestamp, and content hash.
-- Edit an approved document and the approval invalidates itself; everything that depended on it re-blocks.
-- Evidence is cited, not asserted: deterministic checks require command + output.
-- The verifier is not the producer.
-- A changed upstream artifact requires impact analysis or an explicit waiver.
+A coding agent can produce a clean diff, pass the type checker and still deliver the wrong system.
 
-The result is not a bigger spec folder. It is a project whose state can be derived from files: what exists, what is valid, what is stale, what is blocked, and why.
+### A spec is not a method
 
-> **Why isn't a spec folder enough?** Because a spec is a claim, and claims drift. DOCOD's guarantees are hashes sealed to content: they hold when the session forgets, when the model changes, and when it's 2 a.m. and someone edits an approved spec — that edit invalidates the approval by itself, and everything downstream re-blocks until a human looks.
+Writing the specification first helps.
 
-## None of this is new. That's the point
+But a spec-driven repository can still fail three weeks later:
 
-PRD, functional requirements, design review, ADRs, test plans, runbooks, postmortems: this is not a methodology someone invented last quarter. It's the **SDLC (Software Development Life Cycle)**: the discipline software engineering has taught for decades, the one that shipped everything you rely on. Every DOCOD movement maps onto a phase you already learned:
+- the PRD says one thing;
+- the implementation does another;
+- an architectural decision was never recorded;
+- a pull request changed behavior without changing the contract;
+- a reviewer approved a document that was edited afterward;
+- nobody can say exactly when the project stopped agreeing with itself.
 
-| Classic SDLC phase | DOCOD movement | The artifacts you'll recognize |
+The missing layer was never more prose.
+
+It was the machinery that keeps claims attached to the work.
+
+### None of this is new. That is the point.
+
+PRD, functional requirements, design review, ADRs, test plans, runbooks, postmortems: this is not a methodology someone invented last quarter. It is the **SDLC** — the Software Development Life Cycle, the discipline software engineering has taught for decades, the one that shipped everything you rely on.
+
+Every DOCOD movement maps onto a phase you already learned:
+
+| Classic SDLC phase | DOCOD movement | The artifacts you will recognize |
 |---|---|---|
-| Planning & feasibility | **Define** | business case |
-| Requirements & analysis | **Define** | PRD, FRD, user stories |
-| Design & architecture | **Orchestrate** | system/data/security design, API contract, ADR |
-| Implementation | **Orchestrate** | tasks, code, evidence |
-| Testing & verification | **Confirm** | test plan, QA, design review, code review |
-| Deployment & operations | **Observe** | SLOs, runbooks, playbooks, release notes |
-| Maintenance & evolution | **[re]Define** | postmortem, impact analysis, feeding the cycle again |
+| Planning & feasibility | Define | business case |
+| Requirements & analysis | Define | PRD, FRD, user stories |
+| Design & architecture | Orchestrate | system / data / security design, API contract, ADR |
+| Implementation | Orchestrate | tasks, code, evidence |
+| Testing & verification | Confirm | test plan, QA, design review, code review |
+| Deployment & operations | Observe | SLOs, runbooks, playbooks, release notes |
+| Maintenance & evolution | [re]Define | postmortem, impact analysis, feeding the cycle again |
 
-<sub>The table shows where each artifact is *most often* born. ADR and the other cross-cutting artifacts (RFC, tradeoffs, impact analysis) appear whenever the need does, in any phase; the map below marks them ⚡.</sub>
+The table shows where each artifact is most often born. ADR and the other cross-cutting artifacts (RFC, tradeoffs, impact analysis) appear whenever the need does, in any phase; the full method map further down marks them ⚡.
 
 Most teams abandoned this lifecycle for one honest reason: writing and maintaining those documents was slower than writing the code.
 
 AI inverted that equation, twice:
 
-- **The documents became the input.** An agent's output is bounded by the context it receives. The spec stopped being paperwork *about* the system and became **the program that programs the agent**. A human developer fills gaps with judgment and hallway context; an agent fills them with plausible guesses. The discipline your team dropped is exactly what agents can't work without.
-- **The cost that killed it is gone.** DOCOD's agents write and maintain these documents *with* you: interview, draft, cross-check, propagate changes. The historical reason to skip the lifecycle no longer exists.
+- **The documents became the input.** An agent's output is bounded by the context it receives. The spec stopped being paperwork about the system and became the program that programs the agent. A human developer fills gaps with judgment and hallway context; an agent fills them with plausible guesses. The discipline your team dropped is exactly what agents cannot work without.
+- **The cost that killed it is gone.** DOCOD's agents write and maintain these documents with you: interview, draft, cross-check, propagate changes. The historical reason to skip the lifecycle is no longer decisive.
 
-So DOCOD isn't asking you to adopt something new. It's the SDLC you already know, revived, wired for agents, and enforced with gates instead of good intentions. **If you want AI to build software, this layer is no longer optional. It's the difference between engineering and generation.**
+So DOCOD is not asking you to adopt something new. It is the SDLC you already know, revived, wired for agents, and enforced with gates instead of good intentions. If you want AI to build software, this layer is no longer optional. It is the difference between engineering and generation.
 
-> 📐 Why the spec is back at the center, and how documentation becomes an execution system for agents: chapters 13 and 14 of **[the book](https://docod.ai/book)** (*Spec-Driven Development* and *Documentation as an Execution System*).
+> 📐 Why the spec is back at the center, and how documentation becomes an execution system for agents: chapters 13 and 14 of the book (*Spec-Driven Development* and *Documentation as an Execution System*).
 
-## See it work in 60 seconds
+### The layer above generation
+
+Every step of that lifecycle now has an owner.
+
+Every important input is declared.
+
+Every gate is explicit.
+
+Every approval is attached to a specific version of the content.
+
+Every computable claim can be checked outside the agent that made it.
+
+DOCOD does not make language models deterministic.
+
+**It makes the engineering process verifiable when they are not.**
+
+---
+
+## See it work
+
+Install DOCOD into a repository:
 
 ```bash
 git clone https://github.com/docod-ai/getdocod
@@ -82,374 +118,1398 @@ git clone https://github.com/docod-ai/getdocod
 cd /path/to/your/project
 ```
 
-**Or install as a Claude Code plugin** (you subscribe to the method; your instance stays yours):
+Then open the project in your agent harness and run:
 
-```
-/plugin marketplace add docod-ai/getdocod
-/plugin install docod@docod
-/docod:setup-docod        ← once per repo; re-running it is the update flow
+```text
+/docod:start
 ```
 
-Two installs, two philosophies: the git clone copies the bundle so you can read and hack every contract; the plugin keeps it as a managed, always-current subscription. Either way, `docod.yaml` and everything you produce belong to you and are never touched.
+DOCOD reads the actual repository state and shows the correct entry point.
 
-Then, in your agent harness:
+For a new product:
 
-```
-/docod:start        ← reads your repo and points at the right entry door
-```
-
-**Door A: start from "why"** (the investment needs justifying):
-
-```
-/docod:run business-case
-/docod:approve docs/product/business-case.md --by <you>
+```text
 /docod:run prd create_prd
 /docod:approve docs/product/prd.md --by <you>
 /docod:run frd create_frd
 ```
 
-**Door B: straight to the product** (you already know what to build):
+For an existing codebase:
 
+```text
+/docod:diagnose
 ```
+
+At any moment:
+
+```text
+/docod:status
+```
+
+You receive a derived answer to four questions:
+
+```text
+What exists?
+What is valid?
+What is stale?
+What is blocked, and why?
+```
+
+No manually maintained dashboard.
+
+No hidden database.
+
+No agent memory required.
+
+The files are the state.
+
+---
+
+## Choose your starting point
+
+DOCOD does not require every project to begin in the same place.
+
+There are three doors.
+
+**New project** — an idea you want defined, designed and built under governance.
+
+```text
 /docod:run prd create_prd
-/docod:approve docs/product/prd.md --by <you>
-/docod:run frd create_frd
 ```
 
-Two doors, one pattern you'll see immediately: **agent delivers a draft → you approve → the next step unblocks.** The method bends to where the project really starts; the discipline is identical either way. And at any point:
+**Existing project** — code you want to keep changing, governing the next feature without documenting the whole system first.
 
-```
-/docod:status       ← what exists, what's valid, what's blocked — derived, never lies
-```
-
-> **Already have a PRD?** Import it: `/docod:run prd create_prd` normalizes it to `docs/product/prd.md` and returns `QUESTIONS FOR THE USER:` for whatever the text doesn't answer. Nothing gets assumed silently.
-
-## The code is the point
-
-The documents aren't the product. They're the **context the coding agents consume**. Half of the method is execution, and it ships in the same bundle:
-
-```
-/docod:run rules-factory generate_rules     your project's own rules — not generic advice
-/docod:run task-extraction extract_tasks    tasks with success criteria the executor CANNOT edit
-/docod:run task-executor execute_task       builds → verifies → fixes → hands to QA, citing evidence
-/docod:run qa-executor run_qa               verifies BEHAVIOR against the requirements, running it
-/docod:run code-review review_code          reviews the DIFF against your standards and the task
+```text
+/docod:run rules-factory extract_from_code
 ```
 
-Two things make this different from pointing a raw agent at your repo:
+See *Working in a legacy codebase*.
 
-**1 · The rules are yours.** `rules-factory` doesn't ship opinions. It **derives** coding standards, testing guidelines, CI/CD discipline and security rules from *your* ADRs, *your* designs and *your* code, asks you what can't be derived, and scopes each rule to a subtree (`paths:`). The adapter promotes them to where your harness actually reads (`CLAUDE.md`, `.agents/rules/`), so every line the executor writes is guided by decisions **you** made, with a traceable origin. A generic rule is worse than none: it makes review enforce taste with the authority of a norm.
+**Diagnose only** — no adoption yet; you want to see where the system already stopped agreeing with itself.
 
-**2 · Three reviewers, three objects: none reviews its own work.** `design-review` checks the document before code exists; `code-review` checks the diff; `qa-executor` checks the behavior, running it. The task-executor owns the build→QA→fix→QA loop but can't touch its own success criteria: an executor that edits its own bar self-approves through the back door. Every claim ships with evidence: command + output, cited, not asserted.
+```text
+/docod:diagnose
+```
 
-So no, the paperwork isn't the product. It's what makes the code **explainable**: every line traces back to a requirement, a design, a rule, and a decision with an owner.
+No approvals, no gates. See *Diagnose before adopting*.
 
-**And you don't have to babysit one task's chain.** `/docod:loop` is the dispatch of a single task: you hand it over once and it carries the task through the non-human stretch (build, external verify, QA, fix rounds, diff review) without stopping at every station. It is not a batch runner: one task per dispatch, and parallel tasks are parallel dispatches. It comes back only for what is yours: questions handed back, a bug root-caused to an approved upstream document, a repeated failing verdict, anything needing approval (it never approves). "The human orchestrates" never meant clicking every station: the decision is the dispatch, the stop conditions are contract, and deploy remains a human act.
+The granular index, when you already know the intent:
+
+| I want to… | Start here |
+|---|---|
+| Turn an idea into a defined product | `/docod:run prd create_prd` |
+| Justify an investment before defining the product | `/docod:run business-case create_business_case` |
+| Continue work already started | `/docod:start` |
+| Resume a specific workstream | `/docod:continue <ws>` |
+| Understand an existing codebase before adopting the method | `/docod:diagnose` |
+| Reconstruct the design of a legacy system | `/docod:run system-design reverse_design` |
+| Extract the rules the codebase already follows | `/docod:run rules-factory extract_from_code` |
+| Discuss a technical decision | `/docod:lead <question>` |
+| Turn approved design into executable tasks | `/docod:run task-extraction extract_tasks` |
+| Dispatch one task through build, QA and review | `/docod:loop <task>` |
+| See what is valid or blocked | `/docod:status` |
+| See the whole project in one report | `/docod:report` |
+
+The method bends to where the project actually starts.
+
+The discipline stays the same.
+
+---
+
+## The DOCOD cycle
+
+DOCOD organizes AI-native software engineering into five movements.
+
+```text
+DEFINE
+Decide what should exist.
+Capture intent, requirements, contracts and decisions.
+Prepare the context and decompose the work.
+
+        ↓
+
+ORCHESTRATE
+Dispatch execution through agents, tools and environments.
+Build according to approved inputs and declared success criteria.
+
+        ↓
+
+CONFIRM
+Run sensors, QA and reviews.
+Collect evidence.
+Let the human decide what advances.
+
+        ↓
+
+OBSERVE
+Watch the software and the process in reality.
+Capture incidents, drift, cost, failures and operational evidence.
+
+        ↓
+
+[re]DEFINE
+Feed what reality taught back into the next cycle.
+Update specifications, harness, rules and process.
+```
+
+Governance crosses every movement.
+
+DOCOD is not a rigid sequence of ceremonies.
+
+It is a recurring engineering cycle whose state is visible, versioned and inspectable.
+
+---
+
+## What happens when something changes
+
+Assume a PRD was approved.
+
+```yaml
+status: approved
+approval:
+  by: fabio
+  at: 2026-08-06T10:30:00Z
+  content_hash: sha256:8bf4a91d61a2a891
+```
+
+A week later, someone changes the body of the document.
+
+The written status may still say `approved`.
+
+The effective status does not.
+
+```text
+INVALID APPROVAL
+Content changed after approval.
+Effective status: review
+```
+
+Every action requiring the approved PRD becomes blocked again.
+
+Nothing needed to remember the event.
+
+Nothing needed to update a separate index.
+
+The current content and the recorded hash disagree, so the system knows that the approval no longer applies.
+
+This is one of the central guarantees of DOCOD:
+
+> Approval belongs to a version of the content, not permanently to a filename.
+
+---
+
+## Evidence, not assertion
+
+An agent saying that a check passed is not evidence that the check passed.
+
+DOCOD separates postconditions into three classes.
+
+| Class | Meaning |
+|---|---|
+| `deterministic:` | A machine can recompute the result |
+| `evidence:` | A command, output, screenshot, trace or observation must be attached |
+| `judgment:` | A reviewer or human must interpret the result |
+
+Example:
+
+```yaml
+postconditions:
+  - "deterministic: the artifact frontmatter parses"
+  - "evidence: the test command and output are present"
+  - "judgment: the design boundaries are appropriate"
+```
+
+DOCOD checks the computable class externally.
+
+It requires proof for the observable class.
+
+It leaves judgment where judgment belongs.
+
+---
+
+## Three reviewers, three objects
+
+DOCOD does not ask one agent to produce and approve the same work.
+
+Different reviewers examine different objects.
+
+```text
+design-review
+checks the design before code exists
+
+code-review
+checks the diff against the task and project rules
+
+qa-executor
+checks the running behavior against requirements
+```
+
+These roles are complementary.
+
+A diff can be clean while the behavior is wrong.
+
+The behavior can pass while the architecture is poor.
+
+The architecture can be coherent while the product requirement itself is wrong.
+
+No single reviewer sees every class of failure.
+
+That is why DOCOD separates them.
+
+---
+
+## The shortest useful workflow
+
+A complete project may use many artifacts.
+
+A first experience does not need to.
+
+```text
+PRD
+  ↓ human approval
+FRD
+  ↓ human approval
+System design
+  ↓ agent review
+Tasks
+  ↓ human approval
+Execution
+  ↓ external verification
+QA
+  ↓
+Code review
+  ↓ human decision
+```
+
+The pattern is consistent:
+
+```text
+Agent produces
+Machine checks what it can
+Another role verifies
+Human approves what requires authority
+```
+
+DOCOD automates the work.
+
+It does not automate responsibility away.
+
+---
+
+## Build verified code
+
+The documents are not the final product.
+
+They are the context the coding agents consume.
+
+```text
+/docod:run rules-factory generate_rules
+/docod:run task-extraction extract_tasks
+/docod:run task-executor execute_task
+/docod:run qa-executor run_qa
+/docod:run code-review review_code
+```
+
+### Project-specific rules
+
+`rules-factory` does not impose a generic style guide.
+
+It derives rules from:
+
+- your approved designs;
+- your ADRs;
+- your existing code;
+- your testing patterns;
+- your repository structure;
+- your explicit decisions.
+
+Each rule has an origin and a scope.
+
+A backend rule does not need to contaminate the frontend.
+
+A legacy pattern is not silently replaced by someone else's taste.
+
+### Success criteria cannot be rewritten by the executor
+
+The task executor may:
+
+- implement;
+- update progress;
+- attach evidence;
+- mark completion steps.
+
+It may not change:
+
+- task scope;
+- success criteria;
+- required tests;
+- the definition of done.
+
+An executor that edits its own bar approves itself through the back door.
+
+DOCOD prevents that ownership collapse.
+
+---
+
+## Dispatch without babysitting
+
+```text
+/docod:loop <task>
+```
+
+`/docod:loop` dispatches a single task through the non-human part of delivery:
+
+```text
+Build
+  ↓
+Verify
+  ↓
+QA
+  ↓
+Fix
+  ↓
+QA again
+  ↓
+Diff review
+```
+
+It stops when:
+
+- the task requires a human answer;
+- an approved upstream artifact appears to be wrong;
+- requirements are blocked;
+- a verdict repeatedly fails;
+- an approval is required;
+- the declared stop condition is reached.
+
+It never approves.
+
+It never deploys by itself.
+
+The human decision is the dispatch.
+
+The stop conditions are contract.
+
+---
 
 ## A tech lead to think with
 
-Every other agent produces. This one thinks **with you**:
+Most DOCOD agents produce an artifact.
 
+The tech lead does something different.
+
+```text
+/docod:lead should we split the payments service now or after launch?
 ```
-/docod:lead should we split the payments service now or after the launch?
+
+The tech lead reads the actual project state:
+
+- approved requirements;
+- system boundaries;
+- ADRs;
+- workstreams;
+- task state;
+- QA findings;
+- stale inputs;
+- open questions.
+
+Then it presents:
+
+- the realistic alternatives;
+- the cost of each;
+- the relevant evidence;
+- its recommendation;
+- what it would do and why.
+
+The choice remains yours.
+
+It does not invoke other agents.
+
+It does not approve artifacts.
+
+It does not silently decide architecture.
+
+When the recommendation changes project direction, the counsel is recorded in:
+
+```text
+docs/decisions/counsel.md
 ```
 
-`tech-lead` is your sparring partner for technical decisions. It reads the whole project first (the approved PRD, the designs and their boundaries, the frozen ADRs, task state, what QA found, what went stale), then argues like a senior: two paths, what each costs, what it would do and why. Sources cited like an engineer cites (artifact and section, ADR number, file:line), disagreement stated plainly, and **the choice always handed back to you**. It never invokes agents, never approves, never decides.
+The recommendation leaves a trail.
 
-It also knows the method better than you need to: hit a technical decision with alternatives and it flags "this needs an ADR"; a one-way door gets routed to `tradeoffs`; a change with unclear blast radius, to `impact-analysis`. And when the question is scope, sequence or priority, it points you to `project-management`: the two of them are your **council**, one on the technical axis, one on the project axis. Use either alone, or both when the question crosses lanes.
+Your decision leaves a trail.
 
-One more thing no chat-based advisor gives you: **counsel leaves a trail.** Every recommendation that changes a direction is appended to `docs/decisions/counsel.md`, with the question, the recommendation, the rationale with sources, and your call in your own words (even when it went against the advice). Six months later, "why did we do it this way?" has an answer with a date on it.
+Six months later, “why did we do this?” has an answer.
 
-> 🧠 The judgment the tech-lead applies (which decisions deserve a gate, how to calibrate trust in an agent's output, where the human belongs in the loop) is unpacked in chapter 19 of **[AI-Native Software Engineering](https://docod.ai/book)**, *Human in the Loop*.
+---
 
-## See the whole project at once
+## See the whole project
 
-```
+```text
 /docod:report
 ```
 
 <div align="center">
-<img src="assets/report.png" alt="DOCOD report: documents, kanban, flow" width="720">
-<br><sub>Static, offline, self-contained HTML. No server, no CDN, no tracking.</sub>
+
+<img src="assets/report.png" alt="DOCOD report: documents, kanban and project flow" width="720">
+
+<br>
+
+<sub>Static, offline, self-contained HTML. No server, CDN or tracking.</sub>
+
 </div>
 
-Documents grouped by nature with their effective status (an invalid approval shows up **red**, it doesn't disappear), a task kanban with progress derived from the checkboxes, what's possible vs. blocked (with the why), and your workstreams. Same state as `status`, with a face.
+The report shows:
 
-> 💡 **This walkthrough is the D of DOCOD, one of five movements.** The full cycle (orchestration, the human gate, sensors before humans, and the loop that reopens the definition with evidence) is chapter 11 of **[AI-Native Software Engineering](https://docod.ai/book)**; chapters 25 to 29 run the method end to end on real projects, with a stopwatch. Prefer to learn by doing? A challenge like this lands every morning in the **[newsletter](https://docod.ai/challenge)**, in 6 languages.
+- artifacts grouped by nature;
+- declared and effective status;
+- invalid approvals in red;
+- stale and observed-at relationships;
+- tasks grouped as todo, doing and done;
+- possible actions;
+- blocked actions and their reasons;
+- workstreams;
+- document contents;
+- project flow.
 
-## A real checkpoint, verbatim
+The report is a visual representation of the same state used by `status`.
 
-This is DOCOD closing the decision phase of a real project (voarr). Nothing staged: it is the message the method hands back at the milestone. Notice the last line, where it refuses to slice the MVP on its own, because that call is the human's.
+It is not a separate source of truth.
 
-> **The voarr decision phase is complete**
->
-> From the approved PRD to the database provisioning, **18 artifacts, hash-consistent end to end** — and the path here carried the rigor you imposed: every one-way door weighted in proportion to what it decided, every rejected alternative recorded with a reason and a revision trigger, every unknown marked as a gap rather than invented.
->
-> ```
-> Product:    PRD · FRD (61 FRs)
-> Design:     system · data · security · api-contract · infra   (+ design-review approved · impact 0001)
-> Tradeoffs:  01 credential+key → A pure · 02 sync → B custom REST · 03 hosting → AWS RDS
-> ADRs:       01 crypto · 02 Postgres · 03 N-back · 04 sync · 05 stack · 06 provisioning
-> ```
->
-> **The next door changes in nature — task-extraction**
->
-> Up to now it was **deciding**; from here on it's **building**. [...] It's `interactive` — it will need a decision from you that hasn't been made yet: **the MVP cut**. The design covers nine modules; the MVP isn't all of them. How do you want to tackle it?
->
-> - **You give me the MVP cut** and I launch task-extraction with that scope, or
-> - **I launch task-extraction and let the agent propose** the slicing, and you correct the cut when it comes back, or
-> - **We stop here** — the decision phase closed clean, and you pick the build back up whenever you want.
->
-> I won't launch task-extraction on my own — the MVP cut is your call, and it's too big for me to presume.
+---
 
-Eighteen artifacts of context, every gate on record, and at the exact moment the decision gets big, the method stops and hands it to you. That is the whole product in one message: a senior copilot with brakes, not an eager generator.
+## Workflows by scenario
 
-## The rules nothing bends
+Complete paths, not isolated commands.
 
-This is the part no other tool gives you, and the reason a tech lead can trust an agent's output:
+### New product
 
-1. **An agent never approves**, not even its own artifact. It delivers in draft/review; approval is human, via `/docod:approve`, recorded as `approval: {by, at, content_hash}`.
-2. **Validity is mechanical.** Edited the content after approval? The approval invalidates itself, `status` shows it, and everything downstream re-blocks. And when a sweeping-but-cosmetic change (a product rename) invalidates dozens at once, `docod.mjs rebless` re-approves in batch: plan shown first, your reason mandatory and recorded inside every approval it touches, ambiguous sources never guessed.
-3. **Requires block upfront.** An action without an approved input doesn't run: `status` says exactly what's missing (and what's waivable, with the waiver recorded).
-4. **Evidence is cited, not asserted.** A deterministic postcondition demands command + output in the report, and the computable part isn't even trusted to the agent: `docod.mjs verify` re-checks frontmatter, status, approval hash and every input hash mechanically, run by the caller. It also refuses a **truncated** document — fewer sections than the contract declares, a promised companion file missing, no final `status` — and flags a prose-cited hash nothing watches or a `file:line` anchor whose quoted fragment has drifted: `VERIFY OK` means the document is whole, not merely present. Whoever verifies behavior, diff, or design is never the one who did the work.
-5. **A missing tool is not a license to improvise.** The capability degrades per the adapter and the document records "not verified". It never pretends.
-6. **A subagent doesn't invent answers.** It stops and returns `QUESTIONS FOR THE USER:`; `/docod:run` asks you and reinvokes.
-7. **A fix never patches around an approved document.** When QA root-causes a bug to an upstream artifact (a contract that omitted a field, a design that guessed wrong), the line stops: the owner amends, and re-approving amended content mechanically requires the mapped radius (`--impact <impact-file>`) or a recorded waiver. Code and design are never allowed to quietly stop agreeing.
-
-## Where DOCOD sits, and what it refuses to be
-
-| If you're using | It gives you | It cannot give you |
-|---|---|---|
-| A skill pack (TDD prompts, debugging loops, review checklists) | Better craft, task by task | Receipts. Nothing records what was approved, by whom, against which version of what |
-| A process framework that owns your flow | Structure | Control. The process decides for you, and a bug in the process is yours to live with |
-| A raw agent pointed at the repo | Speed | A trail. Code that runs, looks right, and nobody can explain |
-
-DOCOD takes the opposite bet on all three axes at once. Craft stays **composable**: bring any skill you love. Control stays **yours**: commands inform and record, never decide; every gate is a human act; every guard ships with a recorded waiver, because a rule you can't consciously bypass is a rule you'll route around. And everything gains a **receipt**: hash-sealed approvals, external verification, lineage from requirement to diff.
-
-**Skills make the work better. DOCOD proves the work happened, and that it still holds.**
-
-> **"Doesn't this own my process?"** No, and that refusal is load-bearing. Everything is plain files in your repo. The runtime derives state and reports it; it never invokes an agent on its own. Approval is a record, not a forum. When you disagree with a gate, you waive it and the waiver is recorded: the method's job is that nothing happens silently, not that nothing happens without permission.
-
-### Bring your own skills
-
-DOCOD's 13 skills are method-neutral, and the method is not a walled garden: install any skill from anywhere (a TDD skill, a debugging loop, your team's review checklist) and use it inside a `/docod:run` task or a `/docod:loop` dispatch. The executor writes code with whatever craft you hand it; DOCOD governs what surrounds the craft: inputs declared and hashed, success criteria the executor cannot edit, adversarial QA, verified delivery. Your favorite skills and DOCOD compose. That is the design, not an accident.
-
-## Not ready to adopt it? Diagnose first.
-
-DOCOD can start in diagnostic mode. It reads an existing codebase and any legacy docs, then produces a dated snapshot: reconstructed artifacts, provenance, DIV findings where claims and reality disagree, RISK findings where the code carries danger on its own, and questions only an outside owner can answer.
-
-No approvals. No gates. No adoption required.
-
-You get an evidenced map of where the system already stopped agreeing with itself.
-
-## Working in a legacy codebase
-
-Honest answer: the strongest path in legacy is to **scope DOCOD to the feature you're adding**, not to boil the ocean. `/docod:start` detects existing code and offers the `reverse_*` door; the sequence that works is:
-
-```
-/docod:run rules-factory extract_from_code    per target: distill the patterns the
-                                              code ALREADY has into verifiable rules
-/docod:run system-design reverse_design       rebuild only the boundaries you'll touch
-                                              (+ data-design / api-contract reverse_*
-                                              if the feature touches data or a consumed
-                                              interface), then approve: it's the baseline
-/docod:run prd create_prd                     in ws scope: the feature's PRD stands on
-                                              its own — the project PRD may never exist,
-                                              and that's by design
+```text
+/docod:run prd create_prd
+/docod:approve docs/product/prd.md --by <you>
+/docod:run frd create_frd
+/docod:run system-design create_design
+/docod:run task-extraction extract_tasks
 ```
 
-From there it's the known cycle: frd → tasks → build. If `impact-analysis` reveals the change touches other people's things, the `rfc` enters derived, not as a style choice.
+Each task then goes through *Dispatch without babysitting*.
 
-Two things make this honest instead of hopeful. First, `rules-factory extract_from_code` is the highest-value opening move in legacy: it gives the executor a ruler made of your codebase's own patterns before anything changes. Second, every fact the `reverse_*` actions rebuild carries declared provenance (`evidence | inferred | user-supplied`), so you always know what was read from the code, what was deduced, and what you told it. An `inferred` that matters becomes a question, never a silent fact. And divergence is a first-class, numbered object: a **DIV** is any *claim vs reality* mismatch — an old doc, or another part of the code's own stated contract, contradicted by what the code actually does — with evidence on both sides; a **RISK** is the one-sided finding the code carries on its own (PII exposed, a one-click destructive action), same evidence bar, an owner each. You get the numbered report of where your system already stopped agreeing with itself.
+### A feature in a legacy codebase
 
-**And you can get that report without adopting anything.** `/docod:diagnose` runs the reverse in diagnostic mode — no approvals, no pins, no gates: point it at your repo and it returns the evidenced map plus the numbered DIV and RISK tables, every finding cited to `file:line` with an owner, and a queue of the questions only an outside owner can close. Everything it produces is a dated snapshot: your system leaves **pre-read, not pre-approved** — adopting the full method later is a human vouching those artifacts forward, with the reading already done. It's the honest first look; the scoped cycle above is for whoever the findings scared. And you're not left alone with the findings: `/docod:lead` is the resident guide — it derives where you actually are (`status` + the artifacts, never a memorized script) and answers "now what?" with the next step, the why in the method's terms, and the exact command to run. It shows the move; you make it. The tool teaches the discipline adopting it requires.
+```text
+/docod:run rules-factory extract_from_code
+/docod:run system-design reverse_design
+/docod:run prd create_prd <workstream>
+/docod:run task-extraction extract_tasks
+```
 
-## The four layers
+Govern the feature you are about to change, not the entire system.
 
-The method doesn't know your stack. That's by design, and it's **enforced by a validator, not aspirational**:
+### Diagnostic only
 
-| Layer | Lives in | Says |
-|---|---|---|
-| 1–2 · **spec** (neutral) | `spec/` | **what**: method, 28 agent contracts, 37 artifacts, commands, rules, 13 skills |
-| 3 · **adapter** (pluggable) | `adapters/` | **which tool**: every tool name lives here. If it shows up in the spec, it's a leak |
-| 4 · **instance** | `docod.yaml` | **where and in which language**: your paths, your project. The only thing that changes between repos |
+```text
+/docod:diagnose
+```
 
-Swap the adapter, keep the method. And the **product speaks your language**: set `language: pt-BR` (or `es`, `de`, …) in `docod.yaml` and every artifact, inquiry question and report comes out in it. The method speaks English, the product speaks yours.
+One command. No approvals, no adoption — a dated snapshot with `DIV` and `RISK` findings. See *Diagnose before adopting*.
+
+### Delivering a single task
+
+```text
+/docod:loop <task>
+```
+
+One dispatch through build, verification, QA, fix and diff review. See *Dispatch without babysitting*.
+
+---
 
 ## Commands
 
-```
-/docod:start                       where to enter, given what already exists
-/docod:status                      what exists, what's valid, what's blocked
-/docod:run <agent> [action] [ws]   invoke an agent
-/docod:approve <file> --by <who>   the human gate
-/docod:continue <ws>               resume a workstream
-/docod:ws list|done|abandon        workstream lifecycle
-/docod:report                      HTML dashboard: documents, kanban, flow
-/docod:lead [topic]                your tech lead: sparring for technical decisions
-/docod:loop <task> [--until]       dispatch one task through build→QA→review, no babysitting
-```
+```text
+/docod:start
+Find the correct entry point from the current repository state.
 
-## The map: who comes after whom
+/docod:status
+Show what exists, what is valid, what is stale and what is blocked.
 
-Derived from the real `requires` in the contracts. This is a snapshot of the model; the **live** answer is always `/docod:status`, which computes possible/blocked against what exists right now.
+/docod:run <agent> [action] [ws]
+Invoke an agent contract explicitly.
 
-```
-legend    ● core    ○ dispensable — use it if the project calls for it
-          ⚑ human gate (/docod:approve)    ⚡ cross-cutting — any time
+/docod:approve <file> --by <who>
+Record a human approval attached to the current content.
 
-DEFINE       ○ business-case (why invest?)
-                    │ waivable
-                    ▼
-             ● prd ⚑ ───────► ● frd ⚑
-                                  │
-ORCHESTRATE                       ▼
-             ● system-design ⚑ ──┬──► ○ infrastructure-design (capacity/cost)
-               (the boundaries)  └──► ○ observability → slos (SLI/SLO/alerting)
-                  │
-                  ├── ○ data-design      — has data of its own? use it
-                  ├── ○ api-contract     — someone consumes your interface? use it
-                  └── ○ security-design  — has an attack surface? use it
-                  │
-CONFIRM      design-review ► verdict on the designs (agent gate)
-                  ▼
-             ● task-extraction → tasks ⚑
-                  │     └─► ○ test-plan · ○ user-stories · ○ project-management
-                  ▼
-             ● task-executor (code + evidence)
-                  ⇅ builds → verifies → fixes
-             ● qa-executor (behavior) · ● code-review (diff)
+/docod:continue <ws>
+Resume a workstream with focused status.
 
-OBSERVE      ○ runbook · ○ playbook (born from the slos)
-             ○ integration-guide (born from the api-contract)
+/docod:ws list|add|done|abandon
+Manage workstream lifecycle.
 
-[re]DEFINE   ○ release-notes (on release) · ○ postmortem (on incident)
-                  └─► impact-analysis propagates what the incident/change invalidated
+/docod:report
+Generate the static project dashboard.
 
-CROSS-CUTTING ⚡ — triggered by NEED, not by stage:
-  adr             technical decision with alternatives ("Postgres instead of Mongo")
-  tradeoffs       deep dive when the cost of BEING WRONG is high (one-way door)
-  rfc             when the cost of DECIDING ALONE is high (people affected)
-  impact-analysis something changed — what went stale, who fixes it
-  rules-factory   distills project patterns into rules the executor obeys
-  tech-lead       your sparring partner: reads everything, recommends, logs counsel
+/docod:lead [topic]
+Discuss a technical decision with project-aware counsel.
+
+/docod:loop <task> [--until]
+Dispatch one task through build, verification, QA and review.
+
+/docod:diagnose
+Analyze an existing codebase without adopting governance.
 ```
 
-**Dispensable is not decorative.** ○ means the method works without it, but each one exists because its absence has a known cost (skip `test-plan` → QA with no traceability matrix; skip `slos` → alerting by gut feeling). Dispense knowing what you're giving up.
+The Node runtime also provides lower-level commands such as:
 
-## Product decision × ADR: don't confuse them
+```text
+node .docod/docod.mjs verify <file>
+node .docod/docod.mjs rebless ...
+```
 
-| | `decisions/log/` | ADR |
+---
+
+## Diagnose before adopting
+
+Not every team is ready to install a complete governance flow.
+
+That should not prevent the team from seeing the problem.
+
+```text
+/docod:diagnose
+```
+
+Diagnostic mode reads an existing codebase and available legacy documentation, then produces a dated snapshot containing:
+
+- reconstructed artifacts;
+- provenance for each important claim;
+- `DIV` findings where claims and reality disagree;
+- `RISK` findings where the code carries danger on its own;
+- questions that only an external owner can answer;
+- an honest account of coverage and unknowns.
+
+No approvals.
+
+No governance gates.
+
+No adoption required.
+
+The output is pre-read, not pre-approved.
+
+You receive an evidenced map of where the system already stopped agreeing with itself.
+
+---
+
+## Working in a legacy codebase
+
+The strongest legacy strategy is usually not to document the entire system.
+
+It is to govern the feature you are about to change.
+
+```text
+/docod:run rules-factory extract_from_code
+/docod:run system-design reverse_design
+/docod:run data-design reverse_model
+/docod:run api-contract reverse_contract
+/docod:run prd create_prd <workstream>
+```
+
+The reverse actions classify reconstructed information as:
+
+```text
+evidence
+read directly from the code or a source
+
+inferred
+deduced from available evidence
+
+user-supplied
+provided by an external owner
+```
+
+Important inferences become questions.
+
+Contradictions become numbered `DIV` findings.
+
+One-sided dangers become numbered `RISK` findings.
+
+DOCOD does not pretend that reverse engineering recovered truth perfectly.
+
+It records what was observed, what was inferred and what remains unknown.
+
+---
+
+## Project graph and lineage
+
+DOCOD treats the repository as a graph of engineering artifacts.
+
+```text
+PRD
+  ↓
+FRD
+  ↓
+System design
+  ├── Data design
+  ├── API contract
+  ├── Security design
+  └── Infrastructure design
+          ↓
+        Tasks
+          ↓
+         Code
+          ↓
+     QA and review
+          ↓
+      Operations
+```
+
+Relationships are declared through inputs and requirements.
+
+Not every relationship behaves the same way.
+
+### Live lineage
+
+The downstream artifact is expected to remain aligned with the current upstream artifact.
+
+A hash mismatch means stale.
+
+### Snapshot lineage
+
+The artifact records what it observed at a specific moment.
+
+A postmortem should not rewrite history every time the code changes.
+
+### Append-only lineage
+
+The source grows by design.
+
+A decision log is observed at a point in time, not continuously repinned.
+
+### External provenance
+
+The source exists outside the DOCOD artifact registry.
+
+It is recorded but not falsely presented as mechanically resolvable.
+
+### Edge-level snapshot
+
+One relationship may be historical even when the rest of the artifact remains live.
+
+This prevents a false choice between erasing provenance and over-invalidating the project.
+
+---
+
+## Full method map
+
+The live answer is always:
+
+```text
+/docod:status
+```
+
+The following map is a conceptual overview.
+
+```text
+DEFINE
+
+  ○ business-case
+          │
+          ▼
+      ● prd ⚑
+          │
+          ▼
+      ● frd ⚑
+
+
+ORCHESTRATE
+
+      ● system-design ⚑
+          ├── ○ data-design
+          ├── ○ api-contract
+          ├── ○ security-design
+          ├── ○ infrastructure-design
+          └── ○ observability
+                    └── ○ slos
+
+      design-review
+          │
+          ▼
+      ● task-extraction
+          │
+          ▼
+        tasks ⚑
+          │
+          ▼
+      ● task-executor
+          ⇅
+      ● qa-executor
+      ● code-review
+
+
+OBSERVE
+
+      ○ runbook
+      ○ playbook
+      ○ integration-guide
+
+
+[re]DEFINE
+
+      ○ release-notes
+      ○ postmortem
+          └── impact-analysis
+
+
+CROSS-CUTTING
+
+      ⚡ adr
+      ⚡ tradeoffs
+      ⚡ rfc
+      ⚡ impact-analysis
+      ⚡ rules-factory
+      ⚡ tech-lead
+```
+
+Legend:
+
+```text
+● core
+○ optional when the project needs it
+⚑ human approval
+⚡ triggered by need, not stage
+```
+
+Optional does not mean decorative.
+
+It means the method can operate without the artifact, while the cost of omission remains explicit.
+
+---
+
+## Four-layer architecture
+
+DOCOD has four layers.
+
+| Layer | Location | Responsibility |
 |---|---|---|
-| what | a **product** answer from the inquiry | a **technical** decision with alternatives |
-| example | "primary persona = operator" | "Postgres instead of Mongo, because…" |
-| recorded by | the agent that asked, automatically | **only the `adr` agent**, invoked by you |
-| shape | append-only yaml fact, with provenance | numbered, immutable document, with consequences |
+| Method | `spec/method.yaml` | Movements, capabilities, statuses, approvals and shared rules |
+| Contract | `spec/`, `agents/`, `rules/`, `skills/` | What agents, actions and artifacts are |
+| Adapter | `adapters/*.yaml` | How the method materializes in a specific harness |
+| Instance | `docod.yaml` | Paths, language, topology and targets for one project |
 
-An ADR **never** gets born inside another agent. When the frd (or any agent) hits a technical decision, it stops and flags that an ADR is missing there; you decide whether to run `/docod:run adr record_decision`. A technical choice with discarded alternatives and no ADR is a gap, and the fix is to give it an owned record.
+The method and contract layers are vendor-neutral.
 
-## Where the documents live
+The adapter contains tool-specific wiring.
 
-`docsRoot` is the instance's call (`docod.yaml`, default `docs/`). Stage is metadata, not a folder. Grouping is by nature:
+The instance contains project-specific configuration.
 
+Swap the adapter.
+
+Keep the method.
+
+---
+
+## Adapter support
+
+DOCOD is designed to remain independent of model, language and repository stack.
+
+Operational capability depends on the adapter.
+
+### Claude Code
+
+Claude Code is currently the fully materialized reference adapter.
+
+It provides:
+
+- native subagents;
+- slash commands;
+- explicit hand-back questions;
+- command orchestration;
+- generated agent envelopes;
+- runtime verification after delivery.
+
+### Other harnesses
+
+The installer exposes DOCOD through root-level discovery files such as:
+
+```text
+AGENTS.md
+CLAUDE.md
 ```
-docs/
-  product/       prd, frd, business-case, user-stories, roadmap
-  design/        system-design, data-design, api-contract, security-design, infra
-  decisions/     adr/, rfc/, tradeoffs/, log/
-  quality/       design-review, impact
-  ops/           runbooks/, playbooks/, postmortems/, slos
-  releases/      release-notes, integration-guide
-  standards/     rules generated by rules-factory
-  workstreams/   {ws}/ · workstreams.yaml (the registry)
-```
 
-Target-scoped artifacts (tasks, evidence, qa, code-review) live next to the code, in `{target.tasksRoot}`: whoever executes reads there.
+Harnesses capable of reading these files can discover the method, rules and artifacts.
 
-## Workstreams
+Full feature parity depends on an adapter implementing the corresponding capabilities.
 
-A workstream is **born** when `prd` runs in ws scope (registered in `docs/workstreams.yaml`), **lives** in `docs/workstreams/{ws}/`, and **dies** via `/docod:ws done` or `abandon --reason "..."`. The reason is mandatory; a workstream that vanishes in silence is lost work with no record. A folder without a registry entry doesn't create a workstream: `status` reports it as a finding.
+DOCOD does not claim that every harness currently supports every orchestration feature.
 
-## Install
+The method is portable.
+
+Materialization is adapter-specific.
+
+---
+
+## Installation and instance configuration
+
+### Repository install
 
 ```bash
-./install.sh /path/to/your/project
+git clone https://github.com/docod-ai/getdocod
+./getdocod/install.sh /path/to/your/project
 ```
 
-What lands in the project:
+The installer is:
 
-- `.docod/`: the bundle (recreated on every sync; don't edit here)
-- `docod.yaml`: the instance, **yours**. Created once, never overwritten
-- `.claude/agents/docod-*`: the agents as native subagents
-- `.claude/commands/docod/`: the orchestration commands
-- `.agents/docod/skills/` + symlinks `.claude/skills/docod-*`
-- a DOCOD block in `CLAUDE.md` + `AGENTS.md` (created as a symlink if absent), so **any** harness that reads them (Codex, Gemini CLI, Cursor, Kimi, Copilot) discovers the method: the slash commands are a Claude Code bonus, not the only door
+- pure Bash;
+- dependency-free at install time;
+- idempotent;
+- merge-safe;
+- namespace-safe.
 
-**Merge rule:** everything of ours is namespaced (`docod`); what isn't ours is **never touched**. A same-named file that isn't ours: the installer warns and skips. Running again updates the bundle and preserves the rest. That's also the update flow.
+Run it again to update the bundle.
 
-## Your docod.yaml, in one minute
+Your project configuration is preserved.
 
-The installer creates it at your project root on the first run, and **never touches it again**: it is the only file in the whole method that is yours to edit. Everything else derives from it. When the template gains new fields, a reinstall warns you and points at the reference copy in `.docod/docod.yaml`; adding them is your call.
+### Claude Code plugin
+
+```text
+/plugin marketplace add docod-ai/getdocod
+/plugin install docod@docod
+/docod:setup-docod
+```
+
+The plugin keeps the method bundle managed and current.
+
+The repository install copies the bundle so you can inspect, modify and fork everything.
+
+Both approaches preserve the same principle:
+
+```text
+Your docod.yaml is yours.
+Your artifacts are yours.
+Your decisions are yours.
+```
+
+### What gets installed
+
+```text
+.docod/
+The method bundle, contracts, agents, runtime and templates.
+Recreated during updates. Do not edit generated copies here.
+
+docod.yaml
+Your project instance.
+Created once and never overwritten.
+
+.claude/agents/docod-*
+Native Claude Code subagents.
+
+.claude/commands/docod/
+DOCOD orchestration commands.
+
+.agents/docod/skills/
+Method-neutral skills.
+
+.claude/skills/docod-*
+Claude-compatible links to DOCOD skills.
+
+CLAUDE.md
+A namespaced DOCOD discovery block.
+
+AGENTS.md
+Created as a link when appropriate, allowing compatible harnesses to discover the method.
+```
+
+Everything DOCOD owns is namespaced.
+
+A same-named file without the DOCOD marker is never overwritten.
+
+The installer warns and skips it.
+
+### Your `docod.yaml`
+
+The project instance is intentionally small.
 
 ```yaml
 project:
   name: "my-project"
-  spec: ./.docod/spec/     # where the method's spec lives; leave as is
+  spec: ./.docod/spec/
 
-adapter: claude-code       # swap this line, swap the harness
+adapter: claude-code
 
-language: en               # everything the method PRODUCES (artifacts, inquiry
-                           # questions, reports) comes out in THIS language.
-                           # The method speaks English; the product speaks yours.
-                           # e.g. pt-BR, es, de
+language: en
 
-docsRoot: docs/            # where artifacts live; grouping inside is by nature
-                           # (product/ design/ decisions/ ops/ ...), never by stage
+docsRoot: docs/
 
-topology: single           # single | monorepo | multi-repo
+topology: single
+
 targets:
   app:
     path: .
-    stack: []              # your stack; the bundle doesn't know it and shouldn't
-    tasksRoot: tasks/      # tasks and evidence live here, next to the code
+    stack: []
+    tasksRoot: tasks/
 ```
 
-When to edit it: right after installing, and usually only twice. Set `language` if your team doesn't work in English, and shape `targets` to your repo. A monorepo looks like this, and it is the difference between the method seeing half your tasks and all of them:
+#### Monorepo example
 
 ```yaml
 topology: monorepo
+
 targets:
-  api:  { path: services/api/, tasksRoot: services/api/tasks/ }
-  web:  { path: apps/web/,     tasksRoot: apps/web/tasks/ }
+  api:
+    path: services/api/
+    tasksRoot: services/api/tasks/
+
+  web:
+    path: apps/web/
+    tasksRoot: apps/web/tasks/
 ```
 
-Every path template in the method resolves against these targets, one pattern per target: rules, tasks, evidence, QA. Get `tasksRoot` right and `status`, `report` and `verify` see everything; get it wrong and they tell you what they can't find instead of pretending.
+DOCOD resolves target-scoped paths once per target.
+
+That allows tasks, QA, evidence and reviews to live close to the code they govern.
+
+---
+
+## Files, workstreams and language
+
+### The files
+
+By default:
+
+```text
+docs/
+  product/
+  design/
+  decisions/
+    adr/
+    rfc/
+    tradeoffs/
+    log/
+  quality/
+  ops/
+    runbooks/
+    playbooks/
+    postmortems/
+    slos.md
+  releases/
+  standards/
+  workstreams/
+```
+
+Tasks, evidence, QA and code reviews live under each target's `tasksRoot`.
+
+Grouping is by nature, not by stage.
+
+A document does not move because the project revisited it.
+
+### Workstreams
+
+A workstream is a bounded project front.
+
+By default, it is created when a PRD runs in workstream scope.
+
+It is registered in:
+
+```text
+docs/workstreams.yaml
+```
+
+Its artifacts live under:
+
+```text
+docs/workstreams/<ws>/
+```
+
+A workstream ends through:
+
+```text
+/docod:ws done <ws>
+```
+
+or:
+
+```text
+/docod:ws abandon <ws> --reason "..."
+```
+
+Abandoning without a reason is refused.
+
+Work that disappears silently becomes lost context.
+
+DOCOD records the ending.
+
+### Language
+
+The method contracts use stable English keys.
+
+The artifacts produced for your project use the language configured in:
+
+```yaml
+language: pt-BR
+```
+
+The method speaks English.
+
+The product speaks your language.
+
+Agent keys, artifact keys, actions, placeholders and machine vocabulary are never translated casually because they form the executable contract.
+
+Human-facing documents, questions and reports are translated.
+
+---
+
+## Rebless
+
+A legitimate edit invalidates the old approval.
+
+That is correct.
+
+Sometimes a broad change is cosmetic, such as a product rename across many approved documents.
+
+For that case:
+
+```text
+rebless
+```
+
+`rebless` can batch re-approve invalid approvals and optionally repin stale live inputs.
+
+It requires:
+
+- an approver;
+- a reason;
+- a visible plan before execution;
+- unique source resolution;
+- explicit scope when desired.
+
+It never guesses ambiguous references.
+
+Anything it cannot resolve is reported and returns a non-zero exit code.
+
+“I do not know which source this means” is an acceptable result.
+
+Silence is not.
+
+---
+
+## Design principles
+
+DOCOD is built around a small set of principles. The five that most define it:
+
+### Derived, never maintained
+
+State is recomputed from files. A manually maintained index would eventually disagree with the repository.
+
+### Never hide invalidity
+
+Changed approvals stay visible. Stale relationships stay visible. Unknowns stay unknown.
+
+### The verifier is not the producer
+
+Self-review is not independence.
+
+### Missing capability is not permission to improvise
+
+Unavailable verification becomes `NOT VERIFIED`, never a fabricated success.
+
+### Ambiguity is surfaced, never guessed
+
+A resolver may become better at recognizing a source. It must never become better at pretending ambiguity does not exist.
+
+The full set — one artifact one owner, humans retain authority, machines check what machines can, every reference needs a watcher, judgment remains judgment, vocabulary comes before enforcement — is in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+---
+
+## What DOCOD does not guarantee
+
+DOCOD is not a formal verification system.
+
+It does not prove that:
+
+- a human actually read an artifact before approving it;
+- the identity in `approval.by` is cryptographically authenticated;
+- two agents using the same model are epistemically independent;
+- every architectural judgment is correct;
+- all failures can be detected by tests;
+- every harness has the same operational capabilities.
+
+Current recorded design work includes:
+
+- multi-approver governance;
+- action-contract evolution for future team workflows;
+- a validated scale-down profile for small projects.
+
+Known limits are kept on record.
+
+A deleted limitation is a limitation that returns without context.
+
+---
+
+## What DOCOD is not
+
+DOCOD is not:
+
+- an autonomous software factory;
+- a replacement for engineering judgment;
+- a proprietary project database;
+- a cloud service required to read your own project;
+- a generic collection of prompts;
+- a rigid process that decides for the team;
+- a promise that language models become deterministic;
+- spec-driven development with more files.
+
+DOCOD is the machinery that keeps specification, decisions, implementation and evidence from drifting apart.
+
+---
+
+## The wider DOCOD ecosystem
+
+The runtime is one part of a larger system.
+
+```text
+                         DOCOD
+
+             AI-Native Software Engineering
+
+      ┌─────────────────┼─────────────────┐
+      │                 │                 │
+    LEARN              BUILD             GROW
+      │                 │                 │
+      │                 │                 │
+    Book              Method           Community
+    Daily             Runtime          Jobs
+    Challenges        Documentation    Certifications
+    Courses           Templates        Career network
+```
+
+### Learn
+
+Understand the discipline.
+
+- **Book** — the principles, models and complete operational method.
+- **Daily challenges** — deliberate practice in small, recurring exercises.
+- **Courses** — deeper learning in context engineering, harness engineering, agents, specifications, QA and governance.
+
+### Build
+
+Apply the discipline.
+
+- **Method** — Define, Orchestrate, Confirm, Observe and [re]Define.
+- **Runtime** — derived state, gates, hashes, lineage and verification inside the repository.
+- **Documentation** — contracts, examples and maintainer internals.
+- **Templates** — reusable structures for real engineering work.
+
+### Grow
+
+Build a career around the new discipline.
+
+- **Community** — learn and exchange experience with other AI-native engineers.
+- **Jobs** — connect professionals with teams redesigning software development around agents.
+- **Certifications** — future validation of practical skills and method proficiency.
+
+These are not unrelated products.
+
+They are one learning and execution loop:
+
+```text
+Learn the discipline
+        ↓
+Practice it
+        ↓
+Apply it in real repositories
+        ↓
+Share evidence and experience
+        ↓
+Grow professionally
+        ↓
+Teach the next cycle
+```
+
+The book explains why.
+
+The method explains how.
+
+The runtime makes it executable.
+
+The platform helps people learn, practice, connect and grow.
+
+---
+
+## The book
+
+<a href="https://docod.ai/book">
+  <img src="assets/book-cover.png" alt="AI-Native Software Engineering" width="150" align="right">
+</a>
+
+**AI-Native Software Engineering** is the conceptual and operational foundation behind DOCOD.
+
+It covers:
+
+- the shift from AI-augmented to AI-native development;
+- context engineering;
+- harness engineering;
+- rules and skills;
+- sensors and feedback loops;
+- execution environments;
+- planning systems;
+- the DOCOD cycle;
+- spec-driven development;
+- documentation as an execution system;
+- decomposition;
+- autonomous agents;
+- QA;
+- human gates;
+- observability;
+- failure modes;
+- security;
+- long-term maintenance;
+- practical implementation through the DOCOD runtime.
+
+The repository is the executable reference implementation.
+
+The book is the complete explanation of the discipline surrounding it.
+
+📖 [Read the book](https://docod.ai/book)
+
+---
+
+## Daily challenges
+
+Learning a method once is not enough.
+
+The DOCOD daily challenge turns AI-native engineering into deliberate practice.
+
+Examples include:
+
+- transforming vague intent into measurable requirements;
+- finding hidden assumptions in a PRD;
+- decomposing a feature into agent-sized tasks;
+- distinguishing product decisions from ADRs;
+- designing a QA loop;
+- identifying drift between code and documentation;
+- writing criteria an executor cannot reinterpret;
+- deciding what belongs to automation and what belongs to human judgment.
+
+Challenges are delivered in six languages.
+
+✉️ [Take the daily challenge](https://docod.ai/challenge)
+
+---
+
+## Courses, community and jobs
+
+The DOCOD platform is being released incrementally.
+
+The first public areas focus on:
+
+- the book;
+- the method;
+- the runtime;
+- daily challenges;
+- articles and industry analysis.
+
+Future areas expand the same mission:
+
+- practical courses;
+- community discussions;
+- project showcases;
+- reusable templates;
+- professional profiles;
+- AI-native engineering jobs;
+- certifications.
+
+The goal is not to build another content portal.
+
+It is to create the home of AI-native software engineering.
+
+🌐 [Explore DOCOD](https://docod.ai)
+
+---
 
 ## Requirements
 
-- **install**: bash. Nothing else.
-- **command runtime**: node ≥18 (YAML ships vendored: no python, pip, or npm install). Without node, commands become manual: the agents still check requires and warn; the gate is never skipped.
-- python is not needed for anything that gets installed.
+### Installation
 
-## Who made this
+```text
+Bash
+```
 
-<a href="https://docod.ai/book"><img src="assets/book-cover.png" alt="AI-Native Software Engineering — the book" width="150" align="right"></a>
+No package installation is required.
 
-Created by **[Fabio Valencio](https://docod.ai)**, author of *AI-Native Software Engineering* and creator of the DOCOD method. The book is the why and the how behind everything in this repo: 27 chapters from context engineering to a full DOCOD cycle run with a stopwatch.
+### Runtime commands
 
-If DOCOD earns a place in your workflow, the best way to support it:
+```text
+Node.js ≥ 18
+```
 
-⭐ **Star the repo** · 📖 **[Read the book](https://docod.ai/book)** · ✉️ **[Take the daily challenge](https://docod.ai/challenge)**
+YAML support is vendored.
 
-That's what keeps the method evolving.
+No `npm install`, Python or `pip` is required for the installed runtime.
 
-## License
+### Development validation
 
-MIT. Use it, adapt it, build on it. If you ship something with it, a link back to [docod.ai](https://docod.ai) is appreciated (and helps the method survive).
+Maintainers may use additional development-only validators.
+
+They are not installed into user projects.
+
+---
+
+## Contributing
+
+DOCOD welcomes contributions in agent contracts, artifact definitions, validators, adapters, skills, runtime behavior, documentation, diagnostic rules, examples and tests based on real failures.
+
+The project values changes grounded in a real failure or use case, that preserve layer neutrality, include a validator for new cross-file relationships, avoid hidden state, surface uncertainty honestly and keep human authority explicit.
+
+A new rule without a failing case is usually a theory.
+
+A new relationship without a validator is usually future drift.
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full guidance and the complete set of design principles.
+
+---
+
+## Author, support and license
+
+DOCOD was created by **[Fabio Valencio](https://docod.ai)**, author of *AI-Native Software Engineering*.
+
+The project grew from a recurring problem:
+
+Agents could produce more software than a human could reliably keep aligned.
+
+The answer was not a larger prompt.
+
+It was an engineering system around the agents.
+
+### Support the project
+
+If DOCOD earns a place in your workflow:
+
+⭐ Star the repository  
+📖 [Read the book](https://docod.ai/book)  
+✉️ [Take the daily challenge](https://docod.ai/challenge)  
+🌐 [Join the platform](https://docod.ai)
+
+That is what keeps the method, runtime and learning ecosystem evolving together.
+
+### License
+
+MIT.
+
+Use it.
+
+Adapt it.
+
+Build on it.
+
+Your artifacts, decisions and repository remain yours.
+
+A link back to [docod.ai](https://docod.ai) is appreciated.
 
 ---
 
 <div align="center">
-<strong>The future is AI-native.</strong><br>
-<a href="https://docod.ai">docod.ai</a>
+
+## The future is AI-native.
+
+**Learn the discipline. Build with governance. Grow with the ecosystem.**
+
+[docod.ai](https://docod.ai)
+
 </div>
