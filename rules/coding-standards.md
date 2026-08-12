@@ -95,6 +95,8 @@ Above the line is automatic. **Below is on us — and that is all the rule talks
 
 **"What the machine guarantees"** exists so the rest stays short. If it is there, it does not become a rule.
 
+**Comment discipline is not a rule here — it is method-level.** "Comments carry the non-obvious why, never the worklog: no task/RF ID, no dates, no change-log in the source" survives a change of language, so by the test below it is advice, not a project rule. It is already carried by the `task-executor` contract (the trace lives in the commit, the task file and `tasks.md`; an ID in the code is a mirror that drifts). Do not restate it.
+
 **"Gaps" protects the PR's author.** Silence in the rule does not mean "free" — it means the reviewer fills it with their own taste. A written gap is what prevents that.
 
 **"Why" on every rule.** A rule without a reason is obeyed without being understood — and then the first legitimate exception becomes a fight, or worse, a silent workaround.

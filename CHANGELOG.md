@@ -5,6 +5,25 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.12.1] — 2026-08-12
+
+Fixed: the task-executor no longer narrates its worklog into the code. A field
+example — a home component whose comments carried "Tarefa 8.9 (RF-014)", the
+subtask decision log, dates and `grep` commands — reads to a reviewer as AI
+churn and couples the source to instance-internal task numbers that drift when
+a task is resequenced. New execute_task postcondition: comments carry the
+non-obvious WHY for the next engineer, never the worklog; the trace is the
+record's job (the commit, the task file, `tasks.md`). The code is the
+deliverable; the record lives elsewhere — CONDUCTOR's two-registers doctrine,
+one layer down.
+
+coding-standards clarifies this is method-level, not a project rule: "comments
+carry the why, never the worklog" survives a change of language, so by the
+template's own generation test it is advice, not a CS rule — it lives in the
+executor's contract, not a derived ruleset.
+
+specVersion → 1.12.1 in lockstep (5 spec files + install.sh + plugin.json).
+
 ## [1.12.0] — 2026-08-06
 
 The conductor release — from the review-loop field transcript ("um vai e vem

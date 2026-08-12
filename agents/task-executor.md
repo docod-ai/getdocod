@@ -35,6 +35,7 @@ contract:
         - "evidence: Every success criterion has cited evidence: command, output, file"
         - "deterministic: Nothing was marked done with a failing test"
         - "deterministic: The task's scope, criteria and tests were NOT altered"
+        - "judgment: Comments carry the non-obvious WHY for the next engineer, never the worklog — no task/RF/subtask ID, no dates, no change-log in the source. That trace is the record's job (the commit, the task file, `tasks.md`); an ID in the code is a mirror that drifts when the task is resequenced. The code is the deliverable, and the record lives elsewhere"
         - "deterministic: The cycle closed with an `approved` verdict from the qa-executor"
       note: |
         The action is the CYCLE, not the commit: build → trigger qa → fix what
