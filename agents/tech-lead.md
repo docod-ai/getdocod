@@ -57,6 +57,7 @@ contract:
       postconditions:
         - "deterministic: Every DIV and RISK row has an id, an owner, and evidence (file:line with the observed fragment)"
         - "deterministic: The frontmatter carries the `report:` data block (census with recorded/ratified, DIV/RISK rows, gravest, questions) per artifacts.yaml § diagnostic — the report profile renders the sellable dossier from it"
+        - "deterministic: `severity` in the report block uses the CANONICAL keys critical|high|medium|low, never the instance language — the block is machine-readable; the template maps keys to colours, and only display labels localize (artifacts.yaml § diagnostic)"
         - "judgment: The census is read as two axes, never collapsed — a zero in user-supplied/decided is NOT absence of rationale; legacy why lives in `external`, recorded not ratified. No summary says 'no why exists'"
         - "deterministic: Open EXTERNAL-OWNER questions are appended to the external-questions queue, never kept inline only"
         - "evidence: The provenance census is derived from the reversed artifacts' own labels, cited per artifact"

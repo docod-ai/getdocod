@@ -335,7 +335,18 @@ function cmdStatus(root, ws = null) {
     const eqF = path.join(root, docsRoot(inst), "decisions", "external-questions.yaml");
     if (fs.existsSync(eqF)) {
       let eq = [];
-      try { eq = yload(fs.readFileSync(eqF, "utf-8")) || []; } catch { /* verify reports parse errors */ }
+      let eqBroken = null;
+      try { eq = yload(fs.readFileSync(eqF, "utf-8")) || []; } catch (e) { eqBroken = String(e.message).split("\n")[0]; }
+      if (eqBroken) {
+        // A queue that does not parse is a LOSS CONDITION, never an empty
+        // list. The old code swallowed this — and in the field a corrupted
+        // queue rendered as "zero open questions" while eight entries were
+        // gone. The status does not lie, so it says the worst thing it knows.
+        console.log(`\n✗ EXTERNAL QUESTIONS — the queue DOES NOT PARSE: ${eqBroken}`);
+        console.log(`  ${eqF}`);
+        console.log("  Open questions CANNOT be shown — treat this as possible loss, not as an empty queue.");
+        console.log("  Restore the file (entries are append-only: git history has every one), then run verify on it.");
+      }
       const open = (Array.isArray(eq) ? eq : []).filter(q => (q?.state ?? "open") === "open");
       if (open.length) {
         console.log(`\nEXTERNAL QUESTIONS — ${open.length} open (only an outside owner can close these; chase the owner):`);
@@ -486,6 +497,174 @@ function cmdWs(root, sub, key = null, reason = null, name = null) {
   return 0;
 }
 
+/* ────────────────────────────────────────── external-questions: the writer */
+
+// The queue's write door. Born from a field incident (2026-08-14): three
+// reverses of one diagnostic run appended in parallel by rewriting the whole
+// file — the YAML stopped parsing and EIGHT prior entries vanished
+// (EXT-001..006 and EXT-007..008, per the loss report the agents left as
+// comments in the restored file); with the queue corrupted, `status` showed
+// zero open questions. Two legs fix it: this command is the SINGLE WRITER
+// (O_EXCL lock + candidate→parse→assert→write), and `verify` gained the
+// per-family sequence check that makes any loss computable. Prevention is
+// best-effort — an agent can still hand-edit — detection is mechanical.
+
+function eqFile(root, inst) {
+  return path.join(root, docsRoot(inst), "decisions", "external-questions.yaml");
+}
+
+function withQueueLock(file, fn) {
+  // O_EXCL lockfile: atomic on POSIX, zero-dep. Two WELL-BEHAVED concurrent
+  // `question add` calls would otherwise race the id allocation (both read
+  // max, both write EQ-05), and appendFileSync is not atomic for large
+  // payloads. The lock closes both. A stale lock is NEVER removed
+  // automatically — a guard does not guess an ambiguous state; it refuses
+  // with the recipe.
+  const lock = file + ".lock";
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const deadline = Date.now() + 10_000;
+  for (;;) {
+    let fd = null;
+    try { fd = fs.openSync(lock, "wx"); }
+    catch (e) {
+      if (e.code !== "EEXIST") throw e;
+      let age = null;
+      try { age = Date.now() - fs.statSync(lock).mtimeMs; } catch { continue; /* released between check and stat */ }
+      if (age > 30_000)
+        die(`✗ queue lock held for ${Math.round(age / 1000)}s: ${lock}\n  If no docod process is running, remove the lock file and retry.\n  (Never removed automatically — the lock may belong to a live writer.)`);
+      if (Date.now() > deadline)
+        die(`✗ queue lock busy after 10s: ${lock}\n  Another writer is active — retry. If this repeats with no docod process running, remove the lock file.`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 120); // sleep without spinning
+      continue;
+    }
+    // `die` inside the critical section calls process.exit, which SKIPS
+    // finally blocks — a refusal must not leave a stale lock behind (the
+    // planted corrupted-queue test caught exactly that). The 'exit' event
+    // still fires on process.exit, so the release rides there too.
+    const release = () => { try { fs.closeSync(fd); } catch { } try { fs.unlinkSync(lock); } catch { } };
+    process.once("exit", release);
+    try { return fn(); }
+    finally { release(); process.removeListener("exit", release); }
+  }
+}
+
+function parseQueueOrDie(f, raw, why) {
+  let items = [];
+  if (raw.trim()) {
+    try { items = yload(raw) || []; }
+    catch (e) {
+      die(`✗ the queue DOES NOT PARSE — refusing to ${why} over a corrupted file (writing would bury the evidence of what corrupted it).\n  ${String(e.message).split("\n")[0]}\n  Inspect ${f}, restore it (entries are append-only — git history has every one), then retry.`);
+    }
+    if (!Array.isArray(items)) die(`✗ the queue is not a YAML list: ${f} — inspect it before writing`);
+  }
+  return items;
+}
+
+function cmdQuestion(root, sub, pos, opt) {
+  const { inst } = loadModel(root);
+  const f = eqFile(root, inst);
+  if (sub === "add") {
+    const question = opt("--question"), owner = opt("--owner"), askedBy = opt("--asked-by");
+    const blocking = (opt("--blocking") || "").split(",").map((s) => s.trim()).filter(Boolean);
+    if (!question || !owner || !askedBy)
+      die('usage: docod.mjs question add --question "..." --owner <who-outside> --asked-by <agent> [--blocking art1,art2]');
+    return withQueueLock(f, () => {
+      const raw = fs.existsSync(f) ? fs.readFileSync(f, "utf-8") : "";
+      const items = parseQueueOrDie(f, raw, "append");
+      // Next id in the CANONICAL family (EQ-nn). Other id families may exist
+      // in the field (grandfathered — renumbering breaks the traceability of
+      // documents that cite them); they are verify's to watch, never this
+      // command's to touch.
+      let max = 0;
+      for (const it of items) {
+        const m = /^EQ-(\d+)$/.exec(String(it?.id ?? ""));
+        if (m) max = Math.max(max, parseInt(m[1], 10));
+      }
+      const id = "EQ-" + String(max + 1).padStart(2, "0");
+      const entry = {
+        id, question, owner, asked_by: askedBy,
+        at: new Date().toISOString().slice(0, 10),
+        ...(blocking.length ? { blocking } : {}),
+        state: "open",
+      };
+      // candidate → parse → assert → write: the full future file must parse
+      // and contain exactly one new entry BEFORE anything touches disk —
+      // appending first and checking later is how the field queue nearly
+      // buried its own corruption.
+      const header = raw ? "" :
+        "# external-questions — the single queue of questions only an OUTSIDE owner\n" +
+        "# can close (spec/artifacts.yaml § external-questions). Append via\n" +
+        "# `docod.mjs question add` — hand-edits race, and a race has already lost entries.\n";
+      const block = ydump([entry], { sortKeys: false, lineWidth: 100 });
+      const candidate = (raw ? raw.replace(/\n*$/, "\n\n") : header) + block;
+      let parsed = null;
+      try { parsed = yload(candidate); } catch (e) { die(`✗ INTERNAL: candidate does not parse — nothing was written.\n  ${String(e.message).split("\n")[0]}`); }
+      const hits = (Array.isArray(parsed) ? parsed : []).filter((it) => String(it?.id ?? "") === id);
+      if (hits.length !== 1) die(`✗ INTERNAL: candidate holds ${hits.length} '${id}' entries, expected exactly 1 — nothing was written`);
+      if ((Array.isArray(parsed) ? parsed.length : 0) !== items.length + 1)
+        die(`✗ INTERNAL: candidate holds ${parsed.length} entries, expected ${items.length + 1} — nothing was written`);
+      fs.writeFileSync(f, candidate);
+      const back = yload(fs.readFileSync(f, "utf-8"));
+      if (!(Array.isArray(back) && back.some((it) => String(it?.id ?? "") === id && (it.state ?? "open") === "open")))
+        die(`✗ post-write assert FAILED for ${id} — inspect ${f} now`);
+      console.log(`✓ ${id} appended (open) → owner: ${owner}`);
+      console.log(`  asked by ${askedBy}${blocking.length ? " · blocking: " + blocking.join(", ") : ""} · the status chases it on every run`);
+      return 0;
+    });
+  }
+  if (sub === "answer") {
+    const id = pos[1], by = opt("--by"), answer = opt("--answer");
+    if (!id || !by || !answer)
+      die('usage: docod.mjs question answer <id> --by <who-answered> --answer "verbatim answer"');
+    if (!fs.existsSync(f)) die(`✗ no queue at ${f}`);
+    return withQueueLock(f, () => {
+      const raw = fs.readFileSync(f, "utf-8");
+      const items = parseQueueOrDie(f, raw, "edit");
+      const hits = items.filter((it) => String(it?.id ?? "") === id);
+      if (hits.length === 0) die(`✗ ${id} is not in the queue`);
+      if (hits.length > 1) die(`✗ ${id} appears ${hits.length}× — duplicate ids need a human look (run verify) before an answer lands`);
+      const it = hits[0];
+      if ((it.state ?? "open") === "answered")
+        die(`✗ ${id} is already answered (by ${it.answer?.by ?? "?"} on ${it.answer?.at ?? "?"}) — an entry never flips back`);
+      // SURGICAL block replacement. The file's comments are part of the
+      // record (the field file carries its own loss report as YAML comments);
+      // a whole-file redump would erase them. Only this entry's lines are
+      // rewritten; every other byte stays.
+      const lines = raw.split("\n");
+      const esc = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const idRe = new RegExp(`^\\s*(-\\s+)?id:\\s*['"]?${esc}['"]?\\s*(#.*)?$`);
+      let idLine = -1;
+      for (let i = 0; i < lines.length; i++) if (idRe.test(lines[i])) { idLine = i; break; }
+      if (idLine < 0) die(`✗ INTERNAL: could not locate the '${id}' line in the raw file — nothing was written`);
+      let start = idLine;
+      while (start > 0 && !/^- /.test(lines[start])) start--;
+      if (!/^- /.test(lines[start])) die(`✗ INTERNAL: could not locate the '- ' opener of ${id} — nothing was written`);
+      let end = start + 1; // exclusive; stops before the next top-level entry
+      while (end < lines.length && !/^- /.test(lines[end])) end++;
+      // trailing comment/blank lines belong to the FILE, not to the block
+      let keepFrom = end;
+      while (keepFrom > start + 1 && (/^\s*$/.test(lines[keepFrom - 1]) || /^\s*#/.test(lines[keepFrom - 1]))) keepFrom--;
+      const updated = { ...it, state: "answered", answer: { text: answer, by, at: new Date().toISOString().slice(0, 10) } };
+      const newBlock = ydump([updated], { sortKeys: false, lineWidth: 100 }).replace(/\n$/, "");
+      const candidate = [...lines.slice(0, start), ...newBlock.split("\n"), ...lines.slice(keepFrom)].join("\n");
+      let parsed = null;
+      try { parsed = yload(candidate); } catch (e) { die(`✗ INTERNAL: candidate does not parse — nothing was written.\n  ${String(e.message).split("\n")[0]}`); }
+      if (!Array.isArray(parsed) || parsed.length !== items.length)
+        die(`✗ INTERNAL: candidate holds ${Array.isArray(parsed) ? parsed.length : "?"} entries, expected ${items.length} — nothing was written`);
+      const after = parsed.filter((x) => String(x?.id ?? "") === id);
+      if (after.length !== 1 || after[0].state !== "answered" || after[0].answer?.by !== by)
+        die(`✗ INTERNAL: candidate does not carry the answered ${id} — nothing was written`);
+      fs.writeFileSync(f, candidate);
+      const back = yload(fs.readFileSync(f, "utf-8"));
+      if (!(Array.isArray(back) && back.some((x) => String(x?.id ?? "") === id && x.state === "answered")))
+        die(`✗ post-write assert FAILED for ${id} — inspect ${f} now`);
+      console.log(`✓ ${id} → answered (by ${by}, recorded verbatim) — the entry never leaves the file`);
+      return 0;
+    });
+  }
+  die('usage: docod.mjs question add --question "..." --owner <who> --asked-by <agent> [--blocking a,b]\n       docod.mjs question answer <id> --by <who> --answer "..."');
+}
+
 function cmdVerify(root, file) {
   // EXTERNAL verification of the computable class — run by the CALLER, never by
   // the producer. Born from the first real test: "deterministic" enforced in
@@ -536,6 +715,71 @@ function cmdVerify(root, file) {
   for (const [k, a] of Object.entries(arts))
     if (findInstances(a, root, inst, "*").includes(p)) { selfKey = k; selfArt = a; break; }
   if (selfKey) oks.push(`registered artifact: ${selfKey}` + (selfArt.lineage === "snapshot" ? " (snapshot — inputs are observed-at)" : ""));
+  // THE QUEUE CHECKS — external-questions only. Born from a field loss
+  // (2026-08-14): three parallel writers rewrote the whole file, the YAML
+  // stopped parsing, and eight entries vanished while this command still
+  // said "YAML parses ✓" — two checks total, both green over the wreck.
+  // The queue's entry_schema declares sequential ids, which makes loss
+  // COMPUTABLE: an append-only entry never leaves the file, so a hole in
+  // the sequence IS a lost (or never-recorded) entry. Checked PER PREFIX
+  // FAMILY, not per canonical grammar: the field file carries two id
+  // families (EQ-nn canonical, EXT-nnn grandfathered — renumbering would
+  // break the documents that cite them), and the lost eight were EXT-nnn.
+  // A check keyed to EQ-nn alone would have passed green over exactly the
+  // entries the field lost — the false-green this whole check exists to kill.
+  if (selfKey === "external-questions") {
+    let qs = null;
+    try { qs = yload(raw); } catch { /* the parse failure is already a fail above */ }
+    if (Array.isArray(qs)) {
+      const ids = qs.map((q) => String(q?.id ?? ""));
+      // global uniqueness — two writers colliding leaves duplicates
+      const count = new Map();
+      for (const v of ids) if (v) count.set(v, (count.get(v) ?? 0) + 1);
+      const dups = [...count].filter(([, n]) => n > 1);
+      if (dups.length) fails.push(`duplicate id(s): ${dups.map(([v, n]) => `${v} ×${n}`).join(", ")} — two writers collided, or an entry was pasted twice`);
+      else oks.push(`${qs.length} entr${qs.length === 1 ? "y" : "ies"}, ids unique`);
+      // per-family sequence
+      const fams = new Map();
+      for (const v of ids) {
+        const m = /^([A-Za-z]+)-(\d+)$/.exec(v);
+        if (m) {
+          const k = m[1];
+          if (!fams.has(k)) fams.set(k, { nums: [], width: 0 });
+          const fam = fams.get(k);
+          fam.nums.push(parseInt(m[2], 10));
+          fam.width = Math.max(fam.width, m[2].length);
+        } else if (v) warns.push(`id '${v}' matches no <PREFIX>-<number> family — the sequence check cannot watch it`);
+      }
+      for (const [famK, fam] of [...fams].sort()) {
+        const uniq = [...new Set(fam.nums)].sort((a, b) => a - b);
+        const label = (n) => `${famK}-${String(n).padStart(fam.width, "0")}`;
+        const missing = [];
+        for (let n = uniq[0]; n <= uniq[uniq.length - 1]; n++) if (!uniq.includes(n)) missing.push(n);
+        if (missing.length)
+          fails.push(`sequence gap in the ${famK} family: missing ${missing.map(label).join(", ")} — an entry was lost or never recorded (append-only entries never leave the file)`);
+        else oks.push(`${famK} family sequential: ${label(uniq[0])}–${label(uniq[uniq.length - 1])}, no gaps`);
+        if (uniq[0] > 1)
+          warns.push(`${famK} family starts at ${label(uniq[0])} — entries below it may have been lost before this file's history, or numbering started high; check the documents that cite ${famK}- ids`);
+      }
+      // entry shape — the current schema, with the field's legacy names read
+      // via alias and NEVER failed: those are precisely the restored entries,
+      // and a false positive on them trains the reader to skip this section.
+      const ALIAS = { raised_by: "asked_by", blocks: "blocking" };
+      let legacy = 0;
+      qs.forEach((q, i) => {
+        const idv = ids[i] || `entry #${i + 1}`;
+        const st = q?.state ?? "open";
+        if (!["open", "answered"].includes(st)) fails.push(`${idv}: state '${st}' not in open|answered`);
+        const has = (k) => q?.[k] != null || Object.entries(ALIAS).some(([lk, nk]) => nk === k && q?.[lk] != null);
+        if (Object.keys(ALIAS).some((lk) => q?.[lk] != null)) legacy++;
+        if (!has("question")) warns.push(`${idv}: no question text`);
+        if (st === "open" && !has("owner")) warns.push(`${idv}: open with no owner — nobody to chase`);
+        if (st === "answered" && q?.answer == null) warns.push(`${idv}: answered with no recorded answer — the record is the point`);
+      });
+      if (legacy)
+        warns.push(`${legacy} entr${legacy === 1 ? "y has" : "ies have"} legacy field names (raised_by/blocks — a pre-1.13.0 field grammar): read via alias, never rewritten (renaming grandfathered entries breaks traceability)`);
+    }
+  }
   // COMPLETENESS — the truncation detector. The contract (artifacts.yaml)
   // declares the MINIMUM sections; a run that died mid-write leaves fewer
   // `##` heads than the contract. COUNT, not names: instance docs are written
@@ -1117,8 +1361,14 @@ function main() {
       if (!["list", "add", "done", "abandon"].includes(sub)) die("usage: docod.mjs ws list|add|done|abandon <key> [--reason ...] [--name ...]");
       return cmdWs(root, sub, pos[1] ?? null, opt("--reason"), opt("--name"));
     }
+    case "question": {
+      const sub = pos[0];
+      if (!["add", "answer"].includes(sub))
+        die('usage: docod.mjs question add --question "..." --owner <who> --asked-by <agent> [--blocking a,b]\n       docod.mjs question answer <id> --by <who> --answer "..."');
+      return cmdQuestion(root, sub, pos, opt);
+    }
     default:
-      die("commands: status [--ws X] · continue <ws> · start · report · verify <file> · rebless · approve <file> --by <who> · ws list|done|abandon");
+      die("commands: status [--ws X] · continue <ws> · start · report · verify <file> · rebless · approve <file> --by <who> · ws list|done|abandon · question add|answer");
   }
 }
 

@@ -1,4 +1,4 @@
-specVersion: "1.12.1"
+specVersion: "1.13.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -845,6 +845,16 @@ artifacts:
           gravest: [id, ...]   # top findings by severity then corroboration — computed, not curated
           divs:  [{id, severity, title, stakes, evidence: [{loc, obs}], corroboration, owner}]
           risks: [{id, severity, class, title, stakes, evidence: [{loc, obs}], owner}]
+          # `severity` is CANONICAL METHOD VOCABULARY: critical | high |
+          # medium | low — never translated, exactly like status and verdict
+          # values. The data block is machine-readable: the template maps
+          # these KEYS to colours; display labels may localize, keys do not.
+          # Field case (2026-08-14): a pt-BR run wrote `crítica`, the colour
+          # map missed on the accent, and all 13 gravest findings rendered in
+          # the neutral colour with no warning — a silent fallback, the
+          # disease 1.10.2 named. The producer translated because nothing
+          # said not to; now it says. An unrecognized severity renders
+          # visibly MARKED in the dossier, never silently neutral.
           questions: [{question, owner}]   # the open EXTERNAL-OWNER entries, mirrored from the queue
           # Presentation fields — OPTIONAL, the template defaults sanely when
           # absent, but every key the template consumes is DECLARED here (a

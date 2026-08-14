@@ -432,6 +432,85 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: queue-serialization
+      was: major
+      issue: |
+        The external-questions queue had NO write serialization and its
+        failure modes were silent on every leg. Any agent appended by
+        rewriting the whole file; parallel writers clobbered each other.
+        status swallowed a parse error into an empty list ("zero open
+        questions" over a corrupted queue); verify ran exactly two checks on
+        a .yaml artifact (parses + registered) — green over the wreck. And
+        the entry_schema had declared `id: EQ-nn, sequential` since birth:
+        the queue carried its own loss detector and nobody wrote the check.
+      field_proof: |
+        (2026-08-14, the first diagnostic run against a real legacy — found
+        BY the method's own conductor discipline: four findings queued as
+        author proposals, nothing self-promoted.) Three reverses of one run
+        wrote in parallel; the YAML stopped parsing and EIGHT prior entries
+        vanished — EXT-001..006 (prd) and EXT-007..008 (api-contract), per
+        the forensic note the agents left as YAML comments while restoring
+        the file (read by the field agent; cited, not read by the
+        maintainer). With the queue corrupted, status showed zero open
+        questions. Two entries could not be restored by an agent that had
+        never read them — appending over corruption nearly buried the
+        evidence for good.
+      resolution: |
+        1.13.0, two legs. PREVENTION: `question add|answer` is the queue's
+        single writer — O_EXCL lockfile around allocate+append (two
+        well-behaved concurrent adds raced the id allocation; a stale lock
+        refuses with the recipe, never auto-removed), candidate→parse→
+        assert→write (a corrupted queue REFUSES the write), `answer` edits
+        surgically preserving every other byte (comments are the forensic
+        record; a redump would erase them). Subagent preamble and diagnose
+        flow teach the verb. DETECTION carries the guarantee (the command is
+        an instruction, not a lock): verify gained the queue checks —
+        duplicate ids, sequence gap PER PREFIX FAMILY naming the missing id
+        (the field's two grammars, EQ-nn canonical and EXT-nnn grandfathered:
+        an EQ-only check would have passed green over the exact eight lost
+        entries), state enum, entry shape with the legacy field names
+        (raised_by/blocks) read via alias and warned, never failed. status
+        now reports an unparseable queue as possible LOSS, out loud. The
+        planted corrupted-queue test caught a real bug in the fix itself:
+        `die` inside the critical section skipped the finally and leaked the
+        lock — released via the process exit event now.
+    - id: tech-lead-wrapper
+      was: major
+      issue: |
+        install.sh generated 27 of 28 subagents — tech-lead was excluded
+        (sparring is conversation, correctly /docod:lead) — while the
+        diagnose command's CONSOLIDATE step delegated to `docod-tech-lead`:
+        a reference declared in prose with nobody on the other side, the
+        recurring failure, live in the shipped flow. validate-layers had
+        zero coverage of that layer. Found by the same diagnostic run.
+      resolution: |
+        1.13.0: the exclusion stays right for sparring and stops being a
+        blanket — install.sh generates docod-tech-lead as a RESTRICTED
+        envelope (consolidate_diagnostic only; anything else stops and
+        points at /docod:lead). validate-layers gained check_generated_refs:
+        every `docod-<key>` in the command texts must resolve to a generated
+        agent, with the exclusion set PARSED from install.sh's own skip
+        pattern so the next exclusion is watched by construction. On record:
+        the first draft of the check aimed at plugin-commands/*.md, which
+        holds no docod-<key> at all — it would have passed green scanning
+        the wrong layer; the review caught it before it shipped.
+    - id: severity-vocabulary
+      was: minor
+      issue: |
+        `severity` sat in the diagnostic report contract with no enum and
+        outside the never-translate vocabulary — so a pt-BR producer wrote
+        `crítica`, and the template's prefix match (indexOf("crit")) missed
+        on the accent: all 13 gravest findings rendered in the neutral
+        colour, silently — the fallback disease 1.10.2 named, in the dossier
+        whose product is honesty. Found by the same diagnostic run.
+      resolution: |
+        1.13.0, vocabulary first: critical|high|medium|low declared CANONICAL
+        in artifacts.yaml § diagnostic (keys never translate; display labels
+        localize), the producer got the verb (tech-lead deterministic
+        postcondition), and the template matches EXACTLY — an unrecognized
+        key renders with a dashed border, a chip note, and a loud banner at
+        the top of the dossier, never silently neutral. Old diagnostics are
+        snapshots: never rewritten, rendered with the marker.
     - id: skill-enrichment
       was: minor
       issue: |

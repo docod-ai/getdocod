@@ -5,6 +5,78 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.13.0] — 2026-08-14
+
+The queue release — the first diagnostic run against a real legacy turned the
+method on itself and won. Four findings AGAINST the method surfaced mid-run,
+were queued as proposals owned by the author (nothing self-promoted — the
+conductor contract, days on disk, holding), survived three rounds of
+adversarial cross-review, and the author promoted them. All four are the
+house's own recurring diseases: a record nobody watches drifting silently, a
+reference with nobody on the other side, a silent fallback — in the honesty
+product.
+
+Added: `question add|answer` — the external-questions queue gets its single
+writer. Field proof, from the run's own file: three parallel reverses each
+rewrote the whole queue; the YAML stopped parsing and EIGHT prior entries
+vanished (EXT-001..006, EXT-007..008 — per the forensic note the agents left
+as YAML comments while restoring; two were unrestorable by an agent that had
+never read them). `add` allocates the next EQ-nn and appends under an O_EXCL
+lockfile (two well-behaved concurrent adds raced the allocation; a stale lock
+refuses with the recipe, never auto-removed), in strict candidate→parse→
+assert→write order — a queue that does not parse REFUSES the write, because
+appending over corruption buries the evidence of what corrupted it. `answer`
+flips the entry surgically, preserving every other byte: the field file
+carries its loss report as comments, and a redump would erase the forensics.
+The subagent preamble and the diagnose flow teach the verb. On record: the
+planted corrupted-queue test caught a bug in the fix itself — `die` inside
+the critical section skips `finally` and leaked the lock; released via the
+process exit event now.
+
+Added: the queue checks in `verify` — detection carries the guarantee, since
+a command is an instruction, not a lock. The entry_schema had declared
+`id: EQ-nn, sequential` since the artifact was born: an append-only entry
+never leaves the file, so a hole in the sequence IS a lost entry — and nobody
+had written the check (verify ran exactly two checks on a .yaml artifact,
+both green over the wreck). Now: duplicate ids fail; a sequence gap fails
+NAMING the missing id, checked PER PREFIX FAMILY — the field file carries two
+grammars (EQ-nn canonical, EXT-nnn grandfathered; renumbering breaks the
+documents that cite them) and an EQ-only check would have passed green over
+the exact eight entries the field lost; state outside open|answered fails;
+legacy field names (raised_by/blocks) read via alias and warned, never
+failed — those are precisely the restored entries, and a false positive there
+trains the reader to skip the section. And `status` stops swallowing: an
+unparseable queue prints a LOSS warning, never an empty list — in the field,
+the corrupted queue rendered as "zero open questions" with eight gone.
+
+Fixed: the tech-lead materialization gap. install.sh generated 27 of 28
+subagents — tech-lead rightly excluded for sparring (/docod:lead) — while
+/docod:diagnose's CONSOLIDATE step delegated to `docod-tech-lead`: a dispatch
+to a wrapper that would never exist, the recurring failure live in the
+shipped flow. The exclusion stays right and stops being a blanket:
+docod-tech-lead now generates as a RESTRICTED envelope, consolidate_diagnostic
+only, everything else stopping and pointing at /docod:lead. validate-layers
+gained `check_generated_refs`: every `docod-<key>` in the command texts must
+resolve to a generated agent, the exclusion set PARSED from install.sh's own
+skip pattern so the next exclusion is watched by construction. On record: the
+first draft of this check scanned plugin-commands/*.md — which contains no
+docod-<key> at all — and would have passed green by looking at the wrong
+layer; the cross-review caught it before it shipped.
+
+Fixed: severity is CANONICAL method vocabulary now. It sat in the report
+contract with no enum and outside the never-translate list, so a pt-BR
+producer wrote `crítica` — and the template's prefix match (indexOf("crit"))
+missed on the accent: all 13 gravest findings rendered in the neutral colour,
+silently, in the dossier whose product is honesty. Vocabulary first:
+critical|high|medium|low declared canonical in artifacts.yaml § diagnostic
+(keys never translate; display labels localize), the producer got the verb
+(tech-lead deterministic postcondition), and the template matches EXACTLY —
+an unrecognized key renders with a dashed border, a chip note and a loud
+banner at the top of the dossier, never silently neutral. Old diagnostics are
+snapshots: never rewritten, rendered with the marker.
+
+specVersion → 1.13.0 in lockstep (5 spec files + install.sh + plugin.json).
+
 ## [1.12.1] — 2026-08-12
 
 Fixed: the task-executor no longer narrates its worklog into the code. A field

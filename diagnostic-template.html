@@ -69,6 +69,14 @@
   .find.crit { --sev: var(--critical); }
   .find.high { --sev: var(--high); }
   .find.med  { --sev: var(--muted); }
+  /* unrecognized severity key: MARKED, never silently neutral — the dashed
+     border and the warning chip are the point (a pt-BR "crítica" once fell
+     into the neutral colour with no trace; artifacts.yaml § diagnostic) */
+  .find.unk { --sev: var(--muted); border-style: dashed; border-left-style: dashed; }
+  .find.unk .chip::after { content: " · key not in critical|high|medium|low"; }
+  .sevwarn { background: var(--critical); color: #fff; font-family: var(--mono); font-size: 13px;
+    line-height: 1.6; padding: 12px 22px; }
+  .sevwarn b { font-weight: 700; }
   .find header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
   .find .idx { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--sev);
     letter-spacing: .03em; }
@@ -140,8 +148,20 @@
   var census = D.census || {}, counts = D.counts || {};
   var divs = D.divs || [], risks = D.risks || [];
   var byId = {}; divs.concat(risks).forEach(function (f) { byId[f.id] = f; });
-  var sevClass = function (s) { s = (s || "").toLowerCase();
-    return s.indexOf("crit") === 0 ? "crit" : s.indexOf("high") === 0 ? "high" : "med"; };
+  // Severity keys are CANONICAL method vocabulary (artifacts.yaml § diagnostic:
+  // critical|high|medium|low, never translated). EXACT match, no prefix
+  // guessing: the old `indexOf("crit")` missed pt-BR "crítica" on the accent
+  // and silently painted the 13 gravest findings neutral. An unrecognized key
+  // renders MARKED — a silent fallback is the one failure a dossier about
+  // honesty cannot afford.
+  var SEV = { critical: "crit", high: "high", medium: "med", low: "med" };
+  var sevUnknown = [];
+  var sevClass = function (s) {
+    var k = String(s || "").toLowerCase();
+    if (SEV[k]) return SEV[k];
+    if (s != null && String(s) !== "" && sevUnknown.indexOf(String(s)) < 0) sevUnknown.push(String(s));
+    return "unk";
+  };
 
   // census: two axes — recorded vs ratified (reverse_conventions.census)
   var recorded = (census.evidence || 0) + (census.external || 0) + (census.git || 0);
@@ -226,6 +246,17 @@
     + '<div class="foot"><div class="wrap"><span>DOCOD · diagnostic mode · ' + esc(D.target || "") + '</span>'
     +   '<span>pre-read, not pre-approved</span></div></div>';
 
+  // Loud, at the top: if any severity key fell outside the canonical
+  // vocabulary, the reader learns it BEFORE reading a single finding —
+  // colour-coding is off for those cards and the dossier says so, instead of
+  // silently painting the gravest findings neutral (the 2026-08-14 field bug).
+  if (sevUnknown.length) {
+    html = '<div class="sevwarn">⚠ severity key(s) outside the canonical vocabulary '
+      + '(critical | high | medium | low): <b>' + sevUnknown.map(esc).join(", ") + '</b> — '
+      + 'these findings render with a dashed border and NO severity colour. The report block is '
+      + 'machine-readable: keys stay canonical; only display labels localize (artifacts.yaml § diagnostic).</div>'
+      + html;
+  }
   document.getElementById("dx-root").innerHTML = html;
 })();
 </script>

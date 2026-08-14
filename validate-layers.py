@@ -479,6 +479,56 @@ def check_conductor():
     print(f"  {'✗' if any('CONDUCTOR' in e for e in ERRORS) else '✓'} CONDUCTOR.md exists · limbs present · body neutral")
 
 
+def check_generated_refs():
+    """Every `docod-<key>` a command text dispatches must have a generator.
+
+    Field finding (1.13.0): the diagnose command's CONSOLIDATE step delegated
+    to `docod-tech-lead` while install.sh's generic loop skipped tech-lead —
+    a reference declared in prose with nobody on the other side, the
+    recurring failure, live in the shipped flow. And the first draft of THIS
+    check aimed at plugin-commands/*.md, which contains no docod-<key> at
+    all: it would have passed green by scanning the wrong layer — the exact
+    false-green the check exists to kill. The command texts live in
+    install.sh's heredocs; that is what is scanned (plugin-commands/ rides
+    along so the check survives a future move). The exclusion set is PARSED
+    from install.sh's own skip pattern, so the next excluded agent is watched
+    by construction, not by someone remembering to update this list.
+    """
+    inst_f = os.path.join(BASE, "install.sh")
+    if not os.path.exists(inst_f):
+        ERRORS.append("[install.sh] missing — the generated-reference check has nothing to scan")
+        return
+    text = open(inst_f, encoding="utf-8").read()
+    sources = [("install.sh", text)]
+    for f in sorted(glob.glob(os.path.join(BASE, "plugin-commands", "*.md"))):
+        sources.append((os.path.relpath(f, BASE), open(f, encoding="utf-8").read()))
+
+    agents = {os.path.basename(p)[:-3] for p in glob.glob(os.path.join(BASE, "agents", "*.md"))}
+    excluded = set(re.findall(r'\[\s*"\$key"\s*=\s*"([a-z0-9-]+)"\s*\]\s*&&\s*continue', text))
+    dedicated = set(re.findall(r'\$AG/docod-([a-z0-9-]+)\.md', text))
+
+    seen = set()
+    for rel, body in sources:
+        for key in set(re.findall(r'\bdocod-([a-z][a-z0-9-]*)', body)):
+            seen.add(key)
+            if key not in agents:
+                ERRORS.append(
+                    f"[{rel}] references `docod-{key}` but agents/{key}.md does not exist — "
+                    f"a dispatch to a subagent nobody generates"
+                )
+            elif key in excluded and key not in dedicated:
+                ERRORS.append(
+                    f"[{rel}] references `docod-{key}` but install.sh excludes '{key}' from the "
+                    f"generic loop and has no dedicated generator — the wrapper will never exist "
+                    f"(the 1.13.0 tech-lead finding, reborn)"
+                )
+    print(f"\nLAYER 3 · GENERATED COMMANDS — every dispatched subagent has a generator")
+    print("-" * 78)
+    bad = any(("nobody generates" in e or "will never exist" in e) for e in ERRORS)
+    print(f"  {'✗' if bad else '✓'} {len(seen)} docod-<key> reference(s) in command texts · "
+          f"exclusions parsed from install.sh: {', '.join(sorted(excluded)) or '(none)'}")
+
+
 def main():
     spec = sorted(glob.glob(os.path.join(BASE, "spec", "**", "*.yaml"), recursive=True))
     adapters = sorted(glob.glob(os.path.join(BASE, "adapters", "*.yaml")))
@@ -509,6 +559,7 @@ def main():
 
     check_agents()
     check_conductor()
+    check_generated_refs()
 
     print("\nLAYER 3 · ADAPTERS — capability coverage")
     print("-" * 78)

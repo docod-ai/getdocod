@@ -65,7 +65,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.12.1"
+specVersion: "1.13.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -162,9 +162,14 @@ mkdir -p "$AG"
 N=0; ASKIP=""
 for f in "$TARGET/.docod/agents"/*.md; do
   key="$(basename "$f" .md)"
-  # tech-lead is the one exception: it materializes as a MAIN-SESSION command
-  # (/docod:lead) — sparring is conversation, and conversation cannot bounce
-  # through a subagent's hand-back protocol. See the adapter's materialization.
+  # tech-lead is the one exception in the GENERIC loop: sparring is
+  # conversation, and conversation cannot bounce through a subagent's
+  # hand-back protocol — that half materializes as /docod:lead. But its
+  # PRODUCER action (consolidate_diagnostic) writes an owned artifact, and a
+  # producer with no subagent left /docod:diagnose delegating to a wrapper
+  # that did not exist (the 1.13.0 field finding: 27 of 28, and the 28th was
+  # the one the diagnose flow dispatches). It gets a RESTRICTED envelope
+  # below, outside this loop.
   [ "$key" = "tech-lead" ] && continue
   out="$AG/docod-$key.md"
   if [ -e "$out" ] && ! grep -q 'generated-by: docod' "$out"; then
@@ -226,6 +231,11 @@ It is your prompt: contract, postconditions (with the nature of each one),
    workstreams/{ws}/decisions/ on a front). Append, never overwrite.
    A TECHNICAL decision with alternatives is NOT a product answer: stop and
    point out that it needs an ADR — the \`adr\` agent records ADRs, never you.
+   An EXTERNAL-OWNER question (only someone outside the room can answer) goes
+   to the single queue VIA THE COMMAND:
+   \`node .docod/docod.mjs question add --question "..." --owner <who> --asked-by $key\`
+   — NEVER by editing the file: hand-edits race, and a race of three parallel
+   writers has already corrupted the queue and lost eight entries in the field.
 5. THE PRODUCT'S LANGUAGE: write everything you produce — artifacts, inquiry
    questions, reports — in the \`language\` set in docod.yaml. The method speaks
    English; the product speaks the instance's language. If \`language\` is
@@ -242,7 +252,56 @@ It is your prompt: contract, postconditions (with the nature of each one),
 AGENT
   N=$((N+1))
 done
-echo "   ✓ $N subagents → .claude/agents/docod-*"
+
+# tech-lead's RESTRICTED envelope: one action, and the envelope says which.
+# Sparring/counsel/guide stay in /docod:lead (main session); the subagent
+# exists so the diagnose flow's CONSOLIDATE step has a real target.
+out="$AG/docod-tech-lead.md"
+if [ -e "$out" ] && ! grep -q 'generated-by: docod' "$out"; then
+  ASKIP="$ASKIP docod-tech-lead"
+else
+  cat > "$out" <<'AGENT'
+---
+name: docod-tech-lead
+description: "Consolidates a diagnostic run into the dated diagnostic artifact — DOCOD: invoke ONLY for consolidate_diagnostic (the /docod:diagnose CONSOLIDATE step, or /docod:run tech-lead consolidate_diagnostic). NEVER on your own initiative. Sparring, counsel and guidance live in /docod:lead, not here."
+---
+<!-- generated-by: docod · recreated on every install; the source is .docod/agents/tech-lead.md -->
+You are the `tech-lead` agent of the DOCOD method, running as a subagent for
+EXACTLY ONE action: `consolidate_diagnostic`. The rest of this role —
+sparring, counsel, the `guide` action — is conversation, and a subagent
+cannot hold one: that half materializes as `/docod:lead` in the main session.
+Invoked for anything other than consolidate_diagnostic: STOP and say exactly
+that, pointing at /docod:lead.
+
+## The role — the source, in full
+Your FIRST action, before anything else: read `.docod/agents/tech-lead.md`
+IN FULL, then apply ONLY what concerns consolidate_diagnostic (its contract,
+postconditions, the diagnostic's `## structure`). This file is the envelope.
+
+## Harness rules — non-negotiable
+1. Before starting: `node .docod/docod.mjs status` and check the `requires`.
+2. The `diagnostic` artifact is a DATED SNAPSHOT by definition: every input
+   edge is observed-at; you NEVER write `status: approved` — the system
+   leaves PRE-READ, never PRE-APPROVED.
+3. Frontmatter: `status` + `inputs:` with computed hashes (sha256:<hex>,
+   never a placeholder) + the machine-readable `report:` block per the
+   REPORT DATA CONTRACT (artifacts.yaml § diagnostic). Severity values in
+   the report block are CANONICAL method vocabulary (critical|high|medium|low,
+   never translated — the template maps them to colours; display labels
+   localize, keys do not).
+4. Write the document BODY in the `language` set in docod.yaml — the method
+   speaks English, the product speaks the instance's language.
+5. EXTERNAL-OWNER questions go to the single queue VIA THE COMMAND:
+   `node .docod/docod.mjs question add --question "..." --owner <who> --asked-by tech-lead`
+   — never by editing the file (hand-edits race, and a race has lost entries).
+6. When done, run `node .docod/docod.mjs verify <the file>` and paste its
+   output — the diagnostic submits to the same external verification it performs.
+7. A missing answer is a hand-back: STOP and return the pending list prefixed
+   with `QUESTIONS FOR THE USER:` — never invent.
+AGENT
+N=$((N+1))
+fi
+echo "   ✓ $N subagents → .claude/agents/docod-*  (tech-lead: restricted to consolidate_diagnostic; the rest of the role is /docod:lead)"
 [ -n "$ASKIP" ] && echo "   ⚠ already existed and are NOT ours — skipped:$ASKIP"
 
 # ── 5. orchestration commands → .claude/commands/docod/ (our namespace)
@@ -372,8 +431,10 @@ this run more than any other: the system leaves PRE-READ, not PRE-APPROVED.
    claim (evidence = file:line with the observed fragment | inferred |
    user-supplied), DIV-nn for claim-vs-reality divergences (the claim side
    may be a doc OR another code artifact's contract), RISK-nn for one-way
-   risks (PII, destructive actions, exposure), EXTERNAL-OWNER questions
-   appended to {docsRoot}decisions/external-questions.yaml, an owner per
+   risks (PII, destructive actions, exposure), EXTERNAL-OWNER questions to
+   the single queue via `node .docod/docod.mjs question add` — the runtime is
+   the queue's only writer; parallel reverses hand-editing the file is
+   exactly the race that lost eight entries in the field. An owner per
    finding. Hand-back questions: relay them verbatim, reinvoke with answers.
 3. CONSOLIDATE: delegate docod-tech-lead consolidate_diagnostic → the
    `diagnostic` artifact ({docsRoot}quality/diagnostic/{date}-{slug}.md,
