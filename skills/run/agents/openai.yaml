@@ -1,0 +1,6 @@
+interface:
+  display_name: "DOCOD Run"
+  short_description: "Invoke one governed DOCOD agent action."
+  default_prompt: "Use $run for an explicit /docod:run request."
+policy:
+  allow_implicit_invocation: false

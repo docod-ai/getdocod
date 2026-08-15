@@ -1,0 +1,6 @@
+interface:
+  display_name: "DOCOD Loop"
+  short_description: "Run a task through build, QA, and review."
+  default_prompt: "Use $loop for an explicit /docod:loop request."
+policy:
+  allow_implicit_invocation: false

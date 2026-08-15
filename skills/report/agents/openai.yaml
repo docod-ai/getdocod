@@ -1,0 +1,6 @@
+interface:
+  display_name: "DOCOD Report"
+  short_description: "Generate the derived DOCOD project report."
+  default_prompt: "Use $report for an explicit /docod:report request."
+policy:
+  allow_implicit_invocation: false

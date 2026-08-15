@@ -1,0 +1,22 @@
+{
+  "name": "docod",
+  "version": "1.14.0",
+  "description": "Executable governance for AI-native software engineering, with the stable /docod:* command namespace.",
+  "author": {
+    "name": "Fabio Valencio",
+    "url": "https://docod.ai"
+  },
+  "homepage": "https://docod.ai",
+  "repository": "https://github.com/docod-ai/getdocod",
+  "license": "MIT",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "DOCOD",
+    "shortDescription": "Governed SDLC commands for Codex.",
+    "longDescription": "Install and operate DOCOD in a repository through the stable /docod:* command namespace, governed agents, human gates, and external verification.",
+    "developerName": "DOCOD",
+    "category": "Developer Tools",
+    "capabilities": [],
+    "defaultPrompt": ["/docod:start"]
+  }
+}

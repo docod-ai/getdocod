@@ -1,0 +1,6 @@
+interface:
+  display_name: "DOCOD Start"
+  short_description: "Find the governed entry point for this project."
+  default_prompt: "Use $start for an explicit /docod:start request."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+  display_name: "DOCOD Diagnose"
+  short_description: "Diagnose a repository without governance gates."
+  default_prompt: "Use $diagnose for an explicit /docod:diagnose request."
+policy:
+  allow_implicit_invocation: false

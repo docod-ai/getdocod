@@ -114,7 +114,7 @@ Install DOCOD into a repository:
 
 ```bash
 git clone https://github.com/docod-ai/getdocod
-./getdocod/install.sh /path/to/your/project
+./getdocod/install.sh /path/to/your/project --adapter codex
 cd /path/to/your/project
 ```
 
@@ -889,8 +889,8 @@ DOCOD has four layers.
 | Layer | Location | Responsibility |
 |---|---|---|
 | Method | `spec/method.yaml` | Movements, capabilities, statuses, approvals and shared rules |
-| Contract | `spec/`, `agents/`, `rules/`, `skills/` | What agents, actions and artifacts are |
-| Adapter | `adapters/*.yaml` | How the method materializes in a specific harness |
+| Contract | `spec/`, `agents/`, `rules/`, `spec/skills/` | What agents, actions and artifacts are |
+| Adapter | `adapters/`, `adapter-assets/`, `skills/`, plugin manifests | How the method materializes in a specific harness |
 | Instance | `docod.yaml` | Paths, language, topology and targets for one project |
 
 The method and contract layers are vendor-neutral.
@@ -924,6 +924,21 @@ It provides:
 - generated agent envelopes;
 - runtime verification after delivery.
 
+### Codex
+
+Codex is a fully materialized adapter as of 1.14.0. It provides:
+
+- project-scoped custom agents in `.codex/agents/`;
+- repository skills in the Codex-discovered `.agents/skills/` path;
+- the same `/docod:*` command namespace through the `docod` plugin;
+- an `AGENTS.md` literal-command router for repository installs;
+- explicit hand-back questions and parent-session verification;
+- honest degradation when browser, documentation or web tooling is unavailable.
+
+The command vocabulary does not change between harnesses. `/docod:start` in
+Claude Code and `/docod:start` in Codex resolve to the same layer-2 command
+contract.
+
 ### Other harnesses
 
 The installer exposes DOCOD through root-level discovery files such as:
@@ -951,8 +966,13 @@ Materialization is adapter-specific.
 
 ```bash
 git clone https://github.com/docod-ai/getdocod
-./getdocod/install.sh /path/to/your/project
+./getdocod/install.sh /path/to/your/project --adapter codex
 ```
+
+Supported values are `claude-code`, `codex`, and `agents-1`. Omitting
+`--adapter` preserves the historical default, `claude-code`. Once created,
+`docod.yaml` is the authority: the installer refuses a conflicting flag rather
+than silently rewriting the user's instance.
 
 The installer is:
 
@@ -975,6 +995,25 @@ Your project configuration is preserved.
 ```
 
 The plugin keeps the method bundle managed and current.
+
+### Codex plugin
+
+The repository root is also the Codex plugin package (`.codex-plugin/`), so
+`/docod:setup-docod` can reach the version-matched installer after the package
+is installed. Its skills live under `skills/` and retain the same
+namespaced command surface:
+
+```text
+/docod:setup-docod
+/docod:start
+/docod:status
+/docod:run <agent> [action] [ws]
+/docod:diagnose
+```
+
+The plugin provides native command discovery in Codex. A repository install
+remains usable without it because `AGENTS.md` routes literal `/docod:*`
+requests to the same checked-in command contracts.
 
 The repository install copies the bundle so you can inspect, modify and fork everything.
 
@@ -1009,6 +1048,12 @@ Method-neutral skills.
 .claude/skills/docod-*
 Claude-compatible links to DOCOD skills.
 
+.codex/agents/docod-*.toml
+Codex project-scoped custom agents when `adapter: codex`.
+
+.agents/skills/docod-*
+Codex/AGENTS-compatible skill links and the DOCOD command router.
+
 CLAUDE.md
 A namespaced DOCOD discovery block.
 
@@ -1031,7 +1076,7 @@ project:
   name: "my-project"
   spec: ./.docod/spec/
 
-adapter: claude-code
+adapter: codex
 
 language: en
 

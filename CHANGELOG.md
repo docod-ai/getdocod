@@ -5,6 +5,47 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.14.0] — 2026-08-14
+
+Added: the first fully materialized Codex adapter. `adapters/codex.yaml` maps
+the neutral contracts to repository-scoped custom agents in `.codex/agents/`,
+portable skills in `.agents/skills/`, and Codex command contracts under
+`adapter-assets/codex/`. The generated agents remain thin envelopes over the
+canonical roles, preserve the interactive hand-back, keep verification in the
+parent session, and restrict the tech-lead subagent to diagnostic
+consolidation.
+
+Preserved: `/docod:*` is the public command API, not a Claude-specific detail.
+The repository-root `.codex-plugin/` package exposes one explicit skill per
+command from `skills/` under the `docod` plugin namespace;
+repository-only installations get the same literal syntax through a router
+skill plus the root `AGENTS.md` contract. The adapter does not rename commands
+to Codex custom-prompt syntax, so existing documentation and operator muscle
+memory remain valid.
+
+Changed: `install.sh` accepts `--adapter claude-code|codex|agents-1`. New
+instances record that choice; existing `docod.yaml` remains authoritative and
+a conflicting explicit choice is refused. Claude materialization is unchanged,
+while the neutral profile now installs only portable skills and discovery
+instructions. An explicit instance adapter change retires only generated
+surfaces from the previous harness. All generated surfaces remain idempotent
+and refuse to overwrite or remove user-owned namesakes.
+
+Added: adapter materialization validation and an end-to-end shell suite across
+all three profiles, including collision preservation, idempotent reinstall,
+Codex TOML parsing, plugin command coverage and mismatch refusal.
+
+Fixed before release: Codex agent descriptions are shortened only at complete
+word/codepoint boundaries. The previous Bash substring could split a UTF-8
+character under `LC_ALL=C`, producing an invalid infrastructure-design TOML
+while the installer exited zero. Generation is now locale-independent and
+atomic: a strict built-in UTF-8 check runs on the temporary TOML before it is
+published, and the regression suite deliberately installs under the `C`
+locale.
+
+specVersion → 1.14.0 in lockstep (5 spec files + install.sh + both plugin
+manifests).
+
 ## [1.13.0] — 2026-08-14
 
 The queue release — the first diagnostic run against a real legacy turned the

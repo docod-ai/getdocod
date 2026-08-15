@@ -1,0 +1,6 @@
+interface:
+  display_name: "DOCOD Lead"
+  short_description: "Ask the DOCOD tech lead for counsel."
+  default_prompt: "Use $lead for an explicit /docod:lead request."
+policy:
+  allow_implicit_invocation: false

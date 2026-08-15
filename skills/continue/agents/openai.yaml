@@ -1,0 +1,6 @@
+interface:
+  display_name: "DOCOD Continue"
+  short_description: "Resume a governed DOCOD workstream."
+  default_prompt: "Use $continue for an explicit /docod:continue request."
+policy:
+  allow_implicit_invocation: false

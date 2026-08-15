@@ -1,0 +1,101 @@
+specVersion: "1.14.0"
+
+# =============================================================================
+# LAYER 3 — ADAPTER: CODEX · PLUGGABLE
+#
+# Codex reads AGENTS.md, repository skills under .agents/skills/, and
+# project-scoped custom agents under .codex/agents/. The stable DOCOD public
+# namespace remains /docod:*: the `docod` plugin exposes it natively and the
+# AGENTS.md router recognizes the same literal requests in repository installs.
+# =============================================================================
+
+adapter:
+  key: codex
+  name: "Codex"
+  vendor: openai
+  default: false
+
+capabilities:
+  code_edit:   { tool: "apply_patch" }
+  shell:       { tool: "local shell" }
+  vcs_diff:    { tool: "local shell", cmd: "git diff" }
+  vcs_history: { tool: "local shell", cmd: "git log" }
+  code_search: { tool: "local shell", cmd: "rg", degraded_to: "grep" }
+  web_search:  { tool: "web search", runtime_defined: true,
+                 note: "availability depends on the Codex surface and workspace policy" }
+  web_fetch:   { tool: "web open", runtime_defined: true,
+                 note: "availability depends on the Codex surface and workspace policy" }
+  doc_lookup:  { tool: null, runtime_defined: true, degraded_to: web_search,
+                 note: "use an enabled documentation MCP/skill when present; otherwise search official docs" }
+  browser_e2e: { tool: null, runtime_defined: true, degraded_to: null,
+                 note: "requires an installed browser plugin/MCP; otherwise record NOT VERIFIED" }
+  a11y_audit:  { tool: null, runtime_defined: true, degraded_to: null,
+                 note: "requires browser accessibility tooling; otherwise record NOT VERIFIED" }
+  calculator:  { tool: "local shell", cmd: "node -e" }
+  ask_user:    { tool: "main-session user input", runtime_defined: true,
+                 note: "subagents hand back QUESTIONS FOR THE USER to the parent session" }
+
+promote:
+  index:
+    path: "AGENTS.md"
+    mode: generate
+    note: "Codex loads project instructions from AGENTS.md before work begins"
+  rules:
+    - { artifact: coding-standards,   to: ".agents/rules/code-standards.md" }
+    - { artifact: testing-guidelines, to: ".agents/rules/tests.md" }
+    - { artifact: security-rules,     to: ".agents/rules/security.md" }
+    - { artifact: system-design,      to: ".agents/rules/architecture.md" }
+    - { artifact: cicd-guidelines,    to: ".agents/rules/cicd.md" }
+
+invoke:
+  mode: subagent
+  agentsRoot: ".codex/agents/"
+  skillsRoot: ".agents/skills/"
+  command_contracts: ".docod/adapter-assets/codex/commands/"
+  commands:
+    namespace: "/docod:"
+    native: "skills in the installable docod Codex plugin"
+    repository_fallback: "AGENTS.md literal namespace + docod-commands router skill"
+  materialization: |
+    One project-scoped TOML custom agent per DOCOD producer, generated as a
+    thin envelope that reads .docod/agents/<key>.md in full. The tech-lead
+    custom agent is restricted to consolidate_diagnostic; /docod:lead remains
+    a main-session conversation.
+
+    The public command names do not change between harnesses. The Codex plugin
+    is named `docod` and its command skills are named start, status, continue,
+    approve, ws, run, report, lead, loop, and diagnose, preserving
+    /docod:<command>. A repository install also writes an AGENTS.md rule and a
+    docod-commands router skill so literal /docod:* requests resolve to the
+    same command contracts even without plugin UI discovery.
+
+    Every generated file carries `generated-by: docod`. A namesake without
+    the marker is user-owned and is warned-and-skipped, never overwritten.
+
+enforcement:
+  deterministic:
+    mechanism: in-band-plus-external-verify
+    contract: |
+      The producing custom agent runs the declared computable checks and shows
+      command plus output. The parent command session independently runs
+      `node .docod/docod.mjs verify <artifact>` before accepting delivery.
+  evidence:
+    mechanism: in-band
+    contract: |
+      Evidence is command output and file:line content, not an agent's claim.
+      A missing optional tool degrades to NOT VERIFIED and remains visible.
+  judgment:
+    mechanism: none
+    contract: |
+      Judgment remains a separate agent gate and, ultimately, a human act.
+
+conformance:
+  supports_all_capabilities: conditional
+  degraded: [doc_lookup]
+  unavailable_without_external_tooling: [browser_e2e, a11y_audit]
+  enforcement:
+    deterministic: "producer evidence plus parent-run external verify"
+    evidence: "full when capability exists; explicit NOT VERIFIED otherwise"
+    judgment: "n/a by definition"
+  interactive: "main-session questions; custom agents use the hand-back protocol"
+

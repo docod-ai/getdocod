@@ -1,0 +1,6 @@
+interface:
+  display_name: "DOCOD Status"
+  short_description: "Show the derived DOCOD project state."
+  default_prompt: "Use $status for an explicit /docod:status request."
+policy:
+  allow_implicit_invocation: false

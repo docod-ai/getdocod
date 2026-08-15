@@ -2,7 +2,7 @@
 # =============================================================================
 # install.sh — installs the DOCOD bundle into a project.   100% bash: ZERO deps.
 #
-#   ./install.sh /path/to/project
+#   ./install.sh /path/to/project [--adapter claude-code|codex|agents-1]
 #
 # What it does, and the policy of each step:
 #
@@ -23,6 +23,9 @@
 #                                        (status/start/continue/approve/ws/run/
 #                                        report/lead/loop/diagnose). Our
 #                                        namespace; recreated on every sync.
+#   <project>/.codex/agents/docod-*    ← Codex project-scoped custom agents.
+#   <project>/.agents/skills/docod-*   ← Codex/AGENTS skill discovery links,
+#                                        including the /docod:* router.
 #
 # THE MERGE RULE, one line: everything of ours lives namespaced (docod), and
 # what is not ours we never touch — not even to "help".
@@ -35,7 +38,91 @@
 set -euo pipefail
 
 BUNDLE="$(cd "$(dirname "$0")" && pwd)"
-TARGET="${1:?usage: install.sh /path/to/project}"
+TARGET="${1:?usage: install.sh /path/to/project [--adapter claude-code|codex|agents-1]}"
+shift
+REQUESTED_ADAPTER=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --adapter)
+      [ "$#" -ge 2 ] || { echo "✗ --adapter requires a value"; exit 1; }
+      REQUESTED_ADAPTER="$2"; shift 2 ;;
+    *)
+      echo "✗ unknown option: $1"
+      echo "  usage: install.sh /path/to/project [--adapter claude-code|codex|agents-1]"
+      exit 1 ;;
+  esac
+done
+case "${REQUESTED_ADAPTER:-claude-code}" in
+  claude-code|codex|agents-1) ;;
+  *) echo "✗ unknown adapter: $REQUESTED_ADAPTER (expected claude-code, codex, or agents-1)"; exit 1 ;;
+esac
+
+# Shorten a UTF-8 description without ever slicing its byte stream. Length is
+# still capped in bytes (stable under every locale), but only complete words
+# are appended. Under LC_ALL=C, Bash substring slicing is byte-oriented and
+# can leave an orphaned lead byte; this construction cannot.
+docod_shorten_description() {
+  local raw="$1" limit="${2:-140}" raw_bytes suffix="…" suffix_bytes max_bytes
+  local shortened="" word candidate candidate_bytes
+  local words=()
+  raw_bytes="$(LC_ALL=C printf '%s' "$raw" | wc -c | tr -d '[:space:]')"
+  if [ "$raw_bytes" -le "$limit" ]; then
+    printf '%s' "$raw"
+    return
+  fi
+  suffix_bytes="$(LC_ALL=C printf '%s' "$suffix" | wc -c | tr -d '[:space:]')"
+  max_bytes=$((limit - suffix_bytes))
+  read -r -a words <<< "$raw"
+  for word in "${words[@]}"; do
+    candidate="${shortened:+$shortened }$word"
+    candidate_bytes="$(LC_ALL=C printf '%s' "$candidate" | wc -c | tr -d '[:space:]')"
+    [ "$candidate_bytes" -le "$max_bytes" ] || break
+    shortened="$candidate"
+  done
+  [ -n "$shortened" ] || shortened="DOCOD agent"
+  printf '%s%s' "$shortened" "$suffix"
+}
+
+# Validate generated text before publishing it. This strict UTF-8 byte state
+# machine consumes POSIX od output, so validation does not depend on the
+# caller's locale or on Python/Node being installed.
+docod_validate_utf8() {
+  local path="$1" byte need=0 next_min=128 next_max=191 offset=0
+  for byte in $(od -An -v -tu1 "$path"); do
+    if [ "$need" -gt 0 ]; then
+      if [ "$byte" -lt "$next_min" ] || [ "$byte" -gt "$next_max" ]; then
+        echo "✗ generated invalid UTF-8: $path (byte $offset)" >&2
+        return 1
+      fi
+      need=$((need - 1)); next_min=128; next_max=191
+    elif [ "$byte" -le 127 ]; then
+      :
+    elif [ "$byte" -ge 194 ] && [ "$byte" -le 223 ]; then
+      need=1
+    elif [ "$byte" -eq 224 ]; then
+      need=2; next_min=160
+    elif { [ "$byte" -ge 225 ] && [ "$byte" -le 236 ]; } || { [ "$byte" -ge 238 ] && [ "$byte" -le 239 ]; }; then
+      need=2
+    elif [ "$byte" -eq 237 ]; then
+      need=2; next_max=159
+    elif [ "$byte" -eq 240 ]; then
+      need=3; next_min=144
+    elif [ "$byte" -ge 241 ] && [ "$byte" -le 243 ]; then
+      need=3
+    elif [ "$byte" -eq 244 ]; then
+      need=3; next_max=143
+    else
+      echo "✗ generated invalid UTF-8: $path (byte $offset)" >&2
+      return 1
+    fi
+    offset=$((offset + 1))
+  done
+  if [ "$need" -ne 0 ]; then
+    echo "✗ generated truncated UTF-8: $path (EOF after byte $offset)" >&2
+    return 1
+  fi
+}
+
 [ -d "$TARGET" ] || { echo "✗ target does not exist: $TARGET"; exit 1; }
 TARGET="$(cd "$TARGET" && pwd)"
 [ "$TARGET" = "$(dirname "$BUNDLE")" ] && { echo "✗ the target is the bundle repo itself"; exit 1; }
@@ -51,21 +138,25 @@ mkdir -p "$TARGET/.docod"
 # bring python along. And .git/.gitignore are the bundle's OWN repo management:
 # copied into .docod/ they nest a git repo inside the user's project and
 # collide with theirs — the installer must never ship them.
-EXCL="--exclude __pycache__ --exclude .DS_Store --exclude .git --exclude .gitignore --exclude validate-layers.py --exclude install.sh --exclude report.html --exclude migration.yaml --exclude .claude-plugin --exclude plugin-commands"
-if command -v rsync >/dev/null 2>&1; then
+EXCL="--exclude __pycache__ --exclude .DS_Store --exclude .git --exclude .gitignore --exclude validate-layers.py --exclude validate-readme.py --exclude install.sh --exclude report.html --exclude migration.yaml --exclude .claude-plugin --exclude .codex-plugin --exclude plugin-commands --exclude plugins --exclude tests"
+if [ "${DOCOD_INSTALL_FORCE_TAR:-0}" != "1" ] && command -v rsync >/dev/null 2>&1; then
   # shellcheck disable=SC2086
-  rsync -a --delete $EXCL "$BUNDLE/" "$TARGET/.docod/"
+  rsync -a --delete $EXCL --exclude /skills "$BUNDLE/" "$TARGET/.docod/"
 else
   rm -rf "$TARGET/.docod"; mkdir -p "$TARGET/.docod"
   # shellcheck disable=SC2086
   (cd "$BUNDLE" && tar cf - $EXCL .) | (cd "$TARGET/.docod" && tar xf -)
 fi
+# Root skills/ is the Codex plugin surface, not part of the installed method
+# bundle. rsync can anchor that exclusion; portable tar matching cannot do so
+# without also swallowing spec/skills, so the fallback removes this owned copy.
+rm -rf "$TARGET/.docod/skills"
 echo "   ✓ bundle → .docod/"
 
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.13.0"
+specVersion: "1.14.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -74,7 +165,7 @@ project:
   name: "$(basename "$TARGET")"
   spec: ./.docod/spec/
 
-adapter: claude-code
+adapter: ${REQUESTED_ADAPTER:-claude-code}
 
 # The language of everything the method PRODUCES in this repo: artifacts,
 # inquiry questions, reports. The method itself speaks English; the product
@@ -110,6 +201,64 @@ else
   [ -n "$MISS" ] && echo "   ⚠ your docod.yaml is missing newer field(s):$MISS — see the template in .docod/docod.yaml and add what you want"
 fi
 
+# The instance is the authority after creation. An explicit adapter may select
+# the initial materialization, but it never silently rewrites a preserved
+# instance — that file belongs to the user.
+ADAPTER="$(sed -n 's/^adapter: *//p' "$TARGET/docod.yaml" | head -1 | tr -d '"' | tr -d "'")"
+ADAPTER="${ADAPTER:-agents-1}"
+case "$ADAPTER" in
+  claude-code|codex|agents-1) ;;
+  *) echo "✗ docod.yaml selects unknown adapter: $ADAPTER"; exit 1 ;;
+esac
+if [ -n "$REQUESTED_ADAPTER" ] && [ "$REQUESTED_ADAPTER" != "$ADAPTER" ]; then
+  echo "✗ --adapter $REQUESTED_ADAPTER conflicts with preserved docod.yaml (adapter: $ADAPTER)"
+  echo "  edit docod.yaml explicitly, then rerun the installer"
+  exit 1
+fi
+echo "   • adapter: $ADAPTER"
+
+# Retire generated surfaces from a previously selected adapter. Changing the
+# instance adapter is an explicit user act; leaving the old harness live would
+# make two execution models appear authoritative. Remove only DOCOD-owned
+# files/links. User-owned namesakes remain untouched.
+if [ "$ADAPTER" != "claude-code" ]; then
+  if [ -d "$TARGET/.claude/agents" ]; then
+    for old in "$TARGET/.claude/agents"/docod-*.md; do
+      [ -f "$old" ] || continue
+      grep -q 'generated-by: docod' "$old" && rm "$old"
+    done
+  fi
+  [ -d "$TARGET/.claude/commands/docod" ] && rm -rf "$TARGET/.claude/commands/docod"
+  if [ -d "$TARGET/.claude/skills" ]; then
+    for old in "$TARGET/.claude/skills"/docod-*; do
+      [ -L "$old" ] || continue
+      case "$(readlink "$old")" in
+        ../../.agents/docod/skills/*) rm "$old" ;;
+      esac
+    done
+  fi
+fi
+if [ "$ADAPTER" != "codex" ]; then
+  if [ -d "$TARGET/.codex/agents" ]; then
+    for old in "$TARGET/.codex/agents"/docod-*.toml; do
+      [ -f "$old" ] || continue
+      grep -q 'generated-by: docod' "$old" && rm "$old"
+    done
+  fi
+  old="$TARGET/.agents/skills/docod-commands"
+  if [ -L "$old" ] && [ "$(readlink "$old")" = "../../.docod/adapter-assets/codex/router" ]; then
+    rm "$old"
+  fi
+fi
+if [ "$ADAPTER" = "claude-code" ] && [ -d "$TARGET/.agents/skills" ]; then
+  for old in "$TARGET/.agents/skills"/docod-*; do
+    [ -L "$old" ] || continue
+    case "$(readlink "$old")" in
+      ../docod/skills/*|../../.docod/adapter-assets/codex/router) rm "$old" ;;
+    esac
+  done
+fi
+
 # ── 2b. migrations — detection-based, idempotent, NEVER destructive
 #      The bundle evolves; the user's state must not be left fragmented (the
 #      ADR-ledger episode). Policy: detect old layouts; MOVE only when the
@@ -139,24 +288,45 @@ fi
 [ -n "$MIGRATED" ] && printf "   ✓ migrated old layout:%b\n" "$MIGRATED"
 [ -n "$MANUAL" ]   && printf "   ⚠ needs your hand (never guessed):%b\n" "$MANUAL"
 
-# ── 3. skills → .agents/docod/skills/ (canonical) + symlinks in .claude/skills/
+# ── 3. skills → .agents/docod/skills/ (canonical) + harness discovery links
 mkdir -p "$TARGET/.agents/docod"
 rm -rf "$TARGET/.agents/docod/skills"
 cp -R "$TARGET/.docod/spec/skills" "$TARGET/.agents/docod/skills"
-mkdir -p "$TARGET/.claude/skills"
 LINKED=0; SKIPPED=""
-for d in "$TARGET/.agents/docod/skills"/*/; do
-  k="$(basename "$d")"; link="$TARGET/.claude/skills/docod-$k"
-  if [ -L "$link" ]; then rm "$link"
-  elif [ -e "$link" ]; then SKIPPED="$SKIPPED docod-$k"; continue; fi
-  ln -s "../../.agents/docod/skills/$k" "$link"; LINKED=$((LINKED+1))
-done
-echo "   ✓ skills → .agents/docod/skills/ · $LINKED symlinks in .claude/skills/"
+if [ "$ADAPTER" = "claude-code" ]; then
+  mkdir -p "$TARGET/.claude/skills"
+  for d in "$TARGET/.agents/docod/skills"/*/; do
+    k="$(basename "$d")"; link="$TARGET/.claude/skills/docod-$k"
+    if [ -L "$link" ]; then rm "$link"
+    elif [ -e "$link" ]; then SKIPPED="$SKIPPED docod-$k"; continue; fi
+    ln -s "../../.agents/docod/skills/$k" "$link"; LINKED=$((LINKED+1))
+  done
+  echo "   ✓ skills → .agents/docod/skills/ · $LINKED Claude discovery links"
+else
+  mkdir -p "$TARGET/.agents/skills"
+  for d in "$TARGET/.agents/docod/skills"/*/; do
+    k="$(basename "$d")"; link="$TARGET/.agents/skills/docod-$k"
+    if [ -L "$link" ]; then rm "$link"
+    elif [ -e "$link" ]; then SKIPPED="$SKIPPED docod-$k"; continue; fi
+    ln -s "../docod/skills/$k" "$link"; LINKED=$((LINKED+1))
+  done
+  if [ "$ADAPTER" = "codex" ]; then
+    link="$TARGET/.agents/skills/docod-commands"
+    if [ -L "$link" ]; then rm "$link"
+    elif [ -e "$link" ]; then SKIPPED="$SKIPPED docod-commands"; link=""; fi
+    if [ -n "$link" ]; then
+      ln -s "../../.docod/adapter-assets/codex/router" "$link"
+      LINKED=$((LINKED+1))
+    fi
+  fi
+  echo "   ✓ skills → .agents/docod/skills/ · $LINKED AGENTS/Codex discovery links"
+fi
 [ -n "$SKIPPED" ] && echo "   ⚠ already existed and are NOT ours — skipped:$SKIPPED"
 
 # ── 4. agents → .claude/agents/docod-<key>.md (native SUBAGENTS)
 #      Ownership via the `generated-by: docod` marker in the body. A namesake
 #      without the marker is not ours: WARN AND SKIP — same rule as the symlinks.
+if [ "$ADAPTER" = "claude-code" ]; then
 AG="$TARGET/.claude/agents"
 mkdir -p "$AG"
 N=0; ASKIP=""
@@ -303,8 +473,81 @@ N=$((N+1))
 fi
 echo "   ✓ $N subagents → .claude/agents/docod-*  (tech-lead: restricted to consolidate_diagnostic; the rest of the role is /docod:lead)"
 [ -n "$ASKIP" ] && echo "   ⚠ already existed and are NOT ours — skipped:$ASKIP"
+fi
+
+# ── 4b. Codex project-scoped custom agents → .codex/agents/*.toml
+# Codex loads one TOML per custom agent. The file is a thin envelope: the
+# source contract remains .docod/agents/<key>.md, so updating a role never
+# schedules a copied prompt to drift.
+if [ "$ADAPTER" = "codex" ]; then
+  CAG="$TARGET/.codex/agents"
+  mkdir -p "$CAG"
+  CN=0; CSKIP=""
+  for f in "$TARGET/.docod/agents"/*.md; do
+    key="$(basename "$f" .md)"
+    agent_name="docod_$(printf '%s' "$key" | tr '-' '_')"
+    out="$CAG/docod-$key.toml"
+    if [ -e "$out" ] && ! grep -q 'generated-by: docod' "$out"; then
+      CSKIP="$CSKIP docod-$key"; continue
+    fi
+    fm="$(awk '/^---$/{c++; next} c==1{print} c>=2{exit}' "$f")"
+    desc="$(printf '%s\n' "$fm" | sed -n 's/^description: *//p' | head -1 | sed 's/^"//; s/"$//')"
+    desc="$(docod_shorten_description "$desc" 140)"
+    desc="$(printf '%s' "$desc — DOCOD: use only after an explicit /docod:run, /docod:loop, or /docod:diagnose request; never self-invoke." | sed 's/\\/\\\\/g; s/"/\\"/g')"
+    inter="$(printf '%s\n' "$fm" | grep -c '^interactive: true' || true)"
+    actions="$(printf '%s\n' "$fm" | awk '/^  actions:$/{a=1; next} a && /^    [a-z_]+:$/{gsub(/[: ]/,""); print} a && /^  [a-z]/{exit}' | paste -sd'|' -)"
+    if [ "$key" = "tech-lead" ]; then
+      actions="consolidate_diagnostic"
+      role_limit="This custom agent is RESTRICTED to consolidate_diagnostic. For sparring, counsel, or guide, stop and point the caller to /docod:lead."
+    else
+      role_limit="Perform only the requested action from this role: ${actions:-—}."
+    fi
+    if [ "$inter" -ge 1 ]; then
+      interaction="If an inquiry answer is missing, stop and return the exact pending list prefixed QUESTIONS FOR THE USER:. The parent session asks and reinvokes you; never invent an answer."
+    else
+      interaction="This role is not interactive. Record missing input as a gap; never turn it into an assumption."
+    fi
+    tmp_out="$TARGET/.docod/.codex-agent-$key.toml.tmp"
+    cat > "$tmp_out" <<AGENT
+# generated-by: docod · recreated on every install; source: .docod/agents/$key.md
+name = "$agent_name"
+description = "$desc"
+developer_instructions = '''
+You are the $key agent of the DOCOD method, running as a Codex subagent.
+
+FIRST read .docod/agents/$key.md IN FULL. It is the source contract: actions,
+requires, reads, writes, postconditions, structure, inquiry, and style. Then
+read docod.yaml and .docod/spec/artifacts.yaml to resolve language and paths.
+
+$role_limit
+
+Non-negotiable harness rules:
+1. Run node .docod/docod.mjs status before starting and stop on blocked requires.
+2. Never write status: approved. Approval is the human's /docod:approve act.
+3. Compute every hash; never write a placeholder that looks like data.
+4. Product answers go to the append-only decisions artifact. Technical choices
+   with alternatives require the adr owner. External-owner questions use
+   node .docod/docod.mjs question add; never hand-edit the shared queue.
+5. Write produced artifacts in docod.yaml's language. If it is unset, hand back.
+6. Missing tools degrade honestly to NOT VERIFIED; never improvise proof.
+7. Run node .docod/docod.mjs verify <artifact> and show command plus output.
+8. $interaction
+'''
+AGENT
+    if ! docod_validate_utf8 "$tmp_out"; then
+      rm -f "$tmp_out"
+      echo "✗ refusing to publish invalid Codex agent: $out" >&2
+      exit 1
+    fi
+    mv "$tmp_out" "$out"
+    CN=$((CN+1))
+  done
+  echo "   ✓ $CN Codex custom agents → .codex/agents/docod-*"
+  [ -n "$CSKIP" ] && echo "   ⚠ already existed and are NOT ours — skipped:$CSKIP"
+fi
 
 # ── 5. orchestration commands → .claude/commands/docod/ (our namespace)
+if [ "$ADAPTER" = "claude-code" ]; then
 CMD="$TARGET/.claude/commands/docod"
 rm -rf "$CMD"; mkdir -p "$CMD"
 gen_cli() { cat > "$CMD/$1.md" <<EOF
@@ -457,11 +700,12 @@ this run more than any other: the system leaves PRE-READ, not PRE-APPROVED.
    forward. Say exactly that when asked, and nothing more ambitious.
 DIAG
 echo "   ✓ 10 commands → .claude/commands/docod/  (status·start·continue·approve·ws·run·report·lead·loop·diagnose)"
+fi
 
 # ── 6. root instructions → CLAUDE.md + AGENTS.md (EVERY harness finds DOCOD)
-#      Slash commands only exist for Claude Code; Codex/Gemini/Cursor/Kimi read
-#      AGENTS.md (or CLAUDE.md). We own ONLY our marked block: existing content
-#      is never touched; the block is replaced on every sync (idempotent).
+#      /docod:* is the stable public namespace. Claude materializes it as native
+#      commands; the Codex plugin materializes the same namespace as skills;
+#      AGENTS.md is the literal-command fallback. We own ONLY our marked block.
 write_block() {
   f="$1"
   [ -f "$f" ] && sed -i.docodbak '/<!-- docod:begin -->/,/<!-- docod:end -->/d' "$f" && rm -f "$f.docodbak"
@@ -473,9 +717,14 @@ This project runs the DOCOD method. Regardless of which coding agent you are:
 
 - **State**: run `node .docod/docod.mjs status` before acting. It shows what
   exists, what is valid, what is blocked (and why), what is possible now.
-- **Commands**: `status` · `start` · `continue <ws>` · `approve <file> --by <who>`
-  · `ws list|done|abandon --reason` · `report` · `verify <file>` — all via
-  `node .docod/docod.mjs <cmd>`. In Claude Code they also exist as `/docod:*`.
+- **Commands**: `/docod:start` · `/docod:status` · `/docod:continue <ws>` ·
+  `/docod:approve <file>` · `/docod:ws ...` · `/docod:run ...` ·
+  `/docod:report` · `/docod:lead` · `/docod:loop` · `/docod:diagnose`.
+  This namespace is the stable public contract in every harness. When a
+  message starts with `/docod:`, treat it as an explicit DOCOD invocation.
+  On Codex, read `.docod/adapter-assets/codex/commands/<command>.md` and follow
+  it exactly; the `docod` plugin exposes the same names natively. Mechanical
+  operations remain available as `node .docod/docod.mjs <cmd>`.
 - **Acting as an agent**: the roles live in `.docod/agents/<key>.md`. Read the
   file IN FULL and follow it: contract, postconditions, `## structure`,
   `## inquiry`, `## style`. The instance (`docod.yaml`) sets language, docsRoot
@@ -515,9 +764,13 @@ else
 fi
 
 echo ""
-echo "── Done. Open Claude Code in $TARGET:"
+case "$ADAPTER" in
+  claude-code) echo "── Done. Open Claude Code in $TARGET:" ;;
+  codex)       echo "── Done. Open Codex in $TARGET (install the bundled docod plugin for native /docod:* discovery):" ;;
+  agents-1)    echo "── Done. Open an AGENTS.md-compatible harness in $TARGET:" ;;
+esac
 echo "   /docod:start          → the entry doors"
 echo "   /docod:status         → where you are"
-echo "   /docod:run <agent>    → invoke an agent (subagent docod-<agent>)"
+echo "   /docod:run <agent>    → invoke an agent through the selected adapter"
 echo "   /docod:diagnose       → diagnostic mode: DIVs + RISKs + provenance, no adoption"
 echo "   /docod:report         → HTML dashboard (documents · kanban · flow)"

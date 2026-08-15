@@ -1,0 +1,6 @@
+interface:
+  display_name: "Set up DOCOD"
+  short_description: "Install or update DOCOD for Codex."
+  default_prompt: "Use $setup-docod to install DOCOD with the Codex adapter."
+policy:
+  allow_implicit_invocation: false

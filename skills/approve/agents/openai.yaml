@@ -1,0 +1,6 @@
+interface:
+  display_name: "DOCOD Approve"
+  short_description: "Record a governed human approval."
+  default_prompt: "Use $approve for an explicit /docod:approve request."
+policy:
+  allow_implicit_invocation: false
