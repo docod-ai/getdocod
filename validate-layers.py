@@ -91,6 +91,12 @@ NATUREZAS = {"deterministic", "evidence", "judgment"}
 
 ERRORS, WARNS = [], []
 
+# The frontmatter delimiter is a LINE that is exactly `---` (trailing blanks
+# tolerated) — anchored, mirroring the runtime's fmClose(). An unanchored
+# substring search truncates the frontmatter at any `# ----` comment rule
+# inside it (the runtime's field bug; this file carried the same one).
+FM_DELIM = re.compile(r"^---[ \t]*$", re.M)
+
 
 def walk_values(node, path=""):
     """Walks only the VALUES of the YAML. Comments are not loaded by the
@@ -196,8 +202,17 @@ def check_agents():
         if not raw.startswith("---"):
             ERRORS.append(f"[{rel}] no YAML frontmatter")
             continue
+        # ANCHORED frontmatter split — the runtime's field bug (an unanchored
+        # "---" search truncating the frontmatter at a `# ----` comment rule)
+        # lived here too, in python clothing: str.split("---") cuts at the
+        # first substring, comment rules included. Same disease, same cure:
+        # the delimiter is a LINE that is `---`, nothing looser. The two
+        # parsers must fail and succeed TOGETHER — a validator that parses
+        # more forgivingly than the runtime is how a green check ships a
+        # truncated contract (the PyYAML dup-key lesson, again).
+        parts = FM_DELIM.split(raw, 2)
         try:
-            d = yaml.safe_load(raw.split("---")[1]) or {}
+            d = yaml.safe_load(parts[1] if len(parts) >= 2 else "") or {}
         except yaml.YAMLError as e:
             ERRORS.append(f"[{rel}] invalid frontmatter: {e}")
             continue
@@ -206,7 +221,7 @@ def check_agents():
             ERRORS.append(f"[{rel}] no `key`")
             continue
         agents[key] = (rel, d)
-        corpos[key] = raw.split("---", 2)[2] if raw.count("---") >= 2 else ""
+        corpos[key] = parts[2] if len(parts) >= 3 else ""
 
         # Body roles. The v1 `knowledge` had 77 sources, 4 implicit roles and
         # 30+ free-form names — question_bank vs questions_bank vs
@@ -215,7 +230,7 @@ def check_agents():
         # validating would repeat the failure with new syntax.
         # A role is the `## x` that OPENS a block after `---`. The `## 1. Vision`
         # headings inside ## structure are the document template, not roles.
-        body = raw.split("---", 2)[2] if raw.count("---") >= 2 else ""
+        body = corpos[key]
         found = {
             m.group(1)
             for bloco in re.split(r"^---$", body, flags=re.M)

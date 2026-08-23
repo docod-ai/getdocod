@@ -5,6 +5,34 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.15.0] — 2026-08-20
+
+Fixed: the frontmatter delimiter is now ANCHORED. Every split in the runtime
+(`sha256Body`, `readFrontmatter`, `writeFrontmatter`, both `verify` sites)
+found the closing `---` with an unanchored substring search — so an ASCII
+comment rule (`# ----------`) INSIDE the frontmatter closed it right there.
+Everything below the rule silently became body prose, and verify stayed
+green, because every key it checks sat above the rule. Field case: a
+diagnostic whose commented `report:` block vanished from the render — two
+agents hit it in one run, and the reporter behaved exactly as the method
+asks: read the runtime source, labeled the reading as its own, fixed its own
+file, queued the defect for the author, touched nothing. The delimiter is now
+a LINE that is exactly `---` (`fmClose()`, shared by all five sites), and the
+dev validator's python split — which carried the same disease in `str.split`
+clothing — is anchored to the same rule, because two parsers that disagree
+about where a contract ends is how a green check ships a truncated one.
+
+Compatibility, said out loud: for every healthy file the split is
+byte-identical and the body hash does not move (verified over the 28 agent
+contracts plus the smoke corpus: zero changes). For a file of the AFFECTED
+class — frontmatter carrying a `---` substring in a comment — the body was
+being mis-read, so its hash changes and any approval recorded over the
+mis-read body now shows INVALID. That flip is honest: the approval vouched
+for a body the runtime never actually delimited correctly. `rebless` is the
+door, and the re-read is the point.
+
+specVersion → 1.15.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.14.0] — 2026-08-14
 
 Added: the first fully materialized Codex adapter. `adapters/codex.yaml` maps

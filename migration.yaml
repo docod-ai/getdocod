@@ -348,6 +348,120 @@ migration:
         recipe ("no worse" is too rigid for legitimate refactors; a budget
         needs an ADR trail). Panel view (the four signals side by side in
         `report`) is cheap and may ship with or before the postcondition.
+      pressure_note: |
+        (2026-08-23.) The vendor's AI-native SDLC playbook (claude.com/blog/
+        the-ai-native-sdlc-playbook, published 2026-08-21) independently
+        answers open decisions (1) and (2): the baseline lives in a
+        DECLARATIVE bands file (metric, rolling window, band rules, tiered
+        actions) and the measurer binds outside the method's layers — their
+        detection script, our adapter binding; same neutrality move. Only
+        (3), the ceiling's derivation via rules-factory, remains genuinely
+        open. This entry's build is absorbed by `observe-bands` below — one
+        thread, not two.
+
+    - id: observe-bands
+      severity: major
+      issue: |
+        OBSERVE closes on paper, not in execution. The method's observe
+        stage delivers artifacts (slos, runbook, playbook, integration-guide)
+        and nothing DERIVES a violation from a live signal — the loop's last
+        edge is prose. The vendor playbook (2026-08-21) closed exactly this
+        in public: a declarative bands.yaml (metric, rolling baseline,
+        western-electric-style rules, tiered actions 1σ log / 2σ diagnose /
+        3σ propose), a deterministic detector, and the finding re-entering
+        the pipeline as a new intent "like anything else". That is the
+        method's weakest stage, now with a public reference implementation —
+        and their tier ladder is our finding_urgency with numbers, their
+        re-entry queue is a discipline we already built twice (external-
+        questions, 1.13.0).
+      decision: |
+        Adopt in the DOCOD idiom, never as a daemon: (a) a registered
+        `bands` artifact — declarative, machine-read, owned (candidate
+        owner: observability), scope per target; (b) `docod.mjs observe`
+        derives violations FRESH on every run (detection is the state, no
+        state file, same law as status) from bands + a METRICS SNAPSHOT the
+        adapter/instance produces — the runtime never collects; who measures
+        binds in layer 3/4, the health-delta neutrality rule; (c) every
+        violation is a dated, evidenced record the status chases, tier
+        echoing finding_urgency ("would it change what is about to be
+        built?" — 3σ is always now); (d) re-entry is HUMAN-fired through an
+        existing door (the finding recommends; a command never decides).
+        OPEN DECISIONS, named so they do not dissolve: (1) where a violation
+        LANDS — a draft prd on a new front, or a dated observation artifact
+        surfaced by status (leaning: the second; the prd stays the human's
+        act); (2) the snapshot file's contract (path, shape, staleness
+        semantics — an old snapshot must read as "observed-at", never as
+        current); (3) health-delta's remaining ceiling-derivation question,
+        absorbed here. Deliberately NOT rushed: this is rebless-grade design
+        territory, and the reference implementation to compare against is
+        public now.
+
+    - id: config-evals
+      severity: minor
+      issue: |
+        rules-factory generates rules and NOTHING verifies that a rule
+        change kept the agents' behavior — the refused-rule case
+        (verifier_discipline, 1.12.0: a TDD rule written, the model still
+        declining tests, only measured coverage catching it) is doctrine
+        without a mechanism. The playbook operationalizes it: evals run in
+        CI on any change to agent configuration, gated on pass rate, every
+        incident becoming a permanent regression eval. We hold the doctrine;
+        they hold the practice.
+      decision: |
+        Adopt as the smallest honest mechanism, buildable next: (a) an
+        `evals` registered artifact — a suite of task + acceptance-criteria
+        pairs per target, owner to be chosen (candidate: qa-executor as
+        owner, rules-factory as co-writer for rule-derived cases); (b) an
+        `evidence:` postcondition on rules-factory's amendments: a change to
+        a rules artifact ships with the suite's run attached (command +
+        output), waivable with the waiver recorded — the gate stays human,
+        the evidence stays measured-not-trusted; (c) every field incident
+        that produced a bundle fix already gets a planted-bug test — name
+        the same discipline for INSTANCE rules in the rules templates.
+        Bundle-side, the smoke battery IS the bundle's config-eval:
+        CONTRIBUTING should say so in those words.
+
+    - id: adapter-enforcement
+      severity: minor
+      issue: |
+        The method's gates are cooperation: a dev can simply not run approve
+        and commit anyway (git-approval-flow tracks the vcs edge of this).
+        The playbook ships coercion for the regulated profile — managed
+        settings an engineer cannot override (allowManagedHooksOnly,
+        allowManagedPermissionsOnly, disableSideloadFlags, sandbox that
+        refuses to start, OS-level credential denies). Those knobs are
+        harness-specific by name and by nature: layer 3, not method.
+      decision: |
+        Keep cooperation in layers 1-2 (the human orchestrates; a gate that
+        coerces is an orchestrator in disguise) and document coercion where
+        it belongs: the claude-code adapter gains an `enforcement:` block
+        mapping DOCOD's gates to the managed-settings profile for regulated
+        deployments — declared external, install hints, degraded_to honest
+        ("cooperation only") when absent, exactly the Context7/Playwright
+        pattern. Documentation-shaped, cheap, and it feeds the teams phase
+        (multi-approver) instead of pre-empting it.
+
+    - id: vocabulary-rosetta
+      severity: minor
+      issue: |
+        The market will learn "intent.md / spec.md / plan.md" from the
+        vendor, not from us. Two wrong responses exist: fighting the
+        vocabulary (losing move, argued 2026-08-22), and renaming our
+        artifact keys to theirs — the keys are load-bearing vocabulary
+        invariants across 39 registered artifacts, installed instances and
+        detection migrations; a rename is a major bought for zero mechanical
+        gain, and an alias is two spellings for one concept, which is this
+        project's recurring disease wearing a new coat.
+      decision: |
+        A ROSETTA, in prose, where prose belongs: README (and the book)
+        gain a mapping section — intent ≈ business-case + prd, spec ≈ frd +
+        system-design (+ the design family), plan ≈ tasks, Maintain's
+        breach-to-intent loop ≈ observe → redefine (see observe-bands). Keys
+        never rename, no aliases in the registry, the mapping is
+        documentation. Positioning rides along: the playbook is the public
+        spec of the problem; this bundle is an executable, vendor-neutral
+        implementation that predates it — say it with the mapping, not with
+        new nomenclature.
 
     - id: shared-language
       severity: minor
@@ -432,6 +546,36 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: frontmatter-delimiter
+      was: major
+      issue: |
+        Every frontmatter split in the runtime (sha256Body, readFrontmatter,
+        writeFrontmatter, both verify sites) located the closing `---` with
+        an UNANCHORED substring search — an ASCII comment rule (`# ------`)
+        inside the frontmatter closed it there. Every key below the rule
+        silently became body prose and verify stayed green, because the keys
+        it checks sat above the rule. The dev validator carried the same bug
+        in python clothing (str.split("---")), so the two parsers could
+        disagree about where a contract ends — the dup-key lesson's shape.
+      field_proof: |
+        (2026-08-20, reported from a live instance; reading relayed, then
+        reproduced by the maintainer against the source.) A diagnostic whose
+        report: block sat below a commented section rule rendered empty; two
+        agents hit it in one run. The reporting agent behaved to the letter
+        of the method: labeled its reading of the runtime as its own, fixed
+        only its own file, queued the defect for the author, touched nothing.
+        Maintainer repro: with the 1.14.0 runtime the crafted file passes
+        VERIFY OK while `report:` is absent from the parsed frontmatter.
+      resolution: |
+        1.15.0: the delimiter is a LINE that is exactly `---` — fmClose(),
+        shared by all five runtime sites; the validator's split anchored to
+        the same rule (FM_DELIM), so both parsers fail and succeed together.
+        Hash compatibility measured, not assumed: zero changes across the
+        healthy corpus (28 agent contracts + smoke docs); ONLY the affected
+        class changes body hash, flipping its approvals to INVALID — honest,
+        because those approvals vouched a mis-delimited body; rebless is the
+        door. Planted proof kept in the record: the same crafted file, old
+        runtime green with the block lost, new runtime green with it kept.
     - id: queue-serialization
       was: major
       issue: |

@@ -73,7 +73,7 @@ Filesystem layout is by NATURE, never by stage (a revisited document must not ch
 
 ## 4. Hashes, approval, and the status machine
 
-`sha256Body(file)` hashes the content EXCLUDING the frontmatter, truncated to `sha256:` + 16 hex chars. Excluding frontmatter is essential: writing the approval into the file must not invalidate the approval it records.
+`sha256Body(file)` hashes the content EXCLUDING the frontmatter, truncated to `sha256:` + 16 hex chars. Excluding frontmatter is essential: writing the approval into the file must not invalidate the approval it records. The frontmatter delimiter is ANCHORED (`fmClose()`, shared by every split in the runtime, mirrored by the validator's `FM_DELIM`): the closer is a line that is exactly `---`, never the first `---` substring — an unanchored search once closed the frontmatter at a `# ----` comment rule inside it, and everything below (a diagnostic's whole `report:` block, in the field) silently became body while verify stayed green.
 
 Human gate: `docod.mjs approve <file> --by <who>` writes `approval: {by, at, content_hash}` and sets `status: approved`. **Effective status** is computed on every read: `approved` with no approval record shows as `approved?`; `approved` whose `content_hash` no longer matches shows as `review` with the warning "INVALID approval, content changed after the approve by X on Y". Nobody remembers anything; the hash remembers. Downstream `requires` re-block automatically because they consult effective status, not written status.
 

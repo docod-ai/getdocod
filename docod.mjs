@@ -43,13 +43,30 @@ const die = (msg) => { console.error(msg); process.exit(1); };
 
 /* ────────────────────────────────────────────────────────────── basic infra */
 
+function fmClose(raw) {
+  // Index of the CLOSING frontmatter delimiter: a LINE that is exactly `---`
+  // (trailing blanks tolerated) — the search is ANCHORED to line starts.
+  // The old unanchored indexOf("---", 3) matched the first "---" SUBSTRING
+  // anywhere, so an ASCII comment rule (`# --------`) INSIDE the frontmatter
+  // truncated it right there: every key below the rule silently became body
+  // prose, verify stayed green (the keys it checks sat above the rule), and
+  // a diagnostic's whole `report:` block vanished from the render. Field
+  // case, two agents in one run. Returns the index of the `---` itself, so
+  // every caller's slice(3, i2) / slice(i2 + 3) shape — and therefore the
+  // computed body hash of every healthy file — is unchanged.
+  const re = /\r?\n---[ \t]*(?=\r?\n|$)/g;
+  re.lastIndex = 3;
+  const m = re.exec(raw);
+  return m ? m.index + (m[0].charCodeAt(0) === 13 ? 2 : 1) : -1;
+}
+
 function sha256Body(p) {
   // Hash of the content EXCLUDING the frontmatter — same rule as staleness:
   // touching status/approval must not invalidate the approval itself.
   const raw = fs.readFileSync(p, "utf-8");
   let body = raw;
   if (raw.startsWith("---")) {
-    const i2 = raw.indexOf("---", 3);
+    const i2 = fmClose(raw);
     if (i2 >= 0) body = raw.slice(i2 + 3);
   }
   return "sha256:" + crypto.createHash("sha256").update(body, "utf-8").digest("hex").slice(0, 16);
@@ -58,7 +75,7 @@ function sha256Body(p) {
 function readFrontmatter(p) {
   const raw = fs.readFileSync(p, "utf-8");
   if (!raw.startsWith("---")) return [{}, raw];
-  const i2 = raw.indexOf("---", 3);
+  const i2 = fmClose(raw);
   if (i2 < 0) return [{}, raw];
   try {
     return [yload(raw.slice(3, i2)) || {}, raw.slice(i2 + 3)];
@@ -71,7 +88,7 @@ function writeFrontmatter(p, fm) {
   const raw = fs.readFileSync(p, "utf-8");
   let body = raw;
   if (raw.startsWith("---")) {
-    const i2 = raw.indexOf("---", 3);
+    const i2 = fmClose(raw);
     if (i2 >= 0) body = raw.slice(i2 + 3);
   }
   fs.writeFileSync(p, "---\n" + ydump(fm, { sortKeys: false }) + "---" + body);
@@ -690,12 +707,12 @@ function cmdVerify(root, file) {
   const raw = fs.readFileSync(p, "utf-8");
   let fm = {};
   let body0 = "";
-  if (raw.startsWith("---")) { const j = raw.indexOf("---", 3); if (j >= 0) body0 = raw.slice(j + 3); }
+  if (raw.startsWith("---")) { const j = fmClose(raw); if (j >= 0) body0 = raw.slice(j + 3); }
   if (p.endsWith(".yaml") || p.endsWith(".yml")) {
     try { yload(raw); oks.push("YAML parses"); } catch (e) { fails.push("YAML does not parse: " + String(e.message).split("\n")[0]); }
   } else if (raw.startsWith("---")) {
-    const i2 = raw.indexOf("---", 3);
-    try { fm = yload(raw.slice(3, i2)) || {}; oks.push("frontmatter parses"); }
+    const i2 = fmClose(raw);
+    try { fm = yload(i2 >= 0 ? raw.slice(3, i2) : raw.slice(3)) || {}; oks.push("frontmatter parses"); }
     catch (e) { fails.push("frontmatter does not parse: " + String(e.message).split("\n")[0]); }
   } else fails.push("no frontmatter (--- block) at the top");
   // The valid set is READ from method.yaml's status machine, never retyped:
