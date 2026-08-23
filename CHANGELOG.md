@@ -5,6 +5,51 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.18.0] — 2026-08-23
+
+The regulated-profile release — the last two entries of the playbook
+absorption, drained. The author widened the first beyond its sketch: not one
+adapter, all three.
+
+Added: a `coercion:` section in EVERY adapter (agents-1, claude-code,
+codex). Cooperation stays the method — layers 1-2 do not move, the human
+orchestrates, a gate that coerces is an orchestrator in disguise — and
+coercion becomes a declared DEPLOYMENT option: six shared enforcement points
+(approval_gate, hook_integrity, supply_chain, sandbox_egress, merge_gate,
+config_regression) that the method owns as POINTS while each deployment owns
+the mechanisms. claude-code binds several points to the managed-settings
+profile, with the note that those names are the harness's vocabulary and
+follow its releases (pointers, verified before rollout, never presumed).
+codex binds only what it can vouch for and marks the rest `runtime_defined`
+— its own honesty vocabulary; pointing at a config key the adapter cannot
+verify would be failure #1 inside the adapter. agents-1 says out loud that a
+file spec coerces nothing. Every point degrades DECLARED to the same
+vendor-neutral floor: branch protection, required review, and the runtime's
+honest exit codes (`verify`, `observe`, the validator) as required CI
+checks. The floor lives outside every harness, which is exactly why it holds
+for all of them — and why it is the strongest leg, not the consolation
+prize.
+
+Added: the rosetta. The README gained "If you arrived from the AI-native
+SDLC playbook": intent ≈ business-case + prd, spec ≈ frd + system-design and
+the design family, plan ≈ tasks, review findings ≈ the three reviewers,
+breach detection ≈ bands + observe + observation, config evals ≈ evals. Keys
+never rename and the registry holds no aliases — the mapping is
+documentation, and the positioning rides with it: the playbook is the
+public spec of the problem; this bundle is an executable, vendor-neutral
+implementation that predates it, starting where the playbook stops
+(content-hash approval, the lineage graph, diagnostic mode).
+
+Docs: the README also gained "Close the loop in production" (bands/observe/
+observation and the evals suite, with the runtime commands) and the
+regulated-profile section under Adapter support; ARCHITECTURE records the
+coercion contract in the materialization section and refreshes the
+known-limits list — the 2026-08 playbook absorption is fully drained into
+resolved, and the pending majors now lead with graduated-gate. Every README
+reference resolves (validate-readme: 60 checked, 0 failures).
+
+specVersion → 1.18.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.17.0] — 2026-08-23
 
 The config-evals release — the refused-rule doctrine gets its mechanism. The

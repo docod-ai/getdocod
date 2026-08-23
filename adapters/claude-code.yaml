@@ -197,6 +197,57 @@ enforcement:
       disagree.
 
 # -----------------------------------------------------------------------------
+# COERCION — the regulated profile (optional; cooperation is the method)
+#
+# Layers 1-2 do not move: the human orchestrates, gates inform and record, and
+# a gate that coerces is an orchestrator in disguise. COERCION is a DEPLOYMENT
+# option for the regulated profile: an engineer-cannot-override floor under
+# the SAME gates, offered by the harness and the platform around it, never by
+# the method. Same honesty rule as external tools: the adapter never presumes.
+# Each point names the harness mechanism where one exists and declares the
+# degradation where none does. The vendor-neutral floor for every point is the
+# VCS and CI: branch protection, required review, and the runtime's honest
+# exit codes (verify, observe, the validator) as required checks. That floor
+# exists in every harness because it lives outside all of them.
+#
+# The six points are shared by every adapter (agents-1, claude-code, codex);
+# only the mechanism column changes per harness.
+# -----------------------------------------------------------------------------
+coercion:
+  points:
+    approval_gate:
+      need: "only a human writes `approved`; agents deliver draft/review"
+      mechanism: "managed settings distributed via MDM/admin console: allowManagedPermissionsOnly (engineers cannot widen permissions), plus managed permission rules where the org wants a hard wall in front of approval writes"
+      floor: "branch protection + CODEOWNERS on {docsRoot}: an approval edit reaches the trunk only through a human-reviewed PR"
+    hook_integrity:
+      need: "the gates' hooks and checks cannot be disabled locally"
+      mechanism: "allowManagedHooksOnly: the managed gates are the only hooks that run; nothing local adds to or replaces them"
+      floor: "CI re-runs verify and the validators server-side; a locally skipped check fails the required status anyway"
+    supply_chain:
+      need: "skills, hooks and MCPs come from an approved source only"
+      mechanism: "disableSideloadFlags + an approved marketplace as the only install path"
+      floor: "harness config under version control and review; drift is caught by diff, not prevented"
+    sandbox_egress:
+      need: "network allowlist and credential isolation BELOW the tool layer"
+      mechanism: "sandbox.failIfUnavailable (the harness refuses to start unsandboxed), OS-level domain allowlist (a tool-level WebFetch deny does not stop a shell command; the OS egress block does), credential deny blocks for ~/.ssh, cloud credentials and named env vars"
+      floor: "none below the OS. Declared: without the sandbox this point is cooperation only"
+    merge_gate:
+      need: "nothing integrates without verify and the owed reviews"
+      mechanism: "branch protection with required checks running `node .docod/docod.mjs verify` on governed artifacts, plus the harness's managed review where adopted"
+      floor: "this point IS the vendor-neutral floor"
+    config_regression:
+      need: "agent-configuration changes run the evals suite (artifacts.yaml § evals, 1.17.0)"
+      mechanism: "a CI job on any change to the index file, skills, hooks or {docsRoot}standards/: run the suite non-interactively and gate on the qa-executor's recorded pass rate"
+      floor: "CI is the floor; the suite and what a pass means are the method's (the run's wiring is this file's)"
+  note: |
+    The managed-settings names above are the HARNESS's vocabulary (naming
+    vendors is what layer 3 exists for) and they follow the harness's
+    releases, not this bundle's: treat them as pointers into the harness
+    documentation and verify against it before a rollout. What the method
+    owns is the six POINTS; what a deployment owns is which mechanism holds
+    each one up.
+
+# -----------------------------------------------------------------------------
 # CONFORMANCE — what this adapter offers
 # -----------------------------------------------------------------------------
 conformance:

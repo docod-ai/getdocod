@@ -89,6 +89,53 @@ enforcement:
     contract: |
       Judgment remains a separate agent gate and, ultimately, a human act.
 
+# -----------------------------------------------------------------------------
+# COERCION — the regulated profile (optional; cooperation is the method)
+# Six shared points (see adapters/claude-code.yaml for the doctrine): the
+# method owns the POINTS, the deployment owns the mechanisms. This adapter
+# follows its own honesty vocabulary: `runtime_defined: true` where the
+# mechanism depends on the Codex surface and workspace policy, never a
+# config key this file cannot vouch for. The vendor-neutral floor for every
+# point is the VCS and CI: branch protection, required review, and the
+# runtime's exit codes (verify, observe, the validator) as required checks.
+# -----------------------------------------------------------------------------
+coercion:
+  points:
+    approval_gate:
+      need: "only a human writes `approved`; agents deliver draft/review"
+      mechanism: null
+      runtime_defined: true
+      floor: "branch protection + CODEOWNERS on {docsRoot}: an approval edit reaches the trunk only through a human-reviewed PR"
+    hook_integrity:
+      need: "the gates' checks cannot be disabled locally"
+      mechanism: null
+      runtime_defined: true
+      floor: "CI re-runs verify and the validators server-side; a locally skipped check fails the required status anyway"
+    supply_chain:
+      need: "skills, plugins and tools come from an approved source only"
+      mechanism: "workspace policy governs which tools and skills a surface enables"
+      runtime_defined: true
+      floor: "harness config under version control and review; drift caught by diff, not prevented"
+    sandbox_egress:
+      need: "network allowlist and credential isolation BELOW the tool layer"
+      mechanism: "the surface's sandbox and approval modes, where the deployment pins them by policy"
+      runtime_defined: true
+      floor: "none below the OS. Declared: without a pinned sandbox this point is cooperation only"
+    merge_gate:
+      need: "nothing integrates without verify and the owed reviews"
+      mechanism: "branch protection with required checks running `node .docod/docod.mjs verify` on governed artifacts"
+      floor: "this point IS the vendor-neutral floor"
+    config_regression:
+      need: "agent-configuration changes run the evals suite (artifacts.yaml § evals, 1.17.0)"
+      mechanism: "a CI job on any change to AGENTS.md, .agents/ skills or {docsRoot}standards/: run the suite non-interactively and gate on the qa-executor's recorded pass rate"
+      floor: "CI is the floor"
+  note: |
+    runtime_defined here means exactly what it means in capabilities: the
+    mechanism exists at the discretion of the surface and the workspace
+    policy, and this file DETECTS rather than presumes. Pointing at a config
+    key this adapter cannot verify would be failure #1 (a reference with
+    nobody on the other end) inside the adapter itself.
+
 conformance:
   supports_all_capabilities: conditional
   degraded: [doc_lookup]

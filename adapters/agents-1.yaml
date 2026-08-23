@@ -78,3 +78,41 @@ invoke:
   promptsRoot: ".agents/prompts/"
   skillsRoot: ".agents/skills/"
   note: "Each action becomes a prompt in .agents/prompts/<action>.md, assembled from the contract."
+
+# -----------------------------------------------------------------------------
+# COERCION — the regulated profile (optional; cooperation is the method)
+#
+# AGENTS.md is a FILE SPEC, not a runtime: it can coerce nothing, and
+# promising otherwise would be the honesty correction above repeated one
+# section lower (a reference with nobody on the other end, inside the
+# adapter). So every one of the six shared points (see
+# adapters/claude-code.yaml for the doctrine) binds to the vendor-neutral
+# floor here — which is not a consolation prize: the floor lives OUTSIDE
+# every harness, which is exactly why it holds for this one.
+# -----------------------------------------------------------------------------
+coercion:
+  points:
+    approval_gate:
+      need: "only a human writes `approved`; agents deliver draft/review"
+      mechanism: null
+      floor: "branch protection + CODEOWNERS on {docsRoot}: an approval edit reaches the trunk only through a human-reviewed PR"
+    hook_integrity:
+      need: "the gates' checks cannot be disabled locally"
+      mechanism: null
+      floor: "CI re-runs verify and the validators server-side; a locally skipped check fails the required status anyway"
+    supply_chain:
+      need: "skills and prompts come from an approved source only"
+      mechanism: null
+      floor: ".agents/ under version control and review; drift caught by diff, not prevented"
+    sandbox_egress:
+      need: "network allowlist and credential isolation BELOW the tool layer"
+      mechanism: null
+      floor: "none below the OS. Declared out loud: whichever runtime reads this spec brings (or does not bring) its own sandbox; without one this point is cooperation only"
+    merge_gate:
+      need: "nothing integrates without verify and the owed reviews"
+      mechanism: null
+      floor: "this point IS the vendor-neutral floor: required checks running `node .docod/docod.mjs verify` on governed artifacts"
+    config_regression:
+      need: "agent-configuration changes run the evals suite (artifacts.yaml § evals, 1.17.0)"
+      mechanism: null
+      floor: "a CI job on any change to AGENTS.md, .agents/ or {docsRoot}standards/: run the suite and gate on the qa-executor's recorded pass rate"

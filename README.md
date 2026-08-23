@@ -298,6 +298,28 @@ This is one of the central guarantees of DOCOD:
 
 ---
 
+## Close the loop in production
+
+Since 1.16.0 the observe stage closes in execution, not on paper.
+
+The `bands` artifact declares control bands per metric in a strict grammar. Your CI or a script drops dated metric snapshots into `docs/ops/metrics/`. The runtime never collects anything; it derives.
+
+```text
+node .docod/docod.mjs observe
+```
+
+Every evaluation prints its numbers. A rolling baseline is computed fresh on every run from the snapshots inside the declared window, with the latest point excluded so the value under judgment cannot soften its own baseline. Insufficient history is declared, never guessed. A stale snapshot is reported as observing blind instead of being used silently. The exit code is honest, so CI can gate on it.
+
+```text
+node .docod/docod.mjs observe --record
+```
+
+A violation lands as a dated `observation` draft. The machine fills the anomaly and the evidence verbatim; the judgment sections arrive as declared gaps for the owner to complete. Re-entry into the pipeline stays a human act: a prd, a workstream, an impact analysis citing the record.
+
+Since 1.17.0 the configuration that steers the agents gets the same treatment as code. The `evals` artifact holds a regression suite of real tasks with acceptance criteria, owned by the `qa-executor` precisely because the rules producer must not own the check that judges its own changes. A rules amendment ships with the suite's measured run attached, and a missing suite is a declared gap rather than a silent pass.
+
+---
+
 ## Evidence, not assertion
 
 An agent saying that a check passed is not evidence that the check passed.
@@ -662,6 +684,8 @@ The Node runtime also provides lower-level commands such as:
 ```text
 node .docod/docod.mjs verify <file>
 node .docod/docod.mjs rebless ...
+node .docod/docod.mjs question add|answer ...
+node .docod/docod.mjs observe [--record]
 ```
 
 ---
@@ -882,6 +906,25 @@ It means the method can operate without the artifact, while the cost of omission
 
 ---
 
+## If you arrived from the AI-native SDLC playbook
+
+The vocabulary maps directly. The playbook describes a pipeline of committed artifacts with human gates; DOCOD is an executable, vendor-neutral implementation of that shape, and it was running before the playbook was published.
+
+| Playbook term | DOCOD artifacts |
+|---|---|
+| `intent.md` | `business-case` + `prd` |
+| `spec.md` | `frd` + `system-design` and the design family |
+| `plan.md` | `tasks` and the per-task files |
+| review findings on the PR | `design-review`, `qa`, `codereview` |
+| breach detection and `bands.yaml` | `bands` + `observe` + `observation` |
+| evals on configuration changes | `evals` and the rules-amendment evidence |
+
+The keys on the right are load-bearing method vocabulary and do not rename. The mapping is the bridge: teams can read their pipeline in either language.
+
+What the playbook leaves to the reader is where this runtime starts. Approval bound to a content hash that invalidates itself when the document changes. A lineage graph that knows what went stale when an upstream decision moved. A diagnostic mode for the codebase whose design was never written. Those are capabilities, not vocabulary, and they are the reason this repository exists.
+
+---
+
 ## Four-layer architecture
 
 DOCOD has four layers.
@@ -938,6 +981,19 @@ Codex is a fully materialized adapter as of 1.14.0. It provides:
 The command vocabulary does not change between harnesses. `/docod:start` in
 Claude Code and `/docod:start` in Codex resolve to the same layer-2 command
 contract.
+
+### The regulated profile
+
+Cooperation is the method: gates inform and record, and the human orchestrates. Regulated deployments often need a floor that an engineer cannot override. Since 1.18.0 every adapter declares the same six coercion points and binds each one to what its harness actually offers, with honest degradation where it offers nothing:
+
+- approval gate: only a human writes `approved`;
+- hook integrity: the gates' checks cannot be disabled locally;
+- supply chain: skills and tools come from an approved source only;
+- sandbox and egress: network and credential isolation below the tool layer;
+- merge gate: nothing integrates without `verify` and the owed reviews;
+- configuration regression: config changes run the `evals` suite.
+
+Claude Code binds several points to managed settings distributed by the organization. Codex binds what its workspace policy governs and marks the rest as runtime-defined. The neutral adapter declares that a file spec coerces nothing. Every point shares the same vendor-neutral floor, and the floor is the strongest part: branch protection, required review, and the runtime's honest exit codes as required checks in CI. That floor lives outside every harness, which is exactly why it holds for all of them.
 
 ### Other harnesses
 

@@ -412,48 +412,6 @@ migration:
         territory, and the reference implementation to compare against is
         public now.
 
-    - id: adapter-enforcement
-      severity: minor
-      issue: |
-        The method's gates are cooperation: a dev can simply not run approve
-        and commit anyway (git-approval-flow tracks the vcs edge of this).
-        The playbook ships coercion for the regulated profile — managed
-        settings an engineer cannot override (allowManagedHooksOnly,
-        allowManagedPermissionsOnly, disableSideloadFlags, sandbox that
-        refuses to start, OS-level credential denies). Those knobs are
-        harness-specific by name and by nature: layer 3, not method.
-      decision: |
-        Keep cooperation in layers 1-2 (the human orchestrates; a gate that
-        coerces is an orchestrator in disguise) and document coercion where
-        it belongs: the claude-code adapter gains an `enforcement:` block
-        mapping DOCOD's gates to the managed-settings profile for regulated
-        deployments — declared external, install hints, degraded_to honest
-        ("cooperation only") when absent, exactly the Context7/Playwright
-        pattern. Documentation-shaped, cheap, and it feeds the teams phase
-        (multi-approver) instead of pre-empting it.
-
-    - id: vocabulary-rosetta
-      severity: minor
-      issue: |
-        The market will learn "intent.md / spec.md / plan.md" from the
-        vendor, not from us. Two wrong responses exist: fighting the
-        vocabulary (losing move, argued 2026-08-22), and renaming our
-        artifact keys to theirs — the keys are load-bearing vocabulary
-        invariants across 39 registered artifacts, installed instances and
-        detection migrations; a rename is a major bought for zero mechanical
-        gain, and an alias is two spellings for one concept, which is this
-        project's recurring disease wearing a new coat.
-      decision: |
-        A ROSETTA, in prose, where prose belongs: README (and the book)
-        gain a mapping section — intent ≈ business-case + prd, spec ≈ frd +
-        system-design (+ the design family), plan ≈ tasks, Maintain's
-        breach-to-intent loop ≈ observe → redefine (see observe-bands). Keys
-        never rename, no aliases in the registry, the mapping is
-        documentation. Positioning rides along: the playbook is the public
-        spec of the problem; this bundle is an executable, vendor-neutral
-        implementation that predates it — say it with the mapping, not with
-        new nomenclature.
-
     - id: shared-language
       severity: minor
       issue: |
@@ -537,6 +495,59 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: adapter-enforcement
+      was: minor
+      issue: |
+        The method's gates are cooperation: a dev can simply not run approve
+        and commit anyway (git-approval-flow tracks the vcs edge of this).
+        The playbook ships coercion for the regulated profile — managed
+        settings an engineer cannot override, sandbox that refuses to start,
+        OS-level credential denies. Harness-specific by name and by nature:
+        layer 3, not method.
+      resolution: |
+        1.18.0, widened by the author beyond the original sketch: not one
+        adapter but ALL THREE. Every adapter carries a `coercion:` section
+        with the same SIX shared points (approval_gate, hook_integrity,
+        supply_chain, sandbox_egress, merge_gate, config_regression — the
+        method owns the points; the deployment owns the mechanisms), each
+        bound to what its harness actually offers and degraded DECLARED
+        where it offers nothing. claude-code names the managed-settings
+        profile (with the note that those names are the harness's vocabulary
+        and follow its releases — pointers, verified before rollout); codex
+        uses its own honesty vocabulary (`runtime_defined` for what depends
+        on surface and workspace policy — pointing at a config key the
+        adapter cannot verify would be failure #1 inside the adapter);
+        agents-1 says out loud that a file spec coerces nothing. Every point
+        shares the vendor-neutral floor — branch protection, required
+        review, and the runtime's exit codes (verify, observe, validator) as
+        required CI checks — which lives outside every harness and
+        therefore holds for all of them. Cooperation stays the method;
+        coercion stays a deployment option.
+
+    - id: vocabulary-rosetta
+      was: minor
+      issue: |
+        The market will learn "intent.md / spec.md / plan.md" from the
+        vendor, not from us. Two wrong responses existed: fighting the
+        vocabulary (a losing move), and renaming our artifact keys to
+        theirs — the keys are load-bearing vocabulary invariants across the
+        registry, installed instances and detection migrations; a rename is
+        a major bought for zero mechanical gain, and an alias is two
+        spellings for one concept, the recurring disease in a new coat.
+      resolution: |
+        1.18.0: the README gained the rosetta section ("If you arrived from
+        the AI-native SDLC playbook") — intent ≈ business-case + prd, spec ≈
+        frd + system-design and the design family, plan ≈ tasks, review
+        findings ≈ the three reviewers, breach detection ≈ bands + observe +
+        observation, config evals ≈ evals — with the positioning attached:
+        the playbook is the public spec of the problem, this bundle is an
+        executable vendor-neutral implementation that predates it, and the
+        capabilities the playbook leaves to the reader (content-hash
+        approval, the lineage graph, diagnostic mode) are where this
+        runtime starts. Keys never rename; no aliases in the registry; the
+        mapping is documentation. The book's version of the mapping remains
+        the author's.
+
     - id: config-evals
       was: minor
       issue: |
