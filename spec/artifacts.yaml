@@ -1,4 +1,4 @@
-specVersion: "1.18.0"
+specVersion: "1.19.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -182,6 +182,13 @@ artifacts:
       ws: "{docsRoot}workstreams/{ws}/frd.md"
     sections: [Context and Overview, In/Out Scope, Numbered Functional Requirements,
                Acceptance Criteria, Non-Functional Requirements, Dependencies & Impact]
+    protected: [3, 4, 5]
+    # protected: ordinals into sections (language-neutral, like the count
+    # check) marking the SPINE — the sections a `approve --correction` may
+    # not touch. Requirements and criteria are the contract; a number flip
+    # there is one character and a semantic change, so the spine always
+    # takes the full ceremony. Only artifacts that declare `sections:` can
+    # declare a spine.
 
   user-stories:
     stage: define
@@ -484,6 +491,7 @@ artifacts:
     promotable: true
     sections: [Overview & Goals, High-Level Architecture, Components,
                Data Flows, Interfaces/APIs, Data & Storage]
+    protected: [3, 5]      # Components and Interfaces/APIs — the spine a correction may not touch
     note: |
       RESOLVED: the techspec was not feature design — it was a PACKAGE of the
       outputs of 7 agents, at feature scope. It became `techspec-team` (see
@@ -653,9 +661,12 @@ artifacts:
       the verdict HERE; the owner reads it and moves their own status.
 
       What prevents self-approval: the owner may only go to `approved` if
-      there is an `approved` verdict newer than their last edit — and
-      `inputs[].hash` already provides that comparison. Edited after the
-      review, the verdict no longer counts.
+      there is an `approved` — or, since 1.19.0, `approved_with_comments` —
+      verdict newer than their last edit, and `inputs[].hash` already
+      provides that comparison. Edited after the review, the verdict no
+      longer counts. A with-comments verdict satisfies WITH the comments as
+      derived declared debt: status surfaces every standing one on every
+      run, so nothing is hidden and nobody maintains a list.
 
       It checks CONFORMANCE, not correctness: "does the design respect
       security-design §3?" is its question; "is the design secure?" belongs
@@ -920,6 +931,7 @@ artifacts:
       target: "{target.tasksRoot}prd-{ws}/slos.md"
     sections: [Critical Journeys, SLIs, SLOs, Error Budget, Alerts,
                Log & Trace, Cardinality & Cost, Dashboards, Assumptions & Gaps]
+    protected: [2, 3, 4]   # SLIs, SLOs, Error Budget — thresholds ARE the contract (the p95 case)
     note: |
       The name is `slos` but the content is larger — and the SLO is the
       spine: without a number, a window and a measurement point, nothing else

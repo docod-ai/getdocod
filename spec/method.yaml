@@ -1,4 +1,4 @@
-specVersion: "1.18.0"
+specVersion: "1.19.0"
 
 # =============================================================================
 # LAYER 1 — METHOD  ·  NEUTRAL
@@ -404,7 +404,8 @@ rules:
   - "An `immutable` artifact never goes from approved back to review: a new one is created with `supersedes`."
   - "Status is declared in the artifact's own frontmatter — never in a central index, which desynchronizes."
   - "Whoever moves the status is the artifact's OWNER. Nobody writes status on someone else's artifact."
-  - "Transitioning to `approved` requires an `approved` verdict from a gate agent, newer than the artifact's last edit (compare via `inputs[].hash`). Without that, the owner does not promote — not even themselves."
+  - "Transitioning to `approved` requires an `approved` OR `approved_with_comments` verdict from a gate agent, newer than the artifact's last edit (compare via `inputs[].hash`). Without that, the owner does not promote — not even themselves. (1.19.0, the author's graduated-gate decision: with-comments SATISFIES — the comments become DERIVED declared debt, surfaced by status on every run; before this, a one-cell fix on a with-comments artifact re-paid the full ceremony and still needed a waiver.)"
+  - "The CORRECTION class (1.19.0): a factual, evidenced, no-semantic-change edit to an approved artifact is re-approved by CONFIRMATION (`approve --correction --reason`), not re-review — and the MACHINE delimits the class, never the author: the edit must stay inside the recorded envelope (same section count, same heading structure, same ID inventory, same inputs[] set, protected spine untouched). Outside the envelope, the refusal names the broken leg and the full ceremony applies. Inside it, the confirmation is still a recorded human act, and the downstream live pins re-pin automatically — the radius executed instead of waived."
 
 who_approves: |
   The rule above resolves the contradiction that was open: the status lives in
@@ -435,6 +436,8 @@ approval:
     by:           "who approved — role or name"
     at:           "when (ISO date)"
     content_hash: "sha256 of the approved content, excluding the frontmatter"
+    envelope:     "structural fingerprint of what was blessed (1.19.0): section count, heading-structure hash, explicit ID inventory, inputs[] set hash, and a hash per protected section — recorded so `approve --correction` can compare the CURRENT document against what the approval actually covered, without a VCS"
+    correction:   "true when this approval was recorded through `approve --correction` — confirmed inside the envelope, not re-reviewed; correction_reason and previous {by, at} ride with it"
   rules:
     - "Status `approved` is only VALID while content_hash matches the current content."
     - "Edited after approval → the approval no longer holds, and the `status` shows it. The hash remembers; nobody has to."

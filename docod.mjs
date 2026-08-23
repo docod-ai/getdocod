@@ -259,15 +259,17 @@ function possibleActions(estado, agents) {
         const aceitos = new Set(r.status || []);
         const tem = okStatus[r.artifact] || new Set();
         if (![...tem].some(s => aceitos.has(s))) {
-          let falta = `${r.artifact} in [${[...aceitos].sort().map(s => `'${s}'`).join(", ")}]` + (r.waivable ? " (waivable)" : "");
-          // The approved_with_comments limbo, named instead of paid in user
-          // attention: the gate compares literally with 'approved', so a
-          // with-comments verdict can never satisfy it without a fresh clean
-          // re-review. When that is the state, the waiver is the DESIGNED
-          // path — debt recorded, gate honest — not a shortcut the user has
-          // to arbitrate. Say so, once, where the decision is made.
-          if (r.waivable && aceitos.has("approved") && (verdicts[r.artifact] || new Set()).has("approved_with_comments"))
-            falta += " — verdict is 'approved_with_comments': the gate compares literally, so the WAIVER is the designed path here (record it; the comments stay as declared debt), not a bypass";
+          // The approved_with_comments limbo, CLOSED by the author (1.19.0,
+          // the graduated-gate decision): a standing with-comments verdict
+          // SATISFIES a gate that asks for 'approved'. The comments do not
+          // vanish — they are DERIVED declared debt, surfaced by status on
+          // every run (nobody maintains a list; the standing verdict IS the
+          // list). Before this, a one-cell fix on a with-comments design
+          // re-triggered the full ceremony and still demanded a waiver,
+          // because the gate compared literally — the field's "vai e vem".
+          if (aceitos.has("approved") && (verdicts[r.artifact] || new Set()).has("approved_with_comments"))
+            continue;
+          const falta = `${r.artifact} in [${[...aceitos].sort().map(s => `'${s}'`).join(", ")}]` + (r.waivable ? " (waivable)" : "");
           faltas.push([falta, Boolean(r.waivable)]);
         }
       }
@@ -345,6 +347,22 @@ function cmdStatus(root, ws = null) {
     for (const a of avisos) console.log(a);
   }
 
+  // DECLARED DEBT — derived, never maintained (1.19.0): every standing
+  // approved_with_comments verdict now SATISFIES downstream gates, and the
+  // comments become debt the status surfaces on every run. Hiding one would
+  // break "never lie"; asking anyone to keep a list would break "derived".
+  {
+    const debt = [];
+    for (const [k, v] of Object.entries(estado))
+      for (const [p, , , verd] of v)
+        if (verd === "approved_with_comments") debt.push([k, p]);
+    if (debt.length) {
+      console.log(`\nDECLARED DEBT — ${debt.length} standing 'approved_with_comments' verdict(s) (they satisfy gates; the comments remain owed):`);
+      for (const [k, p] of debt.slice(0, 8)) console.log(`  ◦ ${k}: ${p} — read the comments in the reviewer's record; closing them retires this line`);
+      if (debt.length > 8) console.log(`  … and ${debt.length - 8} more`);
+    }
+  }
+
   // EXTERNAL QUESTIONS — the single queue (artifacts.yaml: external-questions).
   // Nobody inside the project can close these; scattered across per-agent
   // logs they are the easiest thing to lose. The status chases them.
@@ -414,14 +432,141 @@ function cmdStart(root) {
   return 0;
 }
 
-function cmdApprove(root, arquivo, by, opt) {
+/* ─────────────────────────────────── the approval envelope (graduated-gate) */
+
+// The approval never kept the text it blessed — only its hash — so "compare
+// against the approved version" was impossible without a VCS the runtime
+// refuses to depend on. The ENVELOPE closes that: every approval records a
+// structural FINGERPRINT of what it blessed (section count, heading
+// structure, the explicit ID inventory, the inputs[] set, and a hash per
+// PROTECTED section — the document's spine, declared per artifact in the
+// registry by ordinal, language-neutral). `approve --correction` compares
+// the CURRENT document against the recorded fingerprint: the machine
+// delimits the class, never the author ("just a correction" is the fork
+// that burned 1.3.0). Inside the envelope, confirmation stays a HUMAN act
+// with a recorded reason; outside it, the refusal NAMES the broken leg and
+// the full ceremony applies. Diff size is deliberately not a leg: flipping
+// `100ms` to `300ms` is one character and a semantic change — structure
+// catches spines, thresholds do not.
+
+function sha16(s) {
+  return "sha256:" + crypto.createHash("sha256").update(s, "utf-8").digest("hex").slice(0, 16);
+}
+
+function computeEnvelope(caminho, art) {
+  const raw = fs.readFileSync(caminho, "utf-8");
+  let body = raw, fm = {};
+  if (raw.startsWith("---")) {
+    const i2 = fmClose(raw);
+    if (i2 >= 0) { try { fm = yload(raw.slice(3, i2)) || {}; } catch { /* envelope of an unparseable fm: body only */ } body = raw.slice(i2 + 3); }
+  }
+  const idRx = /\b([A-Z]{2,6}(?:-[A-Z]{2,6})*-\d{1,4})\b/g;  // the COVERAGE grammar — one ID vocabulary, not two
+  const inputsTuples = (Array.isArray(fm.inputs) ? fm.inputs : [])
+    .map((e) => [e?.artifact ?? "", e?.key ?? "", e?.external ? "ext" : "", e?.lineage ?? ""].join("|")).sort();
+  const env = {
+    sections: (body.match(/^## /gm) || []).length,
+    headings: sha16((body.match(/^#{2,3} .*$/gm) || []).join("\n")),
+    ids: [...new Set([...body.matchAll(idRx)].map((m) => m[1]))].sort(),
+    inputs: sha16(inputsTuples.join("\n")),
+  };
+  const prot = Array.isArray(art?.protected) ? art.protected : [];
+  if (prot.length) {
+    const parts = body.split(/^## /m).slice(1);
+    env.protected = {};
+    for (const ord of prot) if (parts[ord - 1] != null) env.protected[String(ord)] = sha16(parts[ord - 1]);
+  }
+  return env;
+}
+
+function envelopeDiff(rec, cur, art) {
+  const broken = [];
+  if (rec.sections !== cur.sections) broken.push(`section count changed: ${rec.sections} → ${cur.sections}`);
+  if (rec.headings !== cur.headings) broken.push("heading structure changed — a section was renamed, reordered, added or removed");
+  const recIds = new Set(rec.ids || []), curIds = new Set(cur.ids || []);
+  const gone = [...recIds].filter((x) => !curIds.has(x)), born = [...curIds].filter((x) => !recIds.has(x));
+  if (gone.length || born.length)
+    broken.push(`the ID inventory changed${gone.length ? ` — vanished: ${gone.join(", ")}` : ""}${born.length ? ` — new: ${born.join(", ")}` : ""}`);
+  if (rec.inputs !== cur.inputs) broken.push("the declared inputs[] set changed — an edge was added or dropped");
+  for (const [ord, h] of Object.entries(rec.protected || {}))
+    if ((cur.protected || {})[ord] !== h)
+      broken.push(`protected section ${ord} ('${art?.sections?.[ord - 1] ?? "#" + ord}') changed — that is the document's spine, and a spine edit takes the full ceremony`);
+  return broken;
+}
+
+function repinDownstream(root, inst, arts, srcKey, oldHash, newHash) {
+  // The correction's radius, executed instead of waived: every LIVE edge
+  // that pinned the corrected artifact's previous hash moves to the new one.
+  // Snapshot artifacts and snapshot/external edges are never touched (a
+  // record stays a record — the rebless rule). Frontmatter only: downstream
+  // approvals hash the body and stay valid by construction.
+  let n = 0;
+  for (const [, a] of Object.entries(arts)) {
+    if (a.lineage === "snapshot" || a.format === "yaml") continue;
+    for (const p of findInstances(a, root, inst, "*")) {
+      if (!p.endsWith(".md") || !fs.existsSync(p) || !fs.statSync(p).isFile()) continue; // the glob can match directories — projectState's guard, here too
+      const [fm] = readFrontmatter(p);
+      if (!Array.isArray(fm.inputs)) continue;
+      let touched = false;
+      for (const e of fm.inputs) {
+        if (e?.artifact !== srcKey || e.lineage === "snapshot" || e.external) continue;
+        if (e.hash !== oldHash) continue;
+        e.hash = newHash;
+        e.repinned_by = `correction:${srcKey}:${new Date().toISOString().slice(0, 10)}`;
+        touched = true;
+      }
+      if (touched) { writeFrontmatter(p, fm); n++; console.log(`  ↻ re-pinned ${path.relative(root, p)} (live edge on ${srcKey})`); }
+    }
+  }
+  console.log(n
+    ? `  ${n} downstream file(s) re-pinned — frontmatter only; their approvals hash the body and stay valid.`
+    : "  no downstream live pin held the previous hash — nothing to re-pin.");
+}
+
+function cmdApprove(root, arquivo, by, opt, correction = false) {
   const caminho = path.isAbsolute(arquivo) ? arquivo : path.join(root, arquivo);
   if (!fs.existsSync(caminho)) die(`✗ does not exist: ${arquivo}`);
   const [fm] = readFrontmatter(caminho);
   if ((fm.status || "draft") === "draft")
     console.log("⚠ it is in draft — the flow is draft → review → approved. Approving anyway (recorded).");
   // agent gate before the human one, when it exists
-  const { arts } = loadModel(root);
+  const { inst, arts } = loadModel(root);
+  let selfKey = null, selfArt = null;
+  for (const [k, a] of Object.entries(arts))
+    if (findInstances(a, root, inst, "*").includes(caminho)) { selfKey = k; selfArt = a; break; }
+  if (correction) {
+    const rel = path.relative(root, caminho);
+    const reason = opt("--reason");
+    if (!reason || !reason.trim())
+      die('✗ --correction requires --reason "<the factual fix and its evidence>" — a correction is RECORDED, never waved through');
+    const ap = fm.approval;
+    if (!ap?.content_hash) die("✗ --correction needs a prior approval — there is nothing to correct against");
+    const h0 = sha256Body(caminho);
+    if (ap.content_hash === h0) die("✗ content is unchanged since the approval — nothing to correct");
+    if (!ap.envelope)
+      die("✗ this approval predates the envelope (1.19.0): the machine has no fingerprint to delimit the class.\n  Re-approve once through the full door; corrections become available from then on.");
+    if (!selfArt) die("✗ unregistered artifact — the envelope contract belongs to registered artifacts; full ceremony applies");
+    const cur = computeEnvelope(caminho, selfArt);
+    const broken = envelopeDiff(ap.envelope, cur, selfArt);
+    if (broken.length) {
+      console.log("✗ NOT a correction — the machine delimits the class, never the author. Broken leg(s):");
+      for (const b of broken) console.log(`  ✗ ${b}`);
+      console.log("  The full ceremony applies:");
+      console.log(`    docod.mjs approve ${rel} --by ${by} --impact <impact-file> | --no-impact "<why no radius>"`);
+      return 1;
+    }
+    console.log(`ℹ correction confirmed INSIDE the envelope — structure, IDs, inputs and protected spine unchanged.`);
+    console.log(`  Read the prose diff anyway (confirmation is yours, not the machine's): git log -p --since="${ap.at ?? ""}" -- ${rel}`);
+    fm.status = "approved";
+    fm.approval = {
+      by, at: new Date().toISOString().slice(0, 10), content_hash: h0, envelope: cur,
+      correction: true, correction_reason: reason.trim(),
+      previous: { by: ap.by ?? "?", at: ap.at ?? "?" },
+    };
+    writeFrontmatter(caminho, fm);
+    console.log(`✓ corrected & re-approved by ${by} · ${h0} — recorded as CORRECTION (confirmed, not re-reviewed)`);
+    repinDownstream(root, inst, arts, selfKey, ap.content_hash, h0);
+    return 0;
+  }
   const gates = ["system-design", "data-design", "api-contract", "infrastructure-design", "security-design", "slos"];
   const nomeBase = path.basename(caminho);
   for (const gk of gates)
@@ -459,7 +604,8 @@ function cmdApprove(root, arquivo, by, opt) {
   }
   const h = sha256Body(caminho);
   fm.status = "approved";
-  fm.approval = { by, at: new Date().toISOString().slice(0, 10), content_hash: h };
+  fm.approval = { by, at: new Date().toISOString().slice(0, 10), content_hash: h,
+    ...(selfArt ? { envelope: computeEnvelope(caminho, selfArt) } : {}) };
   writeFrontmatter(caminho, fm);
   console.log(`✓ approved by ${by} · ${h}`);
   console.log("  Validity is mechanical: edit the content and the approval invalidates itself.");
@@ -910,7 +1056,8 @@ function cmdVerify(root, file) {
   if (fm.status === "approved") {
     if (!fm.approval?.content_hash) fails.push("approved without approval.content_hash");
     else if (fm.approval.content_hash !== sha256Body(p)) fails.push("approval hash MISMATCH — content changed after the approve");
-    else oks.push("approval hash matches the current content");
+    else oks.push("approval hash matches the current content" +
+      (fm.approval.correction ? ` — recorded as CORRECTION by ${fm.approval.by ?? "?"} on ${fm.approval.at ?? "?"} (confirmed inside the envelope, not re-reviewed; reason on record)` : ""));
   }
   let selfKey = null, selfArt = null;
   for (const [k, a] of Object.entries(arts))
@@ -1624,8 +1771,8 @@ function main() {
     }
     case "approve": {
       const by = opt("--by");
-      if (!pos[0] || !by) die("usage: docod.mjs approve <file> --by <who>");
-      return cmdApprove(root, pos[0], by, opt);
+      if (!pos[0] || !by) die('usage: docod.mjs approve <file> --by <who> [--correction --reason "..."]');
+      return cmdApprove(root, pos[0], by, opt, argv.includes("--correction"));
     }
     case "ws": {
       const sub = pos[0];

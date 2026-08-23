@@ -156,7 +156,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.18.0"
+specVersion: "1.19.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -565,7 +565,7 @@ gen_cli start    "Where to enter, given what already exists" \
 gen_cli continue "Resume a workstream: focused status + next steps" \
   "Run \`$PY continue \$ARGUMENTS\`. More than one valid path → present ALL of them; the user decides."
 gen_cli approve  "The human gate: verdict with a hash, moves the status" \
-  "Run \`$PY approve \$ARGUMENTS --by <whoever the user says>\`. NEVER without an explicit request — approving is their act. Re-approving AMENDED content requires --impact <impact-file> or --no-impact \"<reason>\" (the runtime refuses otherwise): touched doc means mapped radius, mechanically. Then show the \`status\`."
+  "Run \`$PY approve \$ARGUMENTS --by <whoever the user says>\`. NEVER without an explicit request — approving is their act. Re-approving AMENDED content requires --impact <impact-file> or --no-impact \"<reason>\" (the runtime refuses otherwise): touched doc means mapped radius, mechanically. For a FACTUAL fix with no semantic change there is the light door: \`$PY approve <file> --by <who> --correction --reason \"...\"\` — the machine checks the edit stays inside the approval's recorded envelope (structure, IDs, inputs, protected spine) and refuses NAMING the broken leg if not; inside it, confirmation replaces re-review and downstream pins re-pin automatically. Then show the \`status\`."
 gen_cli ws       "Workstreams: list, done, abandon (reason mandatory)" \
   "Run \`$PY ws \$ARGUMENTS\`. Abandoning requires --reason — without one the command refuses, and it is right to."
 gen_cli report   "HTML dashboard: documents, task kanban, flow, workstreams" \

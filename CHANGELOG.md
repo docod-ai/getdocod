@@ -5,6 +5,55 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.19.0] — 2026-08-23
+
+The graduated-gate release — the oldest field pain in the ledger, resolved.
+Since the 1.5.0 review this entry was the named relief valve: every honesty
+release added catches arriving at the exact bottleneck nobody widened, and
+the 2026-08-06 transcript priced it ("um vai e vem que confunde e faz o
+usuario querer desistir" — a one-cell fix re-paying the full ceremony plus a
+waiver). Two halves, both author-decided.
+
+Added: the approval ENVELOPE. The approval never kept the text it blessed,
+only its hash — so "compare against the approved version" was impossible
+without a VCS the runtime refuses to depend on. Now every approval records a
+structural fingerprint of what it blessed: section count, heading-structure
+hash, the EXPLICIT ID inventory (explicit so a refusal can say "RF-002
+vanished" instead of "hash differs"), the inputs[] set, and a hash per
+PROTECTED section — the document's spine, declared per artifact in the
+registry by ordinal (frd, slos, system-design to start; ordinals are
+language-neutral, like the count check).
+
+Added: `approve --correction --reason`. A factual, no-semantic-change edit
+is re-approved by CONFIRMATION instead of re-review — and the MACHINE
+delimits the class, never the author ("just a correction" is the fork that
+burned 1.3.0). Outside the envelope the refusal NAMES the broken leg;
+inside it the confirmation is still a recorded human act (mandatory reason,
+previous approver kept, `correction: true` in the record, verify shows the
+provenance), and every downstream LIVE pin on the previous hash re-pins
+automatically with `repinned_by` stamped — the radius executed instead of
+waived. The honest boundary, on record: `p95 100→300ms` and "3 steps→4" are
+structurally identical one-character edits; the envelope separates them by
+WHERE they live (a protected spine takes the full ceremony; prose takes the
+confirmation), and the semantic judgment inside the envelope stays human.
+Diff size is deliberately not a leg. Approvals predating the envelope
+refuse with the recipe. Cosmetic bulk keeps its own door (rebless).
+
+Changed: the approved_with_comments limbo, closed by the author. A standing
+with-comments verdict now SATISFIES a gate that asks for approved — and the
+comments become DERIVED declared debt: status surfaces every standing
+with-comments verdict on every run (nobody maintains a list; the standing
+verdict IS the list; hiding one would break "never lie"). The 1.12.0
+message honesty is retired along with the ceremony it was softening.
+
+The planted battery caught a real bug in the fix itself, again: the
+downstream re-pin scan hit a directory the home-grown glob matched and
+crashed mid-sweep — projectState always guarded with isFile and the new
+scan did not; guard applied. Third time the discipline pays for itself in
+one month.
+
+specVersion → 1.19.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.18.0] — 2026-08-23
 
 The regulated-profile release — the last two entries of the playbook

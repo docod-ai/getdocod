@@ -1,4 +1,4 @@
-specVersion: "1.18.0"
+specVersion: "1.19.0"
 
 # =============================================================================
 # LAYER 2 — COMMANDS  ·  NEUTRAL
@@ -142,13 +142,28 @@ commands:
         On an artifact in `review` (or `draft`, with a warning):
 
           1. computes the content hash (excluding the frontmatter itself)
-          2. writes into the frontmatter:  approval: { by, at, content_hash }
+          2. writes into the frontmatter:  approval: { by, at, content_hash,
+             envelope } — the envelope is the structural fingerprint of what
+             was blessed (sections, headings, ID inventory, inputs set,
+             protected spine), recorded for the correction door below
           3. moves status → approved
 
         Validity is MECHANICAL: approved only counts while content_hash matches
         the current content. Edited after approval → `status` shows "invalid
         approval — content changed". Nobody has to remember anything; the hash
         remembers.
+
+        THE CORRECTION DOOR (1.19.0, graduated-gate): `--correction --reason
+        "..."` re-approves a factual, no-semantic-change edit by CONFIRMATION
+        instead of re-review. The MACHINE delimits the class against the
+        recorded envelope — same structure, same IDs, same inputs, protected
+        spine untouched — and refuses NAMING the broken leg otherwise ("just
+        a correction" from the author is the fork that burned 1.3.0). Inside
+        the envelope the confirmation is still a recorded human act with a
+        mandatory reason, and every downstream LIVE pin on the previous hash
+        re-pins automatically: the radius executed, not waived. Cosmetic
+        bulk keeps its own door (rebless); spine edits keep the full
+        ceremony (--impact | --no-impact).
 
         For artifacts with an agent gate (design-review, qa, codereview),
         approve REQUIRES an `approved` verdict from the gate newer than the
