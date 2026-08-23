@@ -5,6 +5,57 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.17.0] — 2026-08-23
+
+The config-evals release — the refused-rule doctrine gets its mechanism. The
+1.12.0 field case (a TDD rule written, the model still declining tests, only
+the measured coverage catching it) shipped as doctrine: a rule the producer
+holds is an intention; only a check the producer does not control is a fact.
+The doctrine had no machine. The vendor playbook operationalized the same
+idea in public (evals in CI on any change to agent configuration, gated on
+pass rate, every incident a permanent regression eval); this release adopts
+it in the method's idiom.
+
+Added: the `evals` artifact (42nd; owner: qa-executor) — the
+agent-configuration regression suite. Case convention, watched by verify:
+each case is a `### EV-nn — title` block with three LABELED lines — `Task:`
+(a REAL task from the repo's history, an incident or a rule's motivating
+case; a synthetic prompt tests the prompt, not the configuration),
+`Acceptance:` (checkable without asking the author), `Origin:` (what earned
+the case). The labels are method vocabulary, never translated; the content
+speaks the instance's language. EV ids never vanish: a retired case keeps
+its heading marked `retired:` with the reason, so a hole in the sequence IS
+a silent deletion — the queue's computability lesson (1.13.0), applied to a
+markdown suite. Ownership is deliberate: qa-executor owns it BECAUSE
+rules-factory must not — the producer of the rules cannot own the check
+that judges its own changes.
+
+Added: the verbs. `define_evals` (derive cases from postmortems, bugs and
+the rules' motivating incidents; every incident has a case or a declared
+gap in ## Coverage & Gaps) and `run_evals` (the run MEASURED, never
+narrated: per case pass/fail with command and output; the pass rate names
+its denominator; a failing case is a finding routed by finding_urgency, the
+gate stays human). rules-factory's `regenerate_rules` gains the evidence
+postcondition that closes the loop: when a suite exists for the scope, an
+amendment ships with the suite's RUN attached — cited from the
+qa-executor's record, measured by a verifier the producer does not
+control; no suite yet is a DECLARED gap, never a silent pass. A rule born
+from an incident proposes its eval case in the same delivery.
+
+Added: the evals checks in `verify` — duplicate EV ids fail, a sequence
+hole fails naming the missing ids, a case without its labeled lines warns
+(labels only: matching translated content would false-fail, the
+section-name lesson), retired cases counted out loud.
+
+And the bundle takes its own medicine: CONTRIBUTING now names the smoke
+battery as this repo's config-eval — validate-layers at 0 warnings plus the
+governance/queue/observe smoke after any spec, agent or runtime change,
+with every fix landing its bug planted first. The sentence "configuration
+steers the machine, so it gets the regression testing code gets" applies to
+this repo before it applies to anyone's.
+
+specVersion → 1.17.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.16.0] — 2026-08-23
 
 The observe release — OBSERVE closes in execution, not on paper. Until now

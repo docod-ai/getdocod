@@ -1,4 +1,4 @@
-specVersion: "1.16.0"
+specVersion: "1.17.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -794,6 +794,49 @@ artifacts:
     scope: [target]
     path:
       target: "{target.tasksRoot}prd-{ws}/bugs.md"
+
+  evals:
+    stage: confirm
+    owner: qa-executor
+    optional: true
+    delivers: "The agent-configuration regression suite: real tasks with acceptance criteria, run when the rules that steer the agents change"
+    scope: [project, target]
+    path:
+      project: "{docsRoot}quality/evals.md"
+      target: "{target.tasksRoot}evals.md"
+    sections: [Scope, Cases, Coverage & Gaps]
+    note: |
+      The operationalization of the refused-rule doctrine (agent.yaml
+      § verifier_discipline, 1.12.0): a rule the producer holds is an
+      intention; only a check the producer does not control is a fact. The
+      rules artifacts steer every agent — a change to them deserves the
+      regression testing code gets.
+
+      Case convention (verify watches it): each case under ## Cases is a
+      `### EV-nn — title` block carrying three LABELED lines — `Task:` (a
+      REAL task from the repo's history, an incident or a rule's motivating
+      case; a synthetic prompt tests the prompt, not the configuration),
+      `Acceptance:` (checkable without asking the author: tests pass, lint
+      clean, a named policy followed) and `Origin:` (the incident,
+      postmortem, rule or field case that earned it). The three labels are
+      METHOD VOCABULARY (never translated, like EV-nn itself); the content
+      after them speaks the instance's language. EV ids are sequential and
+      NEVER vanish: a retired case keeps its heading, marked `retired:` with
+      the reason — a hole in the sequence is a silent deletion, and verify
+      fails it.
+
+      Ownership is deliberate: qa-executor owns the suite BECAUSE
+      rules-factory must not — the producer of the rules cannot own the
+      check that judges its own changes (self-attestation, the 1.9.0
+      lesson). rules-factory PROPOSES cases when a rule is born from an
+      incident; the qa-executor records them. Every incident in the
+      postmortems is a case candidate; an incident with no eval is a
+      declared gap in ## Coverage & Gaps, never silence.
+
+      RUNNING the suite binds outside the method (the harness/CI executes
+      the cases; the adapter names how). This artifact declares WHAT a pass
+      means; the run's OUTPUT is the evidence the method demands wherever a
+      rules amendment crosses a gate.
 
   pr:
     stage: confirm

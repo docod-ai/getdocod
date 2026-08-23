@@ -7,10 +7,55 @@ capabilities: [shell, code_search, browser_e2e, a11y_audit, doc_lookup]
 skills: [verifiable-requirements, measurable-goals, schema-migration]
 contract:
   owns:
-    artifact: [qa, bugs]
+    artifact: [qa, bugs, evals]
     immutable: false
   triggers: [task-executor, impact-analysis, adr]
   actions:
+    define_evals:
+      stage: confirm
+      scope: [project, target]
+      requires: []
+      reads: [evals, postmortem, qa, bugs, coding-standards, testing-guidelines,
+              cicd-guidelines, security-rules, decisions, code]
+      writes:
+        artifact: evals
+        status: draft
+      capabilities: [code_search, shell]
+      postconditions:
+        - "deterministic: Every case is a `### EV-nn — title` block with `Task:`, `Acceptance:` and `Origin:` labeled lines (labels are method vocabulary, never translated; the content speaks the instance's language); EV ids unique and sequential"
+        - "judgment: Every Task is a REAL task — from the repo's history, an incident, or a rule's motivating case; a synthetic prompt tests the prompt, not the configuration"
+        - "deterministic: Every Acceptance is checkable without asking its author — tests pass, lint clean, a named policy followed"
+        - "judgment: Every incident in the postmortems has a case or a declared gap in ## Coverage & Gaps — an incident without an eval happens again"
+        - "deterministic: A retired case keeps its heading and id, marked `retired:` with the reason — an id that vanishes is a silent deletion and verify fails the hole"
+      note: |
+        This suite exists so a rules change is judged by a check its producer
+        does not control (verifier_discipline: the refused rule). You own it
+        precisely because rules-factory must not — its amendments attach YOUR
+        suite's run as evidence. rules-factory proposes cases when a rule is
+        born from an incident; recording them is yours.
+
+    run_evals:
+      stage: confirm
+      scope: [project, target]
+      requires:
+        - artifact: evals
+          status: [approved, draft]
+          waivable: false
+      reads: [evals, coding-standards, testing-guidelines, cicd-guidelines, security-rules]
+      writes:
+        artifact: qa
+        status: draft
+      capabilities: [shell, code_search]
+      postconditions:
+        - "evidence: The run is MEASURED, never narrated — per case, pass or fail with the command and its output attached; an agent saying a case passed is not evidence, the case's own output is"
+        - "deterministic: The pass rate names its denominator: N of M active cases, retired cases excluded and counted separately"
+        - "judgment: A failing case blocks nothing by itself — it is a FINDING routed to whoever owns the change that broke it (finding_urgency decides now-or-drained); the gate stays human"
+      note: |
+        The harness/CI executes; this action records the run as a dated qa
+        entry. When the trigger was a rules amendment, the amendment's
+        delivery cites this record — that is the evidence chain, and it only
+        works because neither end of it is the rules' producer.
+
     run_qa:
       stage: confirm
       scope: [target]

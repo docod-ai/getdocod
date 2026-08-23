@@ -412,31 +412,6 @@ migration:
         territory, and the reference implementation to compare against is
         public now.
 
-    - id: config-evals
-      severity: minor
-      issue: |
-        rules-factory generates rules and NOTHING verifies that a rule
-        change kept the agents' behavior — the refused-rule case
-        (verifier_discipline, 1.12.0: a TDD rule written, the model still
-        declining tests, only measured coverage catching it) is doctrine
-        without a mechanism. The playbook operationalizes it: evals run in
-        CI on any change to agent configuration, gated on pass rate, every
-        incident becoming a permanent regression eval. We hold the doctrine;
-        they hold the practice.
-      decision: |
-        Adopt as the smallest honest mechanism, buildable next: (a) an
-        `evals` registered artifact — a suite of task + acceptance-criteria
-        pairs per target, owner to be chosen (candidate: qa-executor as
-        owner, rules-factory as co-writer for rule-derived cases); (b) an
-        `evidence:` postcondition on rules-factory's amendments: a change to
-        a rules artifact ships with the suite's run attached (command +
-        output), waivable with the waiver recorded — the gate stays human,
-        the evidence stays measured-not-trusted; (c) every field incident
-        that produced a bundle fix already gets a planted-bug test — name
-        the same discipline for INSTANCE rules in the rules templates.
-        Bundle-side, the smoke battery IS the bundle's config-eval:
-        CONTRIBUTING should say so in those words.
-
     - id: adapter-enforcement
       severity: minor
       issue: |
@@ -562,6 +537,39 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: config-evals
+      was: minor
+      issue: |
+        rules-factory generated rules and NOTHING verified that a rule
+        change kept the agents' behavior — the refused-rule case
+        (verifier_discipline, 1.12.0: a TDD rule written, the model still
+        declining tests, only measured coverage catching it) was doctrine
+        without a mechanism. The vendor playbook operationalized the same
+        idea in public (evals in CI on config changes, gated on pass rate,
+        every incident a permanent eval): we held the doctrine, they held
+        the practice.
+      resolution: |
+        1.17.0, on the recorded design. The `evals` artifact (42nd, owner
+        qa-executor — DELIBERATELY not rules-factory: the producer of the
+        rules cannot own the check that judges its own changes). Case
+        convention watched by verify: `### EV-nn — title` blocks with
+        `Task:`/`Acceptance:`/`Origin:` labeled lines (labels are method
+        vocabulary; content speaks the instance's language); EV ids never
+        vanish — retired cases keep their heading marked `retired:`, so a
+        sequence hole fails as a silent deletion (the queue's computability
+        lesson on a markdown suite). Verbs: qa-executor.define_evals (every
+        postmortem incident has a case or a declared gap) and run_evals
+        (measured never narrated; denominator named; a failing case is a
+        finding routed by finding_urgency — the gate stays human).
+        rules-factory.regenerate_rules gained the closing evidence
+        postcondition: amendment ships with the suite's run cited from the
+        qa-executor's record; no suite = declared gap, never a silent pass;
+        an incident-born rule proposes its eval case in the same delivery.
+        CONTRIBUTING names the smoke battery as the bundle's own
+        config-eval. Running in CI binds in the adapter/instance (the
+        harness executes; the method declares what a pass means) — that
+        wiring is deployment, not method, and stays out on purpose.
+
     - id: frontmatter-delimiter
       was: major
       issue: |

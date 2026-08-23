@@ -1017,6 +1017,40 @@ function cmdVerify(root, file) {
         oks.push(`${bd.metrics.length} metric(s), ${nb} band(s): keys unique, grammar parses, severities canonical`);
     }
   }
+  // THE EVALS CHECKS (1.17.0) — the suite's ids are the contract: a case
+  // never vanishes (a retired one keeps its heading, marked `retired:`), so
+  // a hole in the EV sequence IS a silent deletion — the same computability
+  // the queue taught in 1.13.0. The three case labels are method vocabulary;
+  // their content speaks the instance's language, so only the LABELS are
+  // watched — matching translated content would false-fail (the section-name
+  // lesson).
+  if (selfKey === "evals") {
+    const heads = [...body0.matchAll(/^### +EV-(\d+)\b.*$/gm)];
+    if (heads.length) {
+      const nums = heads.map((h) => parseInt(h[1], 10));
+      const width = Math.max(...heads.map((h) => h[1].length));
+      const label = (x) => "EV-" + String(x).padStart(width, "0");
+      const dup = nums.filter((v, i) => nums.indexOf(v) !== i);
+      if (dup.length) fails.push(`duplicate case id(s): ${[...new Set(dup)].map(label).join(", ")} — two cases answering one id judges neither`);
+      const uniq = [...new Set(nums)].sort((a, b) => a - b);
+      const missing = [];
+      for (let x = uniq[0]; x <= uniq[uniq.length - 1]; x++) if (!uniq.includes(x)) missing.push(x);
+      if (missing.length) fails.push(`hole in the EV sequence: missing ${missing.map(label).join(", ")} — a case never vanishes; a retired one keeps its heading marked \`retired:\``);
+      if (!dup.length && !missing.length) oks.push(`${heads.length} case(s), EV ids unique and gapless (${label(uniq[0])}–${label(uniq[uniq.length - 1])})`);
+      // per-case labeled lines: the block runs to the next ### or section
+      const blocks = body0.split(/^### /m).slice(1);
+      let retired = 0;
+      for (const b of blocks) {
+        const m = /^EV-(\d+)\b/.exec(b);
+        if (!m) continue;
+        const idv = label(parseInt(m[1], 10));
+        if (/^retired:/m.test(b)) { retired++; continue; }
+        for (const lbl of ["Task:", "Acceptance:", "Origin:"])
+          if (!b.includes(lbl)) warns.push(`${idv}: no \`${lbl}\` line — the label is method vocabulary (content localizes; labels do not)`);
+      }
+      if (retired) oks.push(`${retired} retired case(s) — heading kept, id preserved`);
+    } else if (body0.trim()) warns.push("no `### EV-nn` case headings found — the suite's case convention is in artifacts.yaml § evals");
+  }
   // COMPLETENESS — the truncation detector. The contract (artifacts.yaml)
   // declares the MINIMUM sections; a run that died mid-write leaves fewer
   // `##` heads than the contract. COUNT, not names: instance docs are written

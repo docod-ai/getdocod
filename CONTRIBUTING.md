@@ -92,3 +92,26 @@ Humans decide whether a change is cosmetic, acceptable or worth the risk.
 A failure must first become expressible, classifiable and recordable.
 
 Only then can it become mechanically detectable.
+
+## The bundle's own config-eval
+
+The method now asks instances to regression-test their agent configuration
+(the `evals` artifact: a rules change ships with the suite's run attached).
+The bundle holds itself to the same law, and its suite already exists — by
+name, now, not just by habit:
+
+- `python3 validate-layers.py` must end `0 warning(s)` after ANY change to
+  spec/, agents/, rules/, adapters/ or the conductor contract;
+- the smoke pattern must stay green after any runtime or installer change:
+  install into a scratch directory, run the governance cycle
+  (prd → approve → amend → verify fails explained → rebless → verify ok),
+  the queue battery (concurrent `question add`, corrupted-queue refusal),
+  and `observe` over a bands fixture;
+- every fix lands with its bug PLANTED first: the planted case must fail on
+  the old code and pass on the new, in the same change. A check that was
+  never seen failing has never been tested.
+
+A change to the specs or agents is a configuration change, and configuration
+steers the machine — it gets the regression testing code gets. That sentence
+is the whole reason the `evals` artifact exists; it applies to this repo
+first.

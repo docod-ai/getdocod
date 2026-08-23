@@ -48,7 +48,7 @@ contract:
           status: [approved, draft]
           waivable: true
       reads: [coding-standards, testing-guidelines, cicd-guidelines, security-rules,
-              adr, code, codereview, impact-analysis, decisions]
+              adr, code, codereview, impact-analysis, decisions, evals]
       writes:
         artifact: [coding-standards, testing-guidelines, cicd-guidelines, security-rules]
         status: draft
@@ -58,6 +58,7 @@ contract:
         - "evidence: A rule struck down by a new ADR is removed, with the ADR cited"
         - "deterministic: A rule nobody follows is called out: it becomes a declared exception or it goes away"
         - "deterministic: A rule set that only grows does not pass — removing is part of the job"
+        - "evidence: When an `evals` suite exists for the scope, the amendment ships with the suite's RUN attached (the qa-executor.run_evals record cited: command and output, measured by a verifier this producer does not control); no suite yet is a DECLARED gap in the delivery, never a silent pass. A rule born from an incident PROPOSES its eval case to the qa-executor in the same delivery"
       note: |
         Regenerating is where the factory destroys work: the user edited the rule
         by hand, you run again and steamroll it. A derived rule you rewrite; a
