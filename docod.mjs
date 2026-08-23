@@ -682,6 +682,190 @@ function cmdQuestion(root, sub, pos, opt) {
   die('usage: docod.mjs question add --question "..." --owner <who> --asked-by <agent> [--blocking a,b]\n       docod.mjs question answer <id> --by <who> --answer "..."');
 }
 
+/* ─────────────────────────────────────── observe: bands over metric snapshots */
+
+// OBSERVE closes in execution, not on paper (1.16.0). The bands artifact is
+// the machine-read contract; the INSTANCE produces dated metric snapshots
+// ({docsRoot}ops/metrics/*.yaml — the runtime never collects); this command
+// derives everything FRESH on every run — baseline included — because
+// detection is the state and a state file would drift by tomorrow. Every
+// evaluation prints its numbers: a pass that shows its work, a violation
+// that names value, threshold and window. Old data is never used silently.
+
+const SEVERITIES = ["critical", "high", "medium", "low"];
+
+function parseBandWhen(s) {
+  // grammar: (over|under) <number>[sigma] — nothing looser parses. A band
+  // that does not parse is a config ERROR, never a silent skip.
+  const m = /^(over|under)\s+(\d+(?:\.\d+)?)(sigma)?$/.exec(String(s ?? "").trim());
+  return m ? { dir: m[1], n: parseFloat(m[2]), sigma: !!m[3] } : null;
+}
+
+function loadSnapshots(root, inst) {
+  const dir = path.join(root, docsRoot(inst), "ops", "metrics");
+  const files = [...globq(path.join(dir, "*.yaml")), ...globq(path.join(dir, "*.yml"))];
+  const snaps = [], broken = [];
+  for (const f of files) {
+    try {
+      const d = yload(fs.readFileSync(f, "utf-8"));
+      if (d && typeof d === "object" && d.collected_at && d.metrics && typeof d.metrics === "object")
+        snaps.push({ f, at: String(d.collected_at).slice(0, 10), metrics: d.metrics });
+      else broken.push({ f, why: "missing collected_at or metrics — see spec/artifacts.yaml § bands for the snapshot shape" });
+    } catch (e) { broken.push({ f, why: String(e.message).split("\n")[0] }); }
+  }
+  snaps.sort((a, b) => (a.at < b.at ? -1 : 1));
+  return { snaps, broken, dir };
+}
+
+const OBS_I18N = {
+  "en":    { sections: ["Anomaly", "Evidence", "Impact", "Recommendation", "Open Questions"],
+             gap: "GAP — owner judgment pending (observability.assess_observation fills this; the machine does not judge).",
+             anomaly: (n) => `${n} control-band violation(s) detected by \`docod.mjs observe\`. The numbers are in Evidence, verbatim.` },
+  "pt-BR": { sections: ["Anomalia", "Evidência", "Impacto", "Recomendação", "Questões em aberto"],
+             gap: "GAP — julgamento do dono pendente (observability.assess_observation preenche; a máquina não julga).",
+             anomaly: (n) => `${n} violação(ões) de banda de controle detectada(s) por \`docod.mjs observe\`. Os números estão em Evidência, verbatim.` },
+};
+
+function cmdObserve(root, record) {
+  const { inst, arts } = loadModel(root);
+  warnConfigGap(inst);
+  const bandsArt = arts.bands;
+  if (!bandsArt) die("✗ 'bands' is not in the artifact registry — the spec predates 1.16.0");
+  const bandFiles = findInstances(bandsArt, root, inst, "*");
+  console.log("OBSERVE — bands over snapshots, derived fresh (nothing is cached):\n");
+  if (!bandFiles.length) {
+    console.log(`  no bands declared — nothing to derive. The contract lives at ${docsRoot(inst)}ops/bands.yaml`);
+    console.log("  (spec/artifacts.yaml § bands has the schema; observability.define_bands is the owning action)");
+    return 0;
+  }
+  const { snaps, broken, dir } = loadSnapshots(root, inst);
+  for (const b of broken) console.log(`  ⚠ snapshot unreadable: ${path.relative(root, b.f)} — ${b.why}`);
+  const today = new Date();
+  const violations = [], errors = [];
+  const dayMs = 86400e3;
+  for (const bf of bandFiles) {
+    const rel = path.relative(root, bf);
+    let doc = null;
+    try { doc = yload(fs.readFileSync(bf, "utf-8")); }
+    catch (e) { errors.push(`${rel}: does not parse — ${String(e.message).split("\n")[0]}`); continue; }
+    const metrics = doc?.metrics;
+    if (!Array.isArray(metrics)) { errors.push(`${rel}: no 'metrics:' list — see spec/artifacts.yaml § bands`); continue; }
+    if (!snaps.length) {
+      console.log(`  ✗ ${rel}: ${metrics.length} metric(s) declared and ZERO snapshots in ${path.relative(root, dir)}/ — observing blind`);
+      console.log("    (the instance produces the snapshots; the runtime only derives — see the bands note)");
+      errors.push(`${rel}: no snapshots to observe`);
+      continue;
+    }
+    const latest = snaps[snaps.length - 1];
+    const latestAge = Math.floor((today - new Date(latest.at)) / dayMs);
+    console.log(`  ${rel} · latest snapshot ${path.basename(latest.f)} (collected ${latest.at}, ${latestAge}d ago) · history ${snaps.length} snapshot(s)`);
+    for (const m of metrics) {
+      const key = String(m?.key ?? "");
+      if (!key) { errors.push(`${rel}: a metric with no 'key'`); continue; }
+      if (m.max_age_days != null && latestAge > m.max_age_days) {
+        console.log(`    ✗ ${key}: latest snapshot is ${latestAge}d old, max_age_days is ${m.max_age_days} — OBSERVING BLIND (old data is never used silently)`);
+        violations.push({ key, severity: "high", line: `${key}: snapshot ${latestAge}d old > max_age_days ${m.max_age_days} — observing blind (${path.basename(latest.f)})` });
+        continue;
+      }
+      const value = latest.metrics[key];
+      if (typeof value !== "number") {
+        console.log(`    ✗ ${key}: not in the latest snapshot — declared but not measured`);
+        violations.push({ key, severity: "high", line: `${key}: absent from the latest snapshot ${path.basename(latest.f)} — declared in bands, not measured` });
+        continue;
+      }
+      // Rolling baseline: window snapshots EXCLUDING the latest (the point
+      // under judgment must not soften its own baseline); n >= 5 or the
+      // sigma bands are reported as insufficient — declared, never guessed.
+      let mean = null, sd = null, n = 0;
+      const windowDays = m.baseline?.window_days;
+      if (windowDays) {
+        const cut = new Date(today - windowDays * dayMs).toISOString().slice(0, 10);
+        const hist = snaps.slice(0, -1).filter((s) => s.at >= cut && typeof s.metrics[key] === "number").map((s) => s.metrics[key]);
+        n = hist.length;
+        if (n >= 5) {
+          mean = hist.reduce((a, v) => a + v, 0) / n;
+          sd = Math.sqrt(hist.reduce((a, v) => a + (v - mean) ** 2, 0) / n);
+        }
+      }
+      for (const band of (Array.isArray(m.bands) ? m.bands : [])) {
+        const w = parseBandWhen(band?.when);
+        if (!w) { errors.push(`${rel}: ${key}: band '${band?.when}' does not parse — grammar is (over|under) <number>[sigma]; run verify on the bands file`); continue; }
+        const sev = String(band?.severity ?? "");
+        if (!SEVERITIES.includes(sev)) { errors.push(`${rel}: ${key}: band severity '${sev}' not in ${SEVERITIES.join("|")} (canonical, never translated)`); continue; }
+        let thr, basis;
+        if (w.sigma) {
+          if (!windowDays) { errors.push(`${rel}: ${key}: sigma band without baseline.window_days`); continue; }
+          if (mean === null) {
+            console.log(`    • ${key} '${band.when}': insufficient history (n=${n} < 5 in ${windowDays}d window) — sigma band NOT evaluated, declared not guessed`);
+            continue;
+          }
+          thr = w.dir === "over" ? mean + w.n * sd : mean - w.n * sd;
+          basis = `mean ${mean.toFixed(4)} ${w.dir === "over" ? "+" : "−"} ${w.n}×σ ${sd.toFixed(4)} = ${thr.toFixed(4)}, window ${windowDays}d, n=${n}`;
+        } else {
+          thr = w.n;
+          basis = `fixed threshold ${thr}`;
+        }
+        const hit = w.dir === "over" ? value > thr : value < thr;
+        if (hit) {
+          const line = `${key} = ${value} violates '${band.when}' (${basis}) → ${sev}`;
+          console.log(`    ✗ ${line}`);
+          violations.push({ key, severity: sev, line: `${line} · snapshot ${path.basename(latest.f)} · bands ${rel}` });
+        } else {
+          console.log(`    ✓ ${key} = ${value} within '${band.when}' (${basis})`);
+        }
+      }
+    }
+  }
+  if (errors.length) {
+    console.log("\nCONFIG ERRORS — the bands contract, not the system:");
+    for (const e of errors) console.log(`  ✗ ${e}`);
+  }
+  console.log(`\n${violations.length} violation(s) · ${errors.length} config error(s)` +
+    (!violations.length && !errors.length ? " — all bands respected, and every check above shows its numbers" : ""));
+  if (record && violations.length) {
+    const lang = inst?.language && OBS_I18N[inst.language] ? inst.language : "en";
+    if (inst?.language && inst.language !== "unset" && !OBS_I18N[inst.language])
+      console.log(`  ⚠ no observation template for language '${inst.language}' — headings fall back to English (the content contract is unchanged)`);
+    const t = OBS_I18N[lang];
+    const rank = (s) => SEVERITIES.indexOf(s);
+    const sorted = [...violations].sort((a, b) => rank(a.severity) - rank(b.severity));
+    const slug = sorted[0].key.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const date = new Date().toISOString().slice(0, 10);
+    const p = path.join(root, docsRoot(inst), "ops", "observations", `${date}-${slug}.md`);
+    if (fs.existsSync(p)) die(`✗ ${path.relative(root, p)} already exists — complete today's record (assess_observation); do not fork it`);
+    const bandsInputs = bandFiles.map((bf) => ({ artifact: "bands", key: path.relative(root, bf), hash: sha256Body(bf) }));
+    const snapRel = snaps.length ? path.relative(root, snaps[snaps.length - 1].f) : null;
+    const fmObj = {
+      status: "draft", at: date,
+      inputs: [...bandsInputs, ...(snapRel ? [{ artifact: "metrics-snapshot", external: true, key: snapRel, note: "instance-produced, outside the registry" }] : [])],
+    };
+    const body =
+      `\n# Observation — ${date}\n\n` +
+      `## ${t.sections[0]}\n\n${t.anomaly(violations.length)}\n\n` +
+      `## ${t.sections[1]}\n\n` + sorted.map((v) => `- \`${v.line}\``).join("\n") + "\n\n" +
+      `## ${t.sections[2]}\n\n${t.gap}\n\n` +
+      `## ${t.sections[3]}\n\n${t.gap}\n\n` +
+      `## ${t.sections[4]}\n\n${t.gap}\n`;
+    const candidate = "---\n" + ydump(fmObj, { sortKeys: false }) + "---\n" + body;
+    // candidate → parse → assert → write (the 1.13.0/1.15.0 law)
+    let fmBack = null;
+    try { const i2 = fmClose(candidate); fmBack = yload(candidate.slice(3, i2)); }
+    catch (e) { die(`✗ INTERNAL: observation candidate does not parse — nothing written. ${String(e.message).split("\n")[0]}`); }
+    if (fmBack?.status !== "draft" || (candidate.match(/^## /gm) || []).length !== 5)
+      die("✗ INTERNAL: observation candidate malformed (status or section count) — nothing written");
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, candidate);
+    const [chk] = readFrontmatter(p);
+    if (chk.status !== "draft") die(`✗ post-write assert FAILED — inspect ${p}`);
+    console.log(`\n✓ observation recorded (draft): ${path.relative(root, p)}`);
+    console.log("  machine half filled (Anomaly, Evidence — verbatim numbers); judgment sections are declared gaps.");
+    console.log("  Next: observability.assess_observation completes it; re-entry (prd / ws add / impact-analysis) is a HUMAN act.");
+  } else if (record) {
+    console.log("  --record: nothing to record — no violations.");
+  }
+  return violations.length || errors.length ? 1 : 0;
+}
+
 function cmdVerify(root, file) {
   // EXTERNAL verification of the computable class — run by the CALLER, never by
   // the producer. Born from the first real test: "deterministic" enforced in
@@ -795,6 +979,42 @@ function cmdVerify(root, file) {
       });
       if (legacy)
         warns.push(`${legacy} entr${legacy === 1 ? "y has" : "ies have"} legacy field names (raised_by/blocks — a pre-1.13.0 field grammar): read via alias, never rewritten (renaming grandfathered entries breaks traceability)`);
+    }
+  }
+  // THE BANDS CHECKS (1.16.0) — the observe contract must parse BEFORE the
+  // day it is needed: a band that does not parse at observe time is a
+  // detection hole discovered during the incident. Same tiering discipline
+  // as everywhere: config that cannot work fails; config that smells warns.
+  if (selfKey === "bands") {
+    let bd = null;
+    try { bd = yload(raw); } catch { /* the parse failure is already a fail above */ }
+    if (bd && !Array.isArray(bd.metrics)) fails.push("no 'metrics:' list — the bands contract is metrics: [{key, bands: [...]}] (spec/artifacts.yaml § bands)");
+    if (bd && Array.isArray(bd.metrics)) {
+      const seen = new Set();
+      let nb = 0;
+      bd.metrics.forEach((m, i) => {
+        const key = String(m?.key ?? "");
+        if (!key) { fails.push(`metric #${i + 1} has no 'key'`); return; }
+        if (seen.has(key)) fails.push(`metric key '${key}' declared twice — the second silently shadows nothing; it confuses everything`);
+        seen.add(key);
+        const bands = Array.isArray(m?.bands) ? m.bands : null;
+        if (!bands || !bands.length) { fails.push(`${key}: no bands — a metric with no band is telemetry; telemetry lives in the slos`); return; }
+        let usesSigma = false;
+        for (const b of bands) {
+          nb++;
+          const w = parseBandWhen(b?.when);
+          if (!w) fails.push(`${key}: band '${b?.when}' does not parse — grammar is (over|under) <number>[sigma]`);
+          else if (w.sigma) usesSigma = true;
+          const sev = String(b?.severity ?? "");
+          if (!SEVERITIES.includes(sev)) fails.push(`${key}: band severity '${sev}' not in ${SEVERITIES.join("|")} — canonical keys, never translated`);
+        }
+        if (usesSigma && !(m?.baseline?.window_days > 0))
+          fails.push(`${key}: sigma band without a positive baseline.window_days — a rolling baseline needs a declared window`);
+        if (m?.max_age_days != null && !(m.max_age_days > 0))
+          warns.push(`${key}: max_age_days is not a positive number — the observing-blind guard will not arm`);
+      });
+      if (!fails.some((f) => f.includes("band") || f.includes("metric")))
+        oks.push(`${bd.metrics.length} metric(s), ${nb} band(s): keys unique, grammar parses, severities canonical`);
     }
   }
   // COMPLETENESS — the truncation detector. The contract (artifacts.yaml)
@@ -1378,6 +1598,7 @@ function main() {
       if (!["list", "add", "done", "abandon"].includes(sub)) die("usage: docod.mjs ws list|add|done|abandon <key> [--reason ...] [--name ...]");
       return cmdWs(root, sub, pos[1] ?? null, opt("--reason"), opt("--name"));
     }
+    case "observe":  return cmdObserve(root, argv.includes("--record"));
     case "question": {
       const sub = pos[0];
       if (!["add", "answer"].includes(sub))
@@ -1385,7 +1606,7 @@ function main() {
       return cmdQuestion(root, sub, pos, opt);
     }
     default:
-      die("commands: status [--ws X] · continue <ws> · start · report · verify <file> · rebless · approve <file> --by <who> · ws list|done|abandon · question add|answer");
+      die("commands: status [--ws X] · continue <ws> · start · report · verify <file> · rebless · approve <file> --by <who> · ws list|done|abandon · question add|answer · observe [--record]");
   }
 }
 

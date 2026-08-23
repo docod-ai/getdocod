@@ -1,4 +1,4 @@
-specVersion: "1.15.0"
+specVersion: "1.16.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -891,6 +891,74 @@ artifacts:
       What is NOT here: the list of what never to log (that is
       `data-privacy`), the alert's procedure (that is `runbook`), infra
       capacity and cost (that is `infrastructure-design`).
+
+  bands:
+    stage: observe
+    owner: observability
+    format: yaml
+    optional: true
+    delivers: "Machine-read control bands per metric: baseline window, thresholds (fixed or sigma), one canonical severity per band"
+    scope: [project, target]
+    path:
+      project: "{docsRoot}ops/bands.yaml"
+      target: "{target.tasksRoot}bands.yaml"
+    note: |
+      The slos speak to humans; the bands speak to the machine. This file is
+      what lets OBSERVE close in EXECUTION instead of on paper: a declarative
+      contract that `docod.mjs observe` evaluates deterministically on every
+      run — no daemon, no state file; detection is the state, the same law
+      as status.
+
+      schema:
+        metrics:
+          - key: ci_test_failure_rate        # unique
+            description: "..."               # optional
+            max_age_days: 7                  # optional: older latest snapshot = observing blind (a finding)
+            baseline: { window_days: 30 }    # required when any band uses Nsigma
+            bands:
+              - { when: "over 2sigma", severity: high }
+              - { when: "over 0.20",   severity: critical }
+              # grammar: (over|under) <number>[sigma]. Nothing looser parses.
+
+      severity uses the CANONICAL keys critical|high|medium|low (never
+      translated — same vocabulary as the diagnostic report block).
+
+      METRICS SNAPSHOTS live in {docsRoot}ops/metrics/*.yaml, each:
+        collected_at: YYYY-MM-DD     # or full ISO timestamp
+        metrics: { <key>: <number>, ... }
+      The INSTANCE produces them (CI, a script — the adapter binds who): the
+      runtime never collects, it derives. The rolling baseline (mean and
+      sigma) is computed FRESH on every run from the snapshots inside the
+      declared window; fewer than 5 points in the window means sigma bands
+      are reported as "insufficient history", declared and skipped, never
+      guessed. A latest snapshot older than max_age_days is itself a finding
+      ("observing blind") — old data is never used silently.
+
+  observation:
+    stage: observe
+    owner: observability
+    lineage: snapshot
+    optional: true
+    delivers: "Dated record of a control-band violation: machine-computed evidence, owner judgment, the loop's re-entry ticket"
+    scope: [project]
+    path:
+      project: "{docsRoot}ops/observations/{date}-{slug}.md"
+    sections: [Anomaly, Evidence, Impact, Recommendation, Open Questions]
+    note: |
+      Born as a DRAFT by `docod.mjs observe --record` — a named, narrow
+      exception in the workstreams/task family: the runtime materializes the
+      machine half (Anomaly and Evidence carry the computed numbers,
+      verbatim, with the snapshot and bands files cited), and the judgment
+      sections (Impact, Recommendation, Open Questions) are written as
+      DECLARED GAPS for the owner to fill — the command records, it never
+      decides. One observation per day per slug: a second `--record` the
+      same day refuses and points at the existing file (complete the record;
+      do not fork it).
+
+      Re-entry into the loop is a HUMAN act through an existing door: a prd
+      or `ws add` citing this record, or an impact-analysis reading it. The
+      playbook's breach→intent edge, in this method's idiom — the finding
+      recommends; a human fires.
 
   runbook:
     stage: observe

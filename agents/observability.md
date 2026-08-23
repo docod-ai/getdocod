@@ -7,10 +7,58 @@ capabilities: [ask_user, code_search, doc_lookup, calculator]
 skills: [measurable-goals, data-privacy, diagram-as-code]
 contract:
   owns:
-    artifact: slos
+    artifact: [slos, bands, observation]
     immutable: false
   triggers: [adr, rfc, impact-analysis, runbook]
   actions:
+    define_bands:
+      stage: observe
+      scope: [project, target]
+      requires:
+        - artifact: slos
+          status: [approved, draft]
+          waivable: true
+      reads: [slos, code, decisions, adr]
+      writes:
+        artifact: bands
+        status: draft
+      capabilities: [code_search, calculator, ask_user]
+      postconditions:
+        - "deterministic: Every metric declares a unique key and at least one band; every band's `when` parses in the grammar `(over|under) <number>[sigma]` and its `severity` is one of the canonical keys critical|high|medium|low (never translated)"
+        - "deterministic: Every metric with a sigma band declares `baseline.window_days`"
+        - "evidence: Every fixed threshold starts from CURRENT measured values (the snapshot or the slos actuals cited) — or the gap is declared in the entry's description"
+        - "judgment: A band exists because crossing it would CHANGE something someone builds or operates — a band nobody would act on is telemetry, and telemetry lives in the slos"
+      note: |
+        The slos speak to humans; the bands speak to `docod.mjs observe`.
+        Derive the bands FROM the slos where they exist (an SLO with a number
+        and a window is already half a band); where they do not, the waiver
+        records that the bands came first and the slos owe a revisit. The
+        metrics snapshots the bands read are the INSTANCE's to produce — this
+        action declares WHAT is watched, never collects.
+
+    assess_observation:
+      stage: observe
+      scope: [project]
+      requires:
+        - artifact: observation
+          status: [draft]
+          waivable: false
+      reads: [observation, bands, slos, code, decisions, runbook, postmortem]
+      writes:
+        artifact: observation
+        status: draft
+      capabilities: [code_search, ask_user]
+      postconditions:
+        - "deterministic: The machine-written Evidence lines are preserved verbatim — the numbers the runtime computed are the record, never re-typed"
+        - "judgment: Impact, Recommendation and Open Questions are filled, or each remaining gap is justified in place"
+        - "judgment: The Recommendation names the RE-ENTRY DOOR (a prd, a ws add with reason, an impact-analysis) — recommending is this action's ceiling; firing the door is the human's act"
+        - "deterministic: Questions only an outside owner can close go to the external-questions queue via the runtime command, never inline only"
+      note: |
+        `docod.mjs observe --record` writes the machine half (Anomaly,
+        Evidence) and leaves the judgment sections as declared gaps. This
+        action is the owner completing its own document — the split exists so
+        a computed number is never laundered through an agent's rewording.
+
     define_slos:
       stage: orchestrate
       scope: [project, target]
@@ -253,6 +301,20 @@ Two, by audience. **Mixing them makes both useless.**
 | "what broke?" | diagnostics, cause, resources |
 
 ## 9. Assumptions & gaps
+
+The other two documents this role owns:
+
+**bands** (`ops/bands.yaml`, machine-read — schema in the registry): per
+metric, a unique key, an optional `baseline: {window_days}` and one band per
+line, `{when: "(over|under) <number>[sigma]", severity: <canonical key>}`.
+Derived from the slos where they exist. `docod.mjs observe` evaluates it;
+you declare it.
+
+**observation** (`ops/observations/<date>-<slug>.md`, snapshot): the machine
+writes Anomaly and Evidence via `observe --record`; you complete Impact,
+Recommendation and Open Questions through `assess_observation`, preserving
+the computed lines verbatim. The Recommendation names the re-entry door; a
+human fires it.
 
 ---
 

@@ -5,6 +5,62 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.16.0] — 2026-08-23
+
+The observe release — OBSERVE closes in execution, not on paper. Until now
+the method's weakest edge: the observe stage delivered artifacts (slos,
+runbooks) and nothing DERIVED a violation from a live signal — the loop's
+last edge was prose, and the vendor's SDLC playbook had just closed exactly
+this in public (bands.yaml, rolling baselines, breach→intent). Adopted in
+this method's idiom, never as a copy: no daemon, no state file, no invented
+vocabulary.
+
+Added: the `bands` artifact (40th; owner: observability) — the machine-read
+sibling of the slos. Declarative: per metric a unique key, an optional
+rolling-baseline window, an optional max_age_days, and bands in a strict
+grammar — `(over|under) <number>[sigma]` — each carrying one CANONICAL
+severity (critical|high|medium|low, the 1.13.0 vocabulary; the playbook's
+1σ/2σ/3σ action tiers map onto severities the method already owns). Metric
+SNAPSHOTS are dated YAML files in `{docsRoot}ops/metrics/` that the INSTANCE
+produces (CI, a script — the adapter binds who): the runtime never collects.
+
+Added: `docod.mjs observe [--record]`. Everything derives FRESH on every
+run: the rolling baseline (mean and σ) is computed from the snapshots inside
+the declared window — the latest point excluded, so the value under judgment
+does not soften its own baseline; fewer than 5 points reports "insufficient
+history", declared and skipped, never guessed. Every evaluation prints its
+numbers — a pass that shows its work, a violation that names value,
+threshold, window and n. Three findings that refuse silence: a latest
+snapshot older than max_age_days is OBSERVING BLIND (old data is never used
+silently); a metric declared but absent from the snapshot is
+declared-not-measured; an unparseable band is a CONFIG ERROR, never a skip.
+Exit code is honest: violations or config errors → non-zero, CI-usable.
+
+Added: the `observation` artifact (41st; owner: observability; snapshot
+lineage) — where a violation LANDS. `observe --record` materializes the
+draft with the machine half filled: Anomaly and Evidence carry the computed
+lines verbatim, with the bands file pinned as input and the snapshot cited
+as external provenance; Impact, Recommendation and Open Questions are
+written as DECLARED GAPS. The new `assess_observation` action is the owner
+completing its own document — the machine-written evidence preserved
+verbatim (a computed number is never laundered through an agent's
+rewording), the Recommendation naming the re-entry door. Re-entry is a
+HUMAN act through an existing door (prd, ws add, impact-analysis): the
+command records, it never decides. One observation per day per slug — a
+second --record refuses and points at the existing file. Headings localize
+(en/pt-BR, English fallback declared out loud); the content contract does
+not.
+
+Added: the bands checks in `verify` — the observe contract must parse
+BEFORE the day it is needed, because a band that fails at observe time is a
+detection hole discovered during the incident. Fail-tier: no metrics list,
+missing/duplicate keys, unparseable band grammar, non-canonical severity,
+sigma band without a window, a metric with no bands ("telemetry lives in
+the slos"). And `define_bands` gives the producer the verb (the 1.10.2
+lesson: a mechanism nobody triggers does not reach the field).
+
+specVersion → 1.16.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.15.0] — 2026-08-20
 
 Fixed: the frontmatter delimiter is now ANCHORED. Every split in the runtime

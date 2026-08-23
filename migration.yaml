@@ -361,6 +361,22 @@ migration:
 
     - id: observe-bands
       severity: major
+      progress: |
+        v1 SHIPPED in 1.16.0, on the recorded design, both open decisions
+        closed by the author (2026-08-23): the violation lands in a dated
+        `observation` draft via `observe --record` (machine evidence
+        verbatim, judgment sections as declared gaps, assess_observation
+        completes, re-entry stays human), and the v1 grammar is fixed AND
+        sigma (rolling baseline derived fresh from windowed snapshots,
+        latest point excluded, n>=5 or declared insufficient). Artifacts
+        `bands` (40th) and `observation` (41st), owner observability with
+        the verbs (define_bands, assess_observation); verify gained the
+        bands checks (grammar, unique keys, canonical severity — a band
+        that fails at observe time is a detection hole found during the
+        incident). REMAINS OPEN in this entry: the ceiling's derivation
+        recipe via rules-factory (absorbed from health-delta, still the
+        genuinely undesigned piece) and field N — the first real project
+        wearing bands will say whether the snapshot contract holds.
       issue: |
         OBSERVE closes on paper, not in execution. The method's observe
         stage delivers artifacts (slos, runbook, playbook, integration-guide)
