@@ -138,7 +138,7 @@ mkdir -p "$TARGET/.docod"
 # bring python along. And .git/.gitignore are the bundle's OWN repo management:
 # copied into .docod/ they nest a git repo inside the user's project and
 # collide with theirs — the installer must never ship them.
-EXCL="--exclude __pycache__ --exclude .DS_Store --exclude .git --exclude .gitignore --exclude validate-layers.py --exclude validate-readme.py --exclude install.sh --exclude report.html --exclude migration.yaml --exclude .claude-plugin --exclude .codex-plugin --exclude plugin-commands --exclude plugins --exclude tests"
+EXCL="--exclude __pycache__ --exclude .DS_Store --exclude .git --exclude .gitignore --exclude validate-layers.py --exclude validate-readme.py --exclude third-party-references.yaml --exclude install.sh --exclude report.html --exclude migration.yaml --exclude .claude-plugin --exclude .codex-plugin --exclude plugin-commands --exclude plugins --exclude tests"
 if [ "${DOCOD_INSTALL_FORCE_TAR:-0}" != "1" ] && command -v rsync >/dev/null 2>&1; then
   # shellcheck disable=SC2086
   rsync -a --delete $EXCL --exclude /skills "$BUNDLE/" "$TARGET/.docod/"
@@ -156,7 +156,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.19.0"
+specVersion: "1.20.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -419,6 +419,15 @@ It is your prompt: contract, postconditions (with the nature of each one),
    <file>\` and paste its output — external verification beats self-attestation.
    For the rest, run the check and SHOW command + output in the final report.
 8. $modo
+9. A document longer than one response is written in PASSES, never one shot:
+   the \`##\` skeleton first, then each section filled in its own edit, and
+   \`status\` stamped LAST (write_order). The harness truncates long
+   single-shot output mid-file — there is NO character limit in the method;
+   the ceiling is the harness's, and a file cut by it must FAIL verify as an
+   interrupted run, never pass looking whole. And the prd's ~2,000-word
+   target is a READABILITY target: above it you ROUTE (enumeration to the
+   frd, detail to the owning design) or DECLARE the overflow — deleting
+   information to fit a number is a contract violation.
 AGENT
   N=$((N+1))
 done
@@ -611,7 +620,17 @@ conversation cannot bounce through a subagent's hand-back protocol.
    before opining. Cite what you read.
 2. You recommend; the user decides. You NEVER invoke agents, NEVER approve,
    NEVER edit artifacts you do not own.
-3. When the user is LOST or asks "what now?" / "how do I continue?", act as
+3. EXPLORATION BEFORE COMMITMENT: when the idea is still fuzzy ("não sei se
+   isso vira uma front"), this is also the room for it — read the codebase,
+   compare options, sharpen the idea, and create NO artifact while doing it
+   (exploring must stay cheap; governance starts at the door, not before).
+   Substantive insight still lands in the counsel log — exploration that
+   shaped a decision leaves a record. And when the idea CRYSTALLIZES, hand
+   the baton explicitly instead of letting the conversation die: name the
+   door and the command ("isso virou uma front: /docod:run prd em ws nova"
+   or "isso é mudança em doc aprovado: a porta é impact-analysis"). The
+   hand-off names the move; the USER fires it.
+4. When the user is LOST or asks "what now?" / "how do I continue?", act as
    the `guide` action: derive the real state (status + the artifacts — never
    a memorized flow), then answer with exactly three things per step: the
    NEXT STEP, the WHY in the method's own terms, and the EXACT command to
@@ -619,10 +638,10 @@ conversation cannot bounce through a subagent's hand-back protocol.
    you point (why the gate, why reverse-before-forward) — autonomy, not
    dependence. You show the move; the USER runs it. Never run a gate, never
    approve, never execute the step for them.
-4. Substantive counsel goes to the `counsel` log ({docsRoot}decisions/counsel.md),
+5. Substantive counsel goes to the `counsel` log ({docsRoot}decisions/counsel.md),
    append-only, using the four-field entry from `## structure`, written in the
    instance's `language:`.
-5. Topic: $ARGUMENTS — if empty, ask what is on the table.
+6. Topic: $ARGUMENTS — if empty, ask what is on the table.
 LEAD
 cat > "$CMD/loop.md" <<'LOOP'
 ---

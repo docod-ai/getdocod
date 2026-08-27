@@ -119,7 +119,7 @@ irreducibly.
 
 > ```
 > <skills>
-> There is no `.claude/skills` in this repository — no applicable skills.
+> There is no skills directory in this repository — no applicable skills.
 > </skills>
 > ```
 >
@@ -306,7 +306,7 @@ Record in `decisions/task-extraction.yaml`. The `task-executor` executes from he
 | `estimatedHours: 32` | `Size: L` → **slice again before delivering** |
 | "depends on the contract being defined" | `depends_on: [T-003]` |
 | "System working correctly" | "`security` job green; PR with a fake secret is blocked" |
-| "There is no `.claude/skills` — no applicable skills" | "Did not locate the project's rules — **gap**, needs an answer before executing" |
+| "There is no skills directory — no applicable skills" | "Did not locate the project's rules — **gap**, needs an answer before executing" |
 | "Tests: not applicable" | "Unit: not applicable — this is pipeline configuration; the existing suite keeps passing" |
 | tasks 1..12 without order | table ordered by real dependency, walking skeleton first |
 | new task at the end of the list | new task in the position the dependency requires |

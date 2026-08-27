@@ -28,7 +28,7 @@ contract:
         - "evidence: Every objective has a baseline, a number, and a window — or is marked as an Assumption"
         - "judgment: In-Scope and Out of Scope are both filled in"
         - "judgment: No implementation detail in the document"
-        - "judgment: Main document ≤ 2,000 words"
+        - "judgment: The main document targets ~2,000 words for READABILITY — and above the target, information is ROUTED, never deleted: enumeration goes to the FRD (a pointer stays behind), technical detail goes to the owning design artifact, and residual overflow is DECLARED in the document (over target by N words, because X). Cutting content to fit the number is a contract violation, not compliance"
         - "deterministic: All sections of ## structure present"
         - "deterministic: If the scope is ws, the workstream is registered in workstreams.yaml — key, name, state active. This is how a workstream is BORN"
 
@@ -224,7 +224,7 @@ Record each answer in `decisions/prd.yaml` with `key`, `answer`, `provenance: us
 
 ## Non-negotiable
 - **The PRD is the WHAT and the WHY. Never the HOW.**
-- **Maximum ~2,000 words.** Beyond that nobody reads, and an unread document gets rubber-stamped.
+- **~2,000 words is a readability TARGET, not a guillotine.** Beyond it nobody reads, and an unread document gets rubber-stamped — so above the target you ROUTE, never delete: enumeration belongs to the FRD (leave the pointer), technical detail to the owning design artifact, and what remains over stays with the overflow DECLARED and its reason. Deleting information to fit the number is the one move this rule forbids. (Field case, 2026-08: a PRD at 2,221 words after two redaction passes with nothing left to cut — the structural answer was the FRD absorbing what was still enumeration, not a thinner PRD.)
 - **Every target has a baseline, a number, a window, and a measurement point.**
 - **Usability and accessibility are not optional.**
 
@@ -253,5 +253,5 @@ Record each answer in `decisions/prd.yaml` with `key`, `answer`, `provenance: us
 4. Can you tell what will NOT be done?
 5. Can an engineer design the system without asking why about anything?
 6. Does any metric only go up? (then it's vanity — swap it)
-7. Does it fit in 2,000 words?
+7. Over ~2,000 words? Then answer three things before closing: what routes to the FRD, what routes to a design artifact, and is the residual overflow declared with its reason? Routing or declaring closes this check; deleting content does not.
 8. Am I re-asking something already in `decisions/`?

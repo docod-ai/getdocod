@@ -520,6 +520,8 @@ Most DOCOD agents produce an artifact.
 
 The tech lead does something different.
 
+It is also the room for exploration before commitment. When an idea is still fuzzy, `/docod:lead` reads the codebase and the project state, compares options and sharpens the idea while creating no artifact: exploring stays cheap, and governance starts at the door, not before. When the idea crystallizes, the tech lead names the door and the exact command to enter it. Insight that shaped a decision lands in the counsel log, so exploration leaves a record instead of evaporating.
+
 ```text
 /docod:lead should we split the payments service now or after launch?
 ```

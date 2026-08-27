@@ -5,6 +5,77 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.20.0] — 2026-08-24
+
+The route-never-delete release — a field report ("the PRD has a character
+limit and the agent cuts information") turned out to be two defects wearing
+one symptom, and neither was the limit it looked like.
+
+Fixed: the prd's word ceiling asked the data to behave. The contract carried
+"Main document ≤ 2,000 words" with no rule for what happens ABOVE the
+target — so a compliant agent DELETED information to fit, the exact sin the
+method exists to refuse. The field agent that hit it found the right answer
+on its own ("two redaction passes without cutting content; the structural
+fix is the FRD absorbing what is still enumeration here") and that answer is
+now the contract: ~2,000 words stays as a READABILITY target, and above it
+information is ROUTED — enumeration to the frd with the pointer left
+behind, technical detail to the owning design — or the overflow is DECLARED
+with its reason. Deleting content to fit the number is now, in the
+contract's own words, a violation, not compliance. Postcondition, style and
+inquiry closing all rewritten; the field report rides in the style as the
+case.
+
+Fixed: the real hole behind the perceived limit. The prd declared NO
+`sections:` in the registry, so verify's truncation floor (section count vs
+declared minimum) never ARMED for the method's most-written artifact — a
+PRD cut mid-write by the harness's per-turn output ceiling passed VERIFY OK
+in silence. The 1.5.0 FRD lesson, alive next door. The prd now declares its
+nine sections (arming the floor: previously-silent truncated PRDs will now
+FAIL, which is the point) and gains its protected spine
+(Objectives & KPIs, Success Criteria, Scope) for the correction envelope.
+
+Added: the write-in-passes verb, where the producers read. `write_order`
+and the subagent envelope now teach it: a document longer than one response
+is written skeleton-first, then section by section in separate edits, with
+`status` stamped LAST — there is NO character limit in the method; the
+ceiling is the harness's, and a file cut by it must fail verify as an
+interrupted run, never pass looking whole.
+
+Added: exploration before commitment, learned from a spec-driven workflow
+tool we studied (named, with the full reading, in the dev ledger — shipped
+documents do not carry third-party tool names; see the policy below) and
+given the half its design does not keep. `/docod:lead` now explicitly owns the
+fuzzy-idea room: read the codebase, compare options, sharpen the idea,
+create NO artifact while doing it (governance starts at the door, not
+before) — and when the idea crystallizes, hand the baton by NAMING the door
+and the command instead of letting the conversation die. Substantive
+insight still lands in the counsel log: exploration that shaped a decision
+leaves a record.
+
+Recorded in migration.yaml, from the same reading: `change-delta`
+(major — requirement deltas in a mechanical ADDED/MODIFIED/REMOVED grammar
+as the graduated gate's middle rung, checkable against the 1.19.0
+envelope's ID inventory; open decisions named) and `scenario-floor` (minor
+— every requirement ties to at least one scenario, riding the
+traceability-invariant thread, vocabulary first). What was NOT taken, on
+record in the entry: that tool's freshness story depends on human archive
+discipline — no content-hash approval, no staleness graph; nothing to
+absorb there.
+
+Policy (author's rule, 2026-08-24): third-party tool names are FORBIDDEN BY
+DEFAULT in shipped documents (README, CHANGELOG, ARCHITECTURE, CONTRIBUTING,
+CONDUCTOR, agents/, rules/) and allowed only under a REGISTERED
+justification — the dev-only `third-party-references.yaml` holds each
+allowed (name, file) pair with its reason, and `validate-layers.py` now
+fails any unregistered occurrence and warns on stale register entries. The
+dev ledger (migration.yaml) keeps full provenance by design: it never
+ships. The first census under the new check also caught a pre-existing
+layer-2 leak — a harness path cited twice in an agent body's anti-pattern
+example — now neutralized; the vendor-neutrality guard had covered spec
+values and stack terms, never vendor names in agent bodies.
+
+specVersion → 1.20.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.19.0] — 2026-08-23
 
 The graduated-gate release — the oldest field pain in the ledger, resolved.

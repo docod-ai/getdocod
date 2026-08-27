@@ -1,4 +1,4 @@
-specVersion: "1.19.0"
+specVersion: "1.20.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -158,6 +158,14 @@ artifacts:
       project: "{docsRoot}product/prd.md"
       ws: "{docsRoot}workstreams/{ws}/prd.md"
       target: "{target.tasksRoot}prd-{ws}/prd.md"
+    sections: [Overview, Objectives & KPIs, User Stories, Key features, Success Criteria,
+               User experience, High-level technical constraints, Risks & Mitigations, Scope]
+    # sections mirrors the owner's ## structure — and it was MISSING here
+    # until 1.20.0, which meant verify's truncation floor (section count vs
+    # declared minimum) never armed for the prd: a PRD cut mid-write by the
+    # harness's output ceiling passed VERIFY OK in silence, on the method's
+    # most-written artifact. The 1.5.0 FRD lesson, rediscovered next door.
+    protected: [2, 5, 9]   # Objectives & KPIs, Success Criteria, Scope — the spine a correction may not touch
     note: |
       The scope is decided per WS (shared vs per-target), not by a fixed rule.
 

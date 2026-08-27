@@ -115,3 +115,23 @@ A change to the specs or agents is a configuration change, and configuration
 steers the machine — it gets the regression testing code gets. That sentence
 is the whole reason the `evals` artifact exists; it applies to this repo
 first.
+
+
+## Third-party names in shipped documents
+
+Forbidden by default, allowed on record. Shipped documents (README,
+CHANGELOG, ARCHITECTURE, CONTRIBUTING, CONDUCTOR, agents/, rules/) land in
+client repositories, and a competitor's or external tool's name there is a
+positioning and legal risk the author carries. So the rule is mechanical:
+
+- an occurrence without a grant in `third-party-references.yaml` FAILS the
+  validator;
+- a grant without a live occurrence WARNS (a permission nobody uses is a
+  permission nobody audits);
+- the dev ledger (migration.yaml), the validators and the register itself
+  never ship — full provenance of ideas lives there, named, where it
+  belongs;
+- adapters/ and install.sh are exempt by design: naming harnesses is what
+  layer 3 exists for.
+
+An exception is a recorded decision with a reason, never a habit.

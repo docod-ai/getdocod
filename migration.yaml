@@ -351,6 +351,55 @@ migration:
         territory, and the reference implementation to compare against is
         public now.
 
+    - id: change-delta
+      severity: major
+      issue: |
+        An amendment edits the artifact in place, and the reviewer's unit of
+        review is the whole document (or a raw git diff). The CHANGE itself
+        is not a first-class, machine-checkable artifact. OpenSpec
+        (Fission-AI) ships the counter-design: a change lives in its own
+        directory with requirement DELTAS in a mechanical grammar
+        (## ADDED / MODIFIED / REMOVED Requirements), reviewed as deltas and
+        merged on archive. Their freshness story depends on human archive
+        discipline (no content-hash approval, no staleness graph — nothing
+        to absorb there); the delta grammar is the piece worth taking.
+      decision: |
+        Adopt as the middle rung of the graduated gate, and lean on what
+        1.19.0 already built: the approval ENVELOPE records the explicit ID
+        inventory, so a change proposal declaring "MODIFIED: RF-002,
+        REMOVED: RF-005, ADDED: RF-009" is MECHANICALLY checkable against
+        the live inventory (MODIFIED/REMOVED must exist; ADDED must not).
+        The approved proposal becomes the --impact file of the full
+        ceremony: spine changes reviewed AS DELTAS, requirement by
+        requirement, instead of a whole-document re-read. OPEN DECISIONS,
+        named: (1) own artifact (change-proposal) vs extending
+        impact-analysis (leaning: extend — impact-analysis already owns the
+        radius; a second proposal artifact invites drift between the two);
+        (2) delta grammar as method vocabulary (ADDED/MODIFIED/REMOVED as
+        never-translate labels, the evals-labels pattern); (3) archive
+        semantics: DOCOD documents keep their home and status (nature-based
+        layout, no archive/ move) — what "archived" means here is the
+        proposal flipping to a snapshot record once merged, not a folder
+        move. Vocabulary first; verify checks after.
+
+    - id: scenario-floor
+      severity: minor
+      issue: |
+        The frd demands acceptance criteria as a section, but no floor ties
+        each requirement ID to at least one concrete scenario. OpenSpec
+        enforces exactly this (every Requirement has >= 1 #### Scenario
+        block, validated strictly). A requirement with no scenario is
+        acceptance nobody can check.
+      decision: |
+        Ride the traceability-invariant thread, vocabulary first, and reuse
+        the evals-labels pattern (1.17.0): scenario labels become canonical
+        never-translate vocabulary while the content speaks the instance's
+        language; then verify gains the floor as a WARN (an RF-shaped ID in
+        the requirements sections with no scenario line citing it), never a
+        fail at birth — false positives on legacy frds would train users to
+        skip the section. Wire it together with traceability-invariant's
+        set-equality work, not as a separate pass.
+
     - id: shared-language
       severity: minor
       issue: |
@@ -434,6 +483,80 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: third-party-names
+      was: minor
+      issue: |
+        Shipped documents (README, CHANGELOG, ARCHITECTURE, agents/ ...)
+        land in client repositories and had NO guard against third-party
+        tool names — the vendor-neutrality check covered spec VALUES and
+        stack terms in agent bodies, never product names in prose docs. The
+        1.20.0 draft CHANGELOG named a studied competitor three times
+        before the author caught it: "colocar nome de outras ferramentas
+        dentro dos nossos documentos tem que ser algo proibido por padrão,
+        liberado sob justificativa."
+      resolution: |
+        2026-08-24, folded into 1.20.0 (still uncommitted — the history
+        ships clean). The author's rule, mechanized the house way:
+        forbidden by default, allowed by RECORDED grant. Dev-only
+        `third-party-references.yaml` holds one entry per (name, file)
+        pair with its reason; validate-layers gained
+        check_third_party_names enforcing BOTH directions — unregistered
+        occurrence FAILS, grant with no live occurrence WARNS as a stale
+        permission. Curated name list keeps precision over coverage
+        (common-word collisions like linear/notion stay off — the d2/black
+        lesson). Exempt by design: adapters/ and install.sh (naming
+        harnesses is layer 3's job) and the dev-only files (migration.yaml
+        keeps FULL provenance of ideas, named — it never ships; the
+        studied tool from the 1.20.0 reading stays named there and only
+        there). The first census under the check paid immediately: a
+        pre-existing layer-2 leak (a harness path cited twice in
+        task-extraction's anti-pattern example) surfaced and was
+        neutralized. Planted both ways before green: an unregistered name
+        in README fails naming it; a stale grant warns.
+
+    - id: prd-word-ceiling
+      was: major
+      issue: |
+        The prd contract carried "judgment: Main document <= 2,000 words"
+        (plus the style bullet and the inquiry closing check) with no rule
+        for what happens ABOVE the target — so a compliant agent DELETED
+        information to fit, the house sin of asking the data to behave for
+        the ruler. Worse, the perceived "character limit on prd/frd" hid a
+        real detector hole: the prd declared NO sections: in the registry,
+        so verify's truncation floor (section count vs declared minimum)
+        never armed for the method's most-written artifact — a PRD cut
+        mid-write by the harness's per-turn output ceiling passed VERIFY OK
+        in silence. The 1.5.0 FRD lesson, alive next door.
+      field_proof: |
+        (2026-08, relayed by the author from a live instance.) A field
+        agent reported: "PRD em 2.221 palavras (1.825 fora das tabelas).
+        Fiz dois passes de redação sem tirar conteúdo. Continua acima do
+        teto de ~2.000 e vai continuar — o corte estrutural que resolve é o
+        FRD absorver o que ainda é enumeração aqui." The agent found the
+        correct resolution the contract did not prescribe: route, never
+        delete.
+      resolution: |
+        1.20.0, three legs. (1) The ceiling became ROUTE-NEVER-DELETE:
+        ~2,000 words stays as a readability target, and above it
+        information is ROUTED (enumeration to the frd with the pointer left
+        behind, technical detail to the owning design artifact) or the
+        overflow is DECLARED with its reason — deleting content to fit the
+        number is now, in the contract's own words, a violation, not
+        compliance (postcondition, style and inquiry all rewritten; the
+        field report is cited in the style as the case). (2) The prd gained
+        sections: [9] and protected: [2,5,9] in the registry — the
+        truncation floor now ARMS for the prd, and the correction envelope
+        gains its spine. (3) write_order and the subagent envelope gained
+        the write-in-passes verb: skeleton first, section by section,
+        status last — the harness's output ceiling (the real source of the
+        perceived "limit"; the method never had one) now produces a file
+        that FAILS verify as an interrupted run instead of passing cut.
+        Rode along: /docod:lead explicitly owns exploration before
+        commitment (read, compare, sharpen, NO artifacts, counsel log for
+        insight that shaped a decision) and hands the baton by naming the
+        door when the idea crystallizes — the OpenSpec explore lesson, plus
+        the record their design does not keep.
+
     - id: graduated-gate
       was: major
       issue: |

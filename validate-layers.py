@@ -494,6 +494,67 @@ def check_conductor():
     print(f"  {'✗' if any('CONDUCTOR' in e for e in ERRORS) else '✓'} CONDUCTOR.md exists · limbs present · body neutral")
 
 
+def check_third_party_names():
+    """Third-party tool names in SHIPPED documents: forbidden by default,
+    allowed only under a registered justification (author's rule,
+    2026-08-24). Shipped means it lands in a client's repository — README,
+    CHANGELOG, ARCHITECTURE, CONTRIBUTING, CONDUCTOR, agents/, rules/.
+    Naming a competitor there is a positioning and legal risk the author
+    carries, so the exception is a RECORDED decision in the dev-only
+    third-party-references.yaml, checked in BOTH directions: an occurrence
+    without an entry fails; an entry without a live occurrence warns.
+
+    The list is curated for precision over coverage (the d2/black lesson:
+    a false positive trains the reader to ignore the alert) — common words
+    that collide with product names (linear, notion) stay off it. The
+    first census under this check caught a pre-existing layer-2 leak: a
+    harness path cited twice in an agent body — the vendor guard had
+    covered spec VALUES and stack terms, never vendor names in agent
+    bodies. Adapters/ and install.sh are exempt by design: naming vendors
+    is what layer 3 exists for. The dev ledger keeps full provenance —
+    it never ships."""
+    NAMES = re.compile(
+        r"\b(openspec|fission|spec-?kit|kiro|devin|windsurf|aider|copilot|"
+        r"servicenow|asana|trello|confluence|"
+        r"claude|anthropic|codex|openai|gemini|cursor|kimi)\b",
+        re.I,
+    )
+    reg_f = os.path.join(BASE, "third-party-references.yaml")
+    reg = {}
+    if os.path.exists(reg_f):
+        doc = yaml.safe_load(open(reg_f, encoding="utf-8")) or {}
+        for e in (doc.get("allowed") or []):
+            reg[(str(e.get("name", "")).lower(), e.get("file", ""))] = e.get("reason", "")
+    docs = ["README.md", "CHANGELOG.md", "ARCHITECTURE.md", "CONTRIBUTING.md", "CONDUCTOR.md"]
+    docs += sorted(os.path.relpath(p, BASE) for p in glob.glob(os.path.join(BASE, "agents", "*.md")))
+    docs += sorted(os.path.relpath(p, BASE) for p in glob.glob(os.path.join(BASE, "rules", "*.md")))
+    seen = set()
+    for rel in docs:
+        p = os.path.join(BASE, rel)
+        if not os.path.exists(p):
+            continue
+        body = open(p, encoding="utf-8").read()
+        for name in sorted(set(m.group(1).lower() for m in NAMES.finditer(body))):
+            seen.add((name, rel))
+            if (name, rel) not in reg:
+                ERRORS.append(
+                    f"[{rel}] third-party name '{name}' — forbidden by default in shipped "
+                    f"documents; remove it, or register the justification in "
+                    f"third-party-references.yaml (an exception is a recorded decision, "
+                    f"never a habit)"
+                )
+    for (name, rel) in sorted(reg):
+        if (name, rel) not in seen:
+            WARNS.append(
+                f"[third-party-references.yaml] stale grant: '{name}' in {rel} has no live "
+                f"occurrence — a permission nobody uses is a permission nobody audits; remove it"
+            )
+    print(f"\nSHIPPED DOCS · third-party names — forbidden by default, granted on record")
+    print("-" * 78)
+    bad = any("third-party name" in e for e in ERRORS)
+    print(f"  {'✗' if bad else '✓'} {len(seen)} named occurrence pair(s), {len(reg)} grant(s) on record")
+
+
 def check_generated_refs():
     """Every `docod-<key>` a command text dispatches must have a generator.
 
@@ -648,6 +709,7 @@ def main():
 
     check_agents()
     check_conductor()
+    check_third_party_names()
     check_generated_refs()
     check_adapter_materialization(adapters)
 

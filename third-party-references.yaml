@@ -1,0 +1,23 @@
+# DEV-ONLY — the third-party name register (author's rule, 2026-08-24).
+#
+# Third-party tool names are FORBIDDEN BY DEFAULT in shipped documents.
+# Naming a competitor or an external tool in material that lands in a
+# client's repository is a positioning and legal risk the author carries,
+# so the default is refusal and every exception is a RECORDED decision:
+# one entry per (name, file) pair, with the reason on the line.
+#
+# validate-layers.py enforces both directions: an occurrence without an
+# entry FAILS; an entry without a live occurrence WARNS (stale grant).
+# The dev ledger (migration.yaml), this file and the validators never ship,
+# so provenance of ideas stays fully named there — where it belongs.
+#
+# Harness names inside adapters/ and install.sh are exempt by design:
+# naming vendors is what layer 3 exists for.
+
+allowed:
+  - { name: claude, file: README.md,        reason: "adapter documentation — the Adapter support section names the harnesses the method materializes on" }
+  - { name: codex,  file: README.md,        reason: "adapter documentation — same section" }
+  - { name: claude, file: ARCHITECTURE.md,  reason: "maintainer doc describes the materialization per harness (layers 3 concerns are named there by design)" }
+  - { name: codex,  file: ARCHITECTURE.md,  reason: "same — the Codex materialization section" }
+  - { name: claude, file: CHANGELOG.md,     reason: "release history of adapter work names the adapter it shipped" }
+  - { name: codex,  file: CHANGELOG.md,     reason: "same — the 1.14.0/1.18.0 adapter entries" }
