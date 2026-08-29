@@ -217,41 +217,6 @@ migration:
     #  above. PyYAML swallows duplicate keys, so the validator stayed green;
     #  the runtime's YAML 1.2 parser is what finally refused. The checker that
     #  parses this file now does so with the strict parser, on purpose.)
-    - id: traceability-invariant
-      severity: major
-      issue: |
-        Field week (the review-loop transcript, 2026-08-06): the SAME
-        traceability invariant on system-design — set-equality between each
-        component's declared requirement links and the transposed
-        requirements table, with "inside a parenthesis is a mention, not an
-        assignment" — was improvised as a throwaway script FOUR times across
-        review rounds, with four different parse bugs (expanded ranges,
-        parentheses, trailing label lines). One bug made the sets match by
-        accident and hid the single real divergence from the very instrument
-        presented as proof. Most of the loop the user experienced as
-        exhausting was the method debugging its own improvised instruments,
-        not the design being wrong. Doctrine shipped in 1.12.0
-        (agent.yaml verifier_discipline + CONDUCTOR.md): label self-written
-        checks as assertions, propose promotion after the second
-        improvisation. This entry is the promotion itself.
-      decision: |
-        Promote into `verify` as the COVERAGE precedent walked: VOCABULARY
-        FIRST. The invariant's grammar today is a private convention of one
-        instance's table (the `·`-separated assignment cells, the
-        parenthesis-is-mention rule, the Rastreia:/traces: line shape).
-        Mechanizing it as-is ships the parse bug with a badge. Steps, in
-        order: (1) the table convention becomes method vocabulary — declared
-        in the system-design owner's ## structure (and mirrored in the
-        registry only if the runtime must count it); (2) THEN verify gains
-        the set-equality check, external and caller-run like COVERAGE —
-        in-band deterministic postconditions are self-attestation, the
-        1.9.0 lesson; (3) the check reports set DIFFERENCES (which ID, which
-        side), never a bare count — a count that matches by accident is this
-        entry's founding bug. Scope note: this is the third member of the
-        coverage check-class family (defined→cited, sections×structure,
-        now declared-links×table) — wire it with a real miss behind it,
-        which this transcript supplies.
-
     - id: health-delta
       severity: minor
       issue: |
@@ -382,24 +347,6 @@ migration:
         proposal flipping to a snapshot record once merged, not a folder
         move. Vocabulary first; verify checks after.
 
-    - id: scenario-floor
-      severity: minor
-      issue: |
-        The frd demands acceptance criteria as a section, but no floor ties
-        each requirement ID to at least one concrete scenario. OpenSpec
-        enforces exactly this (every Requirement has >= 1 #### Scenario
-        block, validated strictly). A requirement with no scenario is
-        acceptance nobody can check.
-      decision: |
-        Ride the traceability-invariant thread, vocabulary first, and reuse
-        the evals-labels pattern (1.17.0): scenario labels become canonical
-        never-translate vocabulary while the content speaks the instance's
-        language; then verify gains the floor as a WARN (an RF-shaped ID in
-        the requirements sections with no scenario line citing it), never a
-        fail at birth — false positives on legacy frds would train users to
-        skip the section. Wire it together with traceability-invariant's
-        set-equality work, not as a separate pass.
-
     - id: shared-language
       severity: minor
       issue: |
@@ -483,6 +430,187 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: traceability-invariant
+      was: major
+      issue: |
+        Field week (the review-loop transcript, 2026-08-06): the SAME
+        traceability invariant on system-design — set-equality between each
+        component's declared requirement links and the transposed
+        requirements table, with "inside a parenthesis is a mention, not an
+        assignment" — was improvised as a throwaway script FOUR times across
+        review rounds, with four different parse bugs (expanded ranges,
+        parentheses, trailing label lines). One bug made the sets match by
+        accident and hid the single real divergence from the very instrument
+        presented as proof. Most of the loop the user experienced as
+        exhausting was the method debugging its own improvised instruments,
+        not the design being wrong. Doctrine shipped in 1.12.0
+        (agent.yaml verifier_discipline + CONDUCTOR.md): label self-written
+        checks as assertions, propose promotion after the second
+        improvisation. This entry is the promotion itself.
+      decision: |
+        Promote into `verify` as the COVERAGE precedent walked: VOCABULARY
+        FIRST. The invariant's grammar today is a private convention of one
+        instance's table (the `·`-separated assignment cells, the
+        parenthesis-is-mention rule, the Rastreia:/traces: line shape).
+        Mechanizing it as-is ships the parse bug with a badge. Steps, in
+        order: (1) the table convention becomes method vocabulary — declared
+        in the system-design owner's ## structure (and mirrored in the
+        registry only if the runtime must count it); (2) THEN verify gains
+        the set-equality check, external and caller-run like COVERAGE —
+        in-band deterministic postconditions are self-attestation, the
+        1.9.0 lesson; (3) the check reports set DIFFERENCES (which ID, which
+        side), never a bare count — a count that matches by accident is this
+        entry's founding bug. Scope note: this is the third member of the
+        coverage check-class family (defined→cited, sections×structure,
+        now declared-links×table) — wire it with a real miss behind it,
+        which this transcript supplies.
+      resolution: |
+        1.21.0 (2026-08-29), the hub release — all four declared-links
+        members in one build. Vocabulary first, exactly as prescribed:
+        `Traces to:` became a never-translate label and the table's cell
+        grammar (`·`-separated; a parenthesis is a mention, not an
+        assignment) entered the system-design owner's ## structure; THEN
+        verify gained the set-equality check, external and caller-run,
+        reporting set DIFFERENCES (which id, which side), never a bare
+        count. Both sides present and disagreeing FAILS; half the
+        vocabulary present WARNS (a link nothing can cross-check). And the
+        entry's founding fear proved itself DURING the build: the first
+        cut of the parser promoted `**Talks to:** COMP-02 (why)` — the
+        template's own prescribed output — to a component definition, the
+        FIFTH parse bug of the same class; the release's planted-bug run
+        (divergent fixture against the old runtime first) caught it before
+        it could ship with a badge. Definition is POSITIONAL
+        (`**COMP-nn — Name**`, id at the start, name dash after), never
+        presence of an id on a definition-shaped line.
+
+    - id: scenario-floor
+      was: minor
+      issue: |
+        The frd demands acceptance criteria as a section, but no floor ties
+        each requirement ID to at least one concrete scenario. OpenSpec
+        enforces exactly this (every Requirement has >= 1 #### Scenario
+        block, validated strictly). A requirement with no scenario is
+        acceptance nobody can check.
+      decision: |
+        Ride the traceability-invariant thread, vocabulary first, and reuse
+        the evals-labels pattern (1.17.0): scenario labels become canonical
+        never-translate vocabulary while the content speaks the instance's
+        language; then verify gains the floor as a WARN (an RF-shaped ID in
+        the requirements sections with no scenario line citing it), never a
+        fail at birth — false positives on legacy frds would train users to
+        skip the section. Wire it together with traceability-invariant's
+        set-equality work, not as a separate pass.
+      resolution: |
+        1.21.0, riding the traceability-invariant thread as prescribed.
+        The frd template's bold labels (Description:, Acceptance criteria:,
+        Criticality:, Traces:, Dependencies:) became method vocabulary,
+        never translated (the evals-labels pattern); verify warns per RF
+        whose definition block carries no criterion under `Acceptance
+        criteria:` — warn tier, never fail at birth, exactly for the
+        legacy-frd false-positive reason this entry named. Only
+        definition-shaped lines open an RF block; a citation in prose does
+        not, so "see RF-001 above" costs nothing.
+
+    - id: enforcement-edge
+      was: major
+      issue: |
+        The chain "decision → constraint → code" has no machine watching it.
+        An architectural rule recorded in an adr or drawn as a boundary in
+        the system-design is enforced, at best, by a reviewer's judgment —
+        nothing ties the DECISION to the executable CHECK that holds it up,
+        and nothing notices when the check is missing, dangling, or
+        orphaned. The sharpest external statement of the need (Wasowski,
+        "ADR-as-spec, Fitness Functions, and Policy-as-Code", Level Up
+        Coding, 2026-08-22 — provenance named here only, per the
+        third-party-names rule) demands exactly this chain as an
+        architect's "minimum standard": every ADR points to the mechanism
+        that enforces it, every mechanism points to the code it governs,
+        "if any link is missing, you know exactly where the chain breaks."
+        And then verifies it with NOTHING — a chain of references declared
+        in prose, this project's recurring failure #1 promoted to a
+        standard. His drift loop closes code-vs-rule; only our lineage
+        closes doc-vs-doc; nobody yet closes rule-vs-check.
+      decision: |
+        Take his minimum standard and do to it what this house does to
+        every declared reference: give it a validator. (a) The adr (and the
+        weight-bearing boundaries of the system-design) gain an OPTIONAL
+        `enforced_by:` edge naming the check that holds the rule up — the
+        check itself lives as a case in the evals suite (Task/Acceptance/
+        Origin already fit an architecture fitness case; the TOOL that
+        checks a dependency rule is stack-specific and binds in the
+        adapter/instance, layer neutrality intact) and its continuous
+        execution is the coercion merge_gate point (1.18.0). (b) verify
+        watches BOTH directions: an `enforced_by` pointing at nothing
+        FAILS; a load-bearing rule without the edge is a DECLARED gap
+        (warn — an unenforced ADR is a comment, said out loud, never
+        silently); the reverse direction (a check citing no decision) is
+        attribution the evals Origin line already carries. (c) The freeze
+        baseline his rollout demands is health-delta's design (block only
+        NEW violations, delta not absolute) — one mechanism, not two.
+        VOCABULARY FIRST, the traceability-invariant path: the edge enters
+        the adr's ## structure and the registry before verify enforces it.
+        Wire together with traceability-invariant — this is the fourth
+        member of the declared-links check family (defined→cited,
+        sections×structure, declared-links×table, decision→check).
+      resolution: |
+        1.21.0, v1 — the declared half, whole. The adr gained the OPTIONAL
+        frontmatter edge `enforced_by: [EV-nn, ...]` — declared in the
+        owner's ## structure and the registry note BEFORE verify enforces
+        it, the vocabulary-first path — and a DECLARED edge is a checked
+        edge: verify FAILS a dangling one, one into a retired case (a
+        retired check enforces nothing; an unenforced rule wearing an edge
+        is worse than one saying so) and one that does not parse. The
+        reverse direction stays the case's own Origin: line; continuous
+        execution stays the 1.18.0 merge_gate coercion point. DEFERRED,
+        named so it does not dissolve: the load-bearing-rule-without-an-
+        edge WARN waits for a weight marker on decisions, and the
+        freeze-the-baseline rollout rides health-delta's delta design
+        (block only NEW violations) — one mechanism, not two, when that
+        entry builds.
+
+    - id: exception-stream
+      was: minor
+      issue: |
+        The method records every exception it grants — waivable requires
+        waived, `--no-impact` reasons, `impact_waived`, rebless scopes,
+        third-party grants, gate bypasses noted in the field — but records
+        them SCATTERED across frontmatters and dev files. A human wanting
+        to review "what got excepted lately" re-reads documents. The
+        exception-driven review board pattern (same article as
+        enforcement-edge; also the graduated-gate philosophy applied to
+        the org: the board stops approving everything and reads the
+        exception stream with machine-assembled evidence) needs that
+        stream to EXIST as a derivable view. The field criterion adopted
+        in graduated-gate already implies it: a third good-reason bypass
+        is DATA about granularity — but only if someone can SEE the
+        bypasses in one place.
+      decision: |
+        A derived block in `status`, sibling of DECLARED DEBT: every
+        standing exception surfaced on every run — waived requires in
+        force, approvals carrying impact_waived, rebless_scope partial
+        sweeps, correction approvals (they are the designed exception to
+        re-review), third-party grants (dev-side, listed when the bundle
+        repo is the cwd). Derived, never maintained: nobody keeps the
+        list; the standing records ARE the list, and the block is the
+        review board's agenda. Buildable in one sitting; no new state, no
+        new artifact, no bump beyond a minor. The machine assembles the
+        evidence; the human makes the call — reversing those roles would
+        be dismantling governance, not automating it.
+      resolution: |
+        1.21.0, built in one sitting as the entry predicted — no new
+        state, no new artifact, a minor. `status` gained the EXCEPTION
+        STREAM block, sibling of DECLARED DEBT: correction approvals,
+        partial rebless_scope sweeps, impact_waived reasons, waived
+        preconditions, and (bundle-cwd only) the third-party grants —
+        including a LOUD line when the grants register itself does not
+        parse, never a silent zero (the queue lesson, applied). The
+        waived-requires record gained its canonical shape on the way
+        (`waived_requires: [{artifact, by, reason, at}]`, agent.yaml
+        § waivable), because a derived view needs a findable record;
+        legacy free-form waiver keys (any frontmatter key containing
+        'waiv') surface as legacy, never fail. The machine assembles the
+        evidence; the human makes the call.
+
     - id: third-party-names
       was: minor
       issue: |

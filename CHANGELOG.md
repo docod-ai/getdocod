@@ -5,6 +5,65 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.21.0] — 2026-08-29
+
+The declared-links release — the whole check family the ledger's hub entry
+was holding open ships in one release: every reference a document DECLARES
+is now a reference a machine can cross, and the standing exceptions the
+method grants stop hiding in scattered frontmatters.
+
+Added: the traceability invariant, promoted at last. The same set-equality
+check on the system-design — each component's declared requirement links
+versus the transposed traceability table — was improvised as a throwaway
+script FOUR times across one field review loop, with four different parse
+bugs; one made the sets match by accident and hid the single real
+divergence from the very instrument presented as proof. Vocabulary first,
+the COVERAGE precedent: `Traces to:` is now a never-translate label, the
+table's cell grammar is declared in the owner's `## structure` (components
+`·`-separated; an id inside a parenthesis is a mention, not an assignment),
+and `verify` gains the set-equality check — reporting DIFFERENCES, which id
+on which side, never a bare count, because a count that matches by accident
+is this check's founding bug. Both sides present and disagreeing FAILS;
+half the vocabulary present warns (a link nothing can cross-check); a
+translated-away label warns. And the promotion paid for itself before it
+shipped: this release's own planted-bug run caught the fifth parse bug of
+the same class — a mention line promoted to a definition — before it could
+ship with a badge.
+
+Added: the scenario floor on the frd. The template's bold field labels
+(`Description:`, `Acceptance criteria:`, `Criticality:`, `Traces:`,
+`Dependencies:`) become method vocabulary, never translated — the
+evals-labels rule — and `verify` warns on every RF whose definition block
+carries no criterion under `Acceptance criteria:`. A requirement with no
+scenario is acceptance nobody can check. Warn, never fail at birth: legacy
+frds predate the vocabulary, and a false positive trains the user to skip
+the section.
+
+Added: the enforcement edge — the decision → check link, fourth member of
+the declared-links family. An adr MAY declare `enforced_by: [EV-nn]` in its
+frontmatter, naming the evals case(s) that hold the decision up in the
+code. Optional, because not every decision has a mechanizable check — but a
+DECLARED edge is a checked edge: `verify` FAILS a dangling one, an edge
+into a retired case (a retired check enforces nothing), and an edge that
+does not parse. The reverse direction is the case's own `Origin:` line; the
+case's continuous run is the adapters' merge_gate coercion point, already
+shipped in 1.18.0. The load-bearing-rule-without-an-edge warn waits for a
+weight marker, on record in the ledger.
+
+Added: the EXCEPTION STREAM, `status`'s sibling of DECLARED DEBT. Every
+standing exception the method has granted, surfaced in one derived block on
+every run: correction approvals, partial rebless sweeps, `--no-impact`
+waivers, waived preconditions — now with a canonical frontmatter shape,
+`waived_requires: [{artifact, by, reason, at}]` (agent.yaml § waivable);
+legacy free-form waiver fields still surface, never fail — and, when the
+bundle repo is the cwd, the dev-side third-party name grants. Nobody keeps
+this list; the standing records ARE the list, and the block is the review
+board's agenda. The machine assembles the evidence; the human makes the
+call — reversing those roles would be dismantling governance, not
+automating it.
+
+specVersion → 1.21.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.20.0] — 2026-08-24
 
 The route-never-delete release — a field report ("the PRD has a character

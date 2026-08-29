@@ -158,6 +158,8 @@ For each one:
 
 The "does NOT do" is what keeps the component from growing until it becomes the whole system.
 
+`Traces to:` is method vocabulary, never translated — the content around it speaks the instance's language; the label does not (the evals-labels rule). The machine reads this line: it is one side of the traceability invariant `verify` compares against § 8, and an RF **inside a parenthesis is a mention, not an assignment** — "(see RF-020)" explains, it does not claim.
+
 ## 4. Boundaries & Why
 The section that justifies the drawing.
 
@@ -203,6 +205,8 @@ ADRs this design respects, and where they show up in the structure.
 |---|---|
 
 **Gaps** — a component without an RF (invented scope) and an RF without a component (a promise without a plan).
+
+Cell grammar, and the machine reads it: components in a cell are separated by `·` (a comma is tolerated); a component **inside a parenthesis is a mention, not an assignment** — "(consumed by COMP-05)" explains who touches it, it does not assign the RF. `verify` checks SET EQUALITY between this table and the `Traces to:` lines of § 3 and reports **differences** — which id, which side — never a bare count: a count that matches by accident is exactly how a real divergence hides.
 
 ## 9. Known Limitations
 What this design does **not** solve, and what would happen if it had to. Honesty here spares the next person.

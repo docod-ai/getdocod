@@ -119,6 +119,8 @@ Product answers product; engineering decides engineering. You are the second. If
 **Date:** · **Authors:** · **Triggered by:** [agent or person who ran into the decision]
 **Supersedes:** ADR-NNNN · **Superseded by:** ADR-NNNN
 
+Optional, and the machine watches it once declared: the frontmatter edge `enforced_by: [EV-nn]` names the evals case(s) that hold this decision up in the code — the decision → check link. A decision without the edge is a decision enforced by a reviewer's memory, and that is allowed but SAID; a declared edge pointing at a case that does not exist, or at a retired one, fails `verify` — a broken chain is named at the exact link where it breaks. The reverse direction lives in the case itself: its `Origin:` line says which decision it serves.
+
 ## 1. Context / Motivation
 Which technical problem appeared, who ran into it, which constraints and requirements surround it. Cite the RF or the objective that pulled the decision in.
 

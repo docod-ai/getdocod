@@ -1,4 +1,4 @@
-specVersion: "1.20.0"
+specVersion: "1.21.0"
 
 # =============================================================================
 # LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
@@ -340,7 +340,15 @@ contract:
       false (default) — hard gate: without the artifact, the action does not run.
       true            — gate with an escape: the user may waive it, and the
                         waiver is RECORDED in the frontmatter of the produced
-                        document, with who waived it and why.
+                        document, with who waived it and why. The canonical
+                        shape (1.21.0): `waived_requires: [{artifact, by,
+                        reason, at}]` — one entry per waived precondition.
+                        Canonical because a derived view reads it: `status`
+                        surfaces every standing waiver in its EXCEPTION
+                        STREAM block, and a record the machine cannot find is
+                        a silent waiver wearing a costume. Legacy free-form
+                        waiver fields still surface — any frontmatter key
+                        containing 'waiv' is listed, never failed.
     note: |
       `waivable` exists because not every precondition is equal. Requiring a
       business-case before the PRD is correct in the full flow and an absurd

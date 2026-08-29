@@ -363,6 +363,58 @@ function cmdStatus(root, ws = null) {
     }
   }
 
+  // EXCEPTION STREAM — derived, never maintained (1.21.0), sibling of
+  // DECLARED DEBT: every standing exception the method has granted, surfaced
+  // in ONE place on every run. The records were always there — waived
+  // preconditions, --no-impact reasons, partial rebless sweeps, correction
+  // approvals — but SCATTERED across frontmatters, so reviewing "what got
+  // excepted lately" meant re-reading documents. Nobody keeps this list; the
+  // standing records ARE the list, and this block is the review board's
+  // agenda. The machine assembles the evidence; the human makes the call —
+  // reversing those roles would be dismantling governance, not automating it.
+  {
+    const exceptions = [];
+    const seen = new Set();
+    for (const art of Object.values(arts)) {
+      if (String(art.owner ?? "").startsWith("{")) continue;
+      for (const f of findInstances(art, root, inst, "*")) {
+        if (!f.endsWith(".md") || !fs.existsSync(f) || !fs.statSync(f).isFile()) continue;
+        const rel = path.relative(root, f);
+        if (seen.has(rel)) continue;
+        seen.add(rel);
+        const [fm] = readFrontmatter(f);
+        if (fm.approval?.correction)
+          exceptions.push(["correction", `${rel} — approved by CONFIRMATION (${fm.approval.by ?? "?"}, ${fm.approval.at ?? "?"}), inside the envelope, not re-reviewed; the reason is on record`]);
+        if (fm.approval?.rebless_scope)
+          exceptions.push(["partial rebless", `${rel} — a batch re-approval swept a PARTIAL scope (${[].concat(fm.approval.rebless_scope).join(", ")}); what was scoped out was never looked at by that sweep`]);
+        if (fm.impact_waived)
+          exceptions.push(["impact waived", `${rel} — approved with --no-impact: ${String(fm.impact_waived).replace(/\s+/g, " ").slice(0, 70)}`]);
+        if (Array.isArray(fm.waived_requires))
+          for (const w of fm.waived_requires)
+            exceptions.push(["waived require", `${rel} — precondition '${w?.artifact ?? "?"}' waived by ${w?.by ?? "?"}: ${String(w?.reason ?? "no reason recorded").replace(/\s+/g, " ").slice(0, 60)}`]);
+        for (const k2 of Object.keys(fm))
+          if (k2 !== "impact_waived" && k2 !== "waived_requires" && /waiv/i.test(k2))
+            exceptions.push(["waived require", `${rel} — the frontmatter records '${k2}': a precondition waived at run time, in a legacy shape (who and why live in the record; the canonical field is waived_requires, agent.yaml § waivable)`]);
+      }
+    }
+    // dev-side: the third-party name grants, visible when the register is the cwd's
+    const tprF = path.join(root, "third-party-references.yaml");
+    if (fs.existsSync(tprF)) {
+      try {
+        const g = yload(fs.readFileSync(tprF, "utf-8"));
+        const n = Array.isArray(g?.allowed) ? g.allowed.length : 0;
+        if (n) exceptions.push(["third-party grants", `${n} standing grant(s) in third-party-references.yaml — names are forbidden by default; each grant is a recorded decision (dev-side, never shipped)`]);
+      } catch {
+        exceptions.push(["third-party grants", "third-party-references.yaml DOES NOT PARSE — grants cannot be shown; treat as unreviewed, never as none"]);
+      }
+    }
+    if (exceptions.length) {
+      console.log(`\nEXCEPTION STREAM — ${exceptions.length} standing exception(s) (derived; the records ARE the list, this block is the review board's agenda):`);
+      for (const [cls, line] of exceptions.slice(0, 10)) console.log(`  ◦ [${cls}] ${line}`);
+      if (exceptions.length > 10) console.log(`  … and ${exceptions.length - 10} more`);
+    }
+  }
+
   // EXTERNAL QUESTIONS — the single queue (artifacts.yaml: external-questions).
   // Nobody inside the project can close these; scattered across per-agent
   // logs they are the easiest thing to lose. The status chases them.
@@ -1197,6 +1249,137 @@ function cmdVerify(root, file) {
       }
       if (retired) oks.push(`${retired} retired case(s) — heading kept, id preserved`);
     } else if (body0.trim()) warns.push("no `### EV-nn` case headings found — the suite's case convention is in artifacts.yaml § evals");
+  }
+  // THE TRACEABILITY INVARIANT (1.21.0) — the declared-links × table check,
+  // third member of the coverage check-class family (defined→cited,
+  // sections×structure, now declared-links×table). Born as a promotion: the
+  // SAME set-equality invariant was improvised as a throwaway script FOUR
+  // times across one review loop, with four different parse bugs — and one
+  // bug made the sets match by accident, hiding the single real divergence
+  // from the very instrument presented as proof. Vocabulary first (the
+  // COVERAGE precedent): the grammar lives in the system-design owner's
+  // ## structure — `Traces to:` is a never-translate label, table cells
+  // separate components with `·` (comma tolerated), and an id INSIDE A
+  // PARENTHESIS is a mention, not an assignment. The check reports set
+  // DIFFERENCES — which id, which side — never a bare count: a count that
+  // matches by accident is this check's founding bug.
+  if (selfKey === "system-design" && p.endsWith(".md")) {
+    const stripMentions = (s) => s.replace(/\([^)]*\)/g, " ");
+    const rfIds = (s) => [...stripMentions(s).matchAll(/\bRF-\d{1,4}\b/g)].map(m => m[0]);
+    const compIds = (s) => [...stripMentions(s).matchAll(/\bCOMP-\d{1,4}\b/g)].map(m => m[0]);
+    // side A — the `Traces to:` lines, each under the last DEFINED component.
+    // A definition is POSITIONAL: the block opener `**COMP-nn — Name**`
+    // (blockquoted or a heading), the id at the START followed by the name
+    // dash. Presence is not definition — `**Talks to:** COMP-02 (why)` is the
+    // template's own prescribed output, and a guard that promotes a mention
+    // to a definition is the founding parse-bug class reborn (caught by this
+    // release's OWN planted-bug run before it shipped).
+    const compDefRx = /^\s*(?:>+\s*)?(?:#{1,6}\s+)?\*{0,2}(COMP-\d{1,4})\*{0,2}\s*[—–-]/;
+    const fromLines = new Map();   // RF -> Set(comp)
+    let curComp = null, tracesLines = 0, compHeads = 0;
+    for (const line of body0.split("\n")) {
+      const dm = compDefRx.exec(line);
+      if (dm) { curComp = dm[1]; compHeads++; }
+      if (/\*\*Traces to:\*\*/.test(line)) {
+        tracesLines++;
+        if (curComp) for (const rf of rfIds(line.slice(line.indexOf("Traces to:")))) {
+          if (!fromLines.has(rf)) fromLines.set(rf, new Set());
+          fromLines.get(rf).add(curComp);
+        }
+      }
+    }
+    // side B — the traceability table: rows whose first cell holds an RF id
+    // and whose second cell holds component ids (`·`-separated; parenthesis
+    // = mention, stripped above)
+    const fromTable = new Map();   // RF -> Set(comp)
+    for (const line of body0.split("\n")) {
+      if (!/^\s*\|/.test(line) || /^\s*\|[\s:|-]+\|?\s*$/.test(line)) continue;
+      const cells = line.split("|").map(c => c.trim()).filter((c, i, a) => !(i === 0 && !c) && !(i === a.length - 1 && !c));
+      if (cells.length < 2) continue;
+      const rfs = rfIds(cells[0]); if (!rfs.length) continue;
+      const comps = compIds(cells.slice(1).join(" "));
+      for (const rf of rfs) {
+        if (!fromTable.has(rf)) fromTable.set(rf, new Set());
+        for (const c of comps) fromTable.get(rf).add(c);
+      }
+    }
+    if (fromLines.size && fromTable.size) {
+      const diffs = [];
+      for (const rf of new Set([...fromLines.keys(), ...fromTable.keys()])) {
+        const a = fromLines.get(rf), b = fromTable.get(rf);
+        if (!a) { diffs.push(`${rf}: in the table (→ ${[...b].sort().join("·")}) but NO component declares it in a \`Traces to:\` line`); continue; }
+        if (!b) { diffs.push(`${rf}: declared by ${[...a].sort().join("·")} but MISSING from the traceability table`); continue; }
+        const onlyA = [...a].filter(c => !b.has(c)), onlyB = [...b].filter(c => !a.has(c));
+        if (onlyA.length || onlyB.length)
+          diffs.push(`${rf}: ${onlyA.length ? `${onlyA.sort().join("·")} declare(s) it but the table does not assign them` : ""}${onlyA.length && onlyB.length ? "; " : ""}${onlyB.length ? `the table assigns ${onlyB.sort().join("·")} but their \`Traces to:\` lines do not say so` : ""}`);
+      }
+      if (diffs.length)
+        fails.push(`traceability invariant BROKEN — ${diffs.length} set difference(s) between the components' \`Traces to:\` lines and the traceability table (an id inside a parenthesis is a mention, not an assignment): ${diffs.slice(0, 5).join(" · ")}${diffs.length > 5 ? ` · … and ${diffs.length - 5} more` : ""}`);
+      else oks.push(`traceability invariant holds: ${fromLines.size} RF(s) × the components that declare them — \`Traces to:\` lines and the traceability table carry the SAME sets (differences, never counts, are what the machine compares)`);
+    } else if (fromLines.size || fromTable.size) {
+      warns.push(`traceability invariant cannot arm — only ONE side of the vocabulary is present (${fromLines.size ? "`Traces to:` lines without a parseable RF×component table" : "an RF×component table without `Traces to:` lines"}); half a declared link is a link nothing can cross-check`);
+    } else if (compHeads && !tracesLines) {
+      warns.push(`${compHeads} component(s) declared but no \`Traces to:\` label found — the label is method vocabulary, never translated (content localizes; labels do not); without it the traceability invariant cannot watch this design`);
+    }
+  }
+  // THE SCENARIO FLOOR (1.21.0) — every RF carries at least one acceptance
+  // criterion. A requirement with no scenario is acceptance nobody can check.
+  // Warn, never fail at birth: legacy frds predate the label vocabulary, and
+  // a false positive trains the user to skip the section. Same labels rule
+  // as evals: `Acceptance criteria:` is method vocabulary; the content
+  // beside it speaks the instance's language.
+  if (selfKey === "frd" && p.endsWith(".md")) {
+    const defRx = /^\s*(?:#{1,6}\s|>+\s*\*\*|\*\*|[-*]\s+\*\*|\|\s*\*\*)/;
+    const lines = body0.split("\n");
+    const defs = [];   // [idx, RF-id] — definition-shaped lines only; citations do not open a block
+    lines.forEach((line, i) => {
+      if (!defRx.test(line)) return;
+      const m = line.match(/\bRF-\d{1,4}\b/);
+      if (m && !defs.some(([, id]) => id === m[0])) defs.push([i, m[0]]);
+    });
+    if (defs.length) {
+      const bare = [];
+      defs.forEach(([start, id], k) => {
+        const end = k + 1 < defs.length ? defs[k + 1][0] : lines.length;
+        const block = lines.slice(start, end);
+        const li = block.findIndex(l => /\*\*Acceptance criteria:\*\*/.test(l));
+        const hasScenario = li >= 0 && block.slice(li + 1).some(l => /^\s*>?\s*[-*]\s+\S/.test(l) || /\*\*Acceptance criteria:\*\*\s*\S/.test(block[li]));
+        if (!hasScenario) bare.push(id);
+      });
+      if (bare.length)
+        warns.push(`scenario floor: ${bare.length} requirement(s) with no \`Acceptance criteria:\` scenario under the definition — ${bare.slice(0, 6).join(", ")}${bare.length > 6 ? ", …" : ""}. A requirement with no scenario is acceptance nobody can check; the label is method vocabulary (content localizes; labels do not)`);
+      else oks.push(`scenario floor: all ${defs.length} requirement(s) carry at least one acceptance criterion under an \`Acceptance criteria:\` label`);
+    }
+  }
+  // THE ENFORCEMENT EDGE (1.21.0) — the decision → check link, fourth member
+  // of the declared-links family. An architectural rule recorded in an adr is
+  // enforced, at best, by a reviewer's memory; the OPTIONAL frontmatter edge
+  // `enforced_by: [EV-nn, ...]` names the evals case that holds the rule up,
+  // and a DECLARED edge is a checked edge: pointing at nothing FAILS, and
+  // pointing at a retired case FAILS too — a retired check enforces nothing,
+  // and an unenforced rule wearing an edge is worse than one saying so. The
+  // reverse direction (which decision a case serves) is the case's Origin:
+  // line; the case's continuous run is the adapters' merge_gate point.
+  if (fm.enforced_by != null) {
+    const edges = Array.isArray(fm.enforced_by) ? fm.enforced_by : [fm.enforced_by];
+    const live = new Set(), retiredSet = new Set();
+    const evArt = arts["evals"];
+    for (const f of evArt ? findInstances(evArt, root, inst, "*") : []) {
+      if (!f.endsWith(".md") || !fs.existsSync(f) || !fs.statSync(f).isFile()) continue;
+      for (const b of readFrontmatter(f)[1].split(/^### /m).slice(1)) {
+        const m = /^EV-(\d+)\b/.exec(b);
+        if (m) (/^retired:/m.test(b) ? retiredSet : live).add(parseInt(m[1], 10));
+      }
+    }
+    for (const e of edges) {
+      const m = /^EV-(\d+)$/.exec(String(e).trim());
+      if (!m) { fails.push(`enforcement edge '${String(e).slice(0, 24)}' does not parse — the grammar is EV-<number>, an id in the evals suite`); continue; }
+      const n = parseInt(m[1], 10);
+      if (live.has(n)) oks.push(`enforcement edge EV-${m[1]} resolves to a live case in the evals suite — the decision → check chain is closed (its continuous run is the merge gate's job, not this command's)`);
+      else if (retiredSet.has(n)) fails.push(`enforcement edge EV-${m[1]} points at a RETIRED case — a retired check enforces nothing; the rule is unenforced: re-arm the case or remove the edge and say so`);
+      else if (!live.size && !retiredSet.size) fails.push(`enforcement edge EV-${m[1]} declared but NO evals suite exists — the decision claims a check nobody wrote (the suite's contract is artifacts.yaml § evals)`);
+      else fails.push(`enforcement edge EV-${m[1]} is DANGLING — no such case in the evals suite; the decision claims a check that does not exist, which is exactly the broken link this edge exists to name`);
+    }
   }
   // COMPLETENESS — the truncation detector. The contract (artifacts.yaml)
   // declares the MINIMUM sections; a run that died mid-write leaves fewer

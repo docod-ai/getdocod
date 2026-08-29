@@ -118,6 +118,8 @@ Grouped by module or flow. Each one in the template:
 > **Traces:** PRD objective or success criterion
 > **Dependencies:** other RFs, systems, teams
 
+The bold labels of this template — `Description:`, `Acceptance criteria:`, `Criticality:`, `Traces:`, `Dependencies:` — are method vocabulary, never translated; the content beside them speaks the instance's language (the evals-labels rule). And the floor `verify` watches: **every RF carries at least one criterion under `Acceptance criteria:`** — a requirement with no scenario is acceptance nobody can check.
+
 ## Critical Non-Functional Requirements
 Only the ones that **impact functionality**: performance thresholds, security demands, availability. With numbers, via `measurable-goals`. The NFR that doesn't change behavior belongs to the design.
 

@@ -1,4 +1,4 @@
-specVersion: "1.20.0"
+specVersion: "1.21.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -291,6 +291,14 @@ artifacts:
     # real ADR (all six-sectioned, per the structure) failed verify's count.
     sections: [Title, Context / Motivation, Decision, Alternatives Considered,
                Consequences, Review conditions, References]
+    # The decision → check edge (1.21.0): an adr MAY declare, in its
+    # FRONTMATTER, `enforced_by: [EV-nn, ...]` — the evals case(s) that hold
+    # the decision up in the code. OPTIONAL, because not every decision has a
+    # mechanizable check — but a DECLARED edge is a checked edge: verify FAILS
+    # a dangling one (no such case) and one into a retired case (a retired
+    # check enforces nothing). The reverse direction — which decision a case
+    # serves — is the case's own Origin: line; the case's continuous run is
+    # the adapters' merge_gate coercion point, not verify's job.
 
   counsel:
     stage: define

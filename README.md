@@ -347,6 +347,8 @@ It requires proof for the observable class.
 
 It leaves judgment where judgment belongs.
 
+The same rule covers references between documents. A component that declares which requirements it serves, a traceability table that assigns them, a requirement that promises acceptance scenarios, a decision that names the automated check holding it up: each of these is a declared link, and since 1.21.0 `verify` crosses every one of them. Set differences are reported by id and by side, never as a count, because two counts can match while the content diverges.
+
 ---
 
 ## Three reviewers, three objects
@@ -996,6 +998,8 @@ Cooperation is the method: gates inform and record, and the human orchestrates. 
 - configuration regression: config changes run the `evals` suite.
 
 Claude Code binds several points to managed settings distributed by the organization. Codex binds what its workspace policy governs and marks the rest as runtime-defined. The neutral adapter declares that a file spec coerces nothing. Every point shares the same vendor-neutral floor, and the floor is the strongest part: branch protection, required review, and the runtime's honest exit codes as required checks in CI. That floor lives outside every harness, which is exactly why it holds for all of them.
+
+Governance that grants exceptions must also show them. Since 1.21.0, `status` derives an exception stream on every run: correction approvals, partial batch re-approval sweeps, waived impact analyses and waived preconditions, each one already recorded where it happened, now surfaced in one place. Nobody maintains the list; the records are the list. A review board reads that block instead of approving everything, with the evidence assembled by the machine and the call kept human.
 
 ### Other harnesses
 
