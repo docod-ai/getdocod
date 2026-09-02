@@ -999,7 +999,7 @@ Cooperation is the method: gates inform and record, and the human orchestrates. 
 
 Claude Code binds several points to managed settings distributed by the organization. Codex binds what its workspace policy governs and marks the rest as runtime-defined. The neutral adapter declares that a file spec coerces nothing. Every point shares the same vendor-neutral floor, and the floor is the strongest part: branch protection, required review, and the runtime's honest exit codes as required checks in CI. That floor lives outside every harness, which is exactly why it holds for all of them.
 
-Governance that grants exceptions must also show them. Since 1.21.0, `status` derives an exception stream on every run: correction approvals, partial batch re-approval sweeps, waived impact analyses and waived preconditions, each one already recorded where it happened, now surfaced in one place. Nobody maintains the list; the records are the list. A review board reads that block instead of approving everything, with the evidence assembled by the machine and the call kept human.
+Governance that grants exceptions must also show them. Since 1.21.0, `status` derives an exception stream on every run: correction approvals, approvals taken while the producer still had the document as draft, partial batch re-approval sweeps, waived impact analyses and waived preconditions, each one already recorded where it happened, now surfaced in one place. Nobody maintains the list; the records are the list. A review board reads that block instead of approving everything, with the evidence assembled by the machine and the call kept human.
 
 ### Other harnesses
 

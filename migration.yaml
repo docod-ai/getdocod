@@ -430,6 +430,61 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: producer-stamp
+      was: minor
+      issue: |
+        Field complaint (the author, 2026-09-02), shaped as a feature
+        request: "when I open a draft in the report, move it to review — I
+        am reviewing it." Every producer contract says `writes: {status:
+        draft}`, producers stamped draft on FINISHED documents by habit,
+        the human approved what they had just read, and the conductor
+        lectured them about draft → review → approved. method.yaml already
+        defined draft as "incomplete, nobody should depend on it" and
+        review as "complete, awaiting the gate" — the doctrine existed, the
+        stamp did not follow it, and the runtime corrected the wrong party.
+      resolution: |
+        1.22.0. The literal request REFUSED on purpose: the report derives
+        and never writes, a read is not a transition, and a viewer that
+        wrote state would be an ungoverned actor (rule 406: only the owner
+        moves status). What shipped instead fixes the cause: method.yaml
+        rule + agent.yaml write_order + both harness envelopes now say the
+        final stamp of a COMPLETE run is `review`; `draft` is the
+        producer's own declaration of incompleteness with a `draft_reason`;
+        `writes.status` is the birth status, not the delivery status (the
+        runtime never read that field — pure doctrine, so no contract
+        changed). `approve` on a draft explains what draft means, records
+        `from_status: draft`, and the EXCEPTION STREAM lists it; CONDUCTOR
+        gained the Never ("correct the producer's habit, never the human's
+        act"); the report's status chips carry the definition as a tooltip.
+        In the normal flow the human now opens a `review` document and
+        approves with no message at all.
+
+    - id: review-rounds
+      was: minor
+      issue: |
+        codereview, qa and bugs had FIXED paths (qa.md, codereview.md,
+        bugs.md): every re-run overwrote the previous verdict, and the
+        history of how a task got to green — round 1 changes_requested,
+        round 2 with comments, round 3 approved — was gone. The author
+        changed the registry to `-{seq}.md` (uncommitted, found on disk
+        2026-09-02) and asked for it to be absorbed.
+      resolution: |
+        1.22.0, absorbed whole with the vocabulary it needed: `rounds:
+        true` on the three, because sequential alone is ambiguous — an adr
+        is sequential and each adr is its own decision; rounds are records
+        of ONE verdict and only the newest per folder counts. Wired at
+        every point a stale round could lie: possibleActions and DECLARED
+        DEBT read only the latest round (planted bug: round 1
+        approved_with_comments satisfied a gate after round 3 said
+        changes_requested — the old runtime listed it as standing debt);
+        status marks earlier rounds as history; verify names the round and
+        whether it counts, warns on an unnumbered file, and the
+        codereview's upstream-smells opposition runs against the latest qa
+        round instead of the fixed `qa.md` that no longer exists (the old
+        check warned "no sibling qa.md" over three qa rounds on disk).
+        Reviewer agents gained the round rule: new numbered file per pass,
+        claim-by-creation, history never deleted.
+
     - id: traceability-invariant
       was: major
       issue: |

@@ -5,6 +5,52 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.22.0] — 2026-09-02
+
+The producer's-stamp release — a field complaint that sounded like a
+feature request ("when I open a draft in the report, move it to review, I
+am reviewing it") turned out to be a doctrine hole, and the request's
+literal shape was refused on purpose.
+
+Fixed: the wrong party was being corrected. method.yaml defines `draft` as
+"incomplete, nobody should depend on it" and `review` as "complete,
+awaiting the gate" — and every contract says `writes: {status: draft}`, so
+producers stamped draft on FINISHED documents by habit, the human approved
+what they had just read, and the conductor lectured them about a flow the
+producer had skipped. Now the doctrine says it out loud (method.yaml rule,
+agent.yaml § write_order, both harness envelopes in install.sh): the final
+stamp of a COMPLETE run is `review`; `draft` is the producer's own
+declaration of incompleteness and carries a `draft_reason`; the contracts'
+`writes.status` is the status a document is BORN with, not delivered with.
+The report was NOT given the power to move status: it derives, it never
+writes, and a read is not a transition — a viewer that wrote state would be
+an ungoverned actor, the exact thing the owner rule forbids. The report's
+status chips now carry the method's definition as a tooltip instead.
+
+Changed: `approve` on a draft stops lecturing. The message says what draft
+means (the producer left it incomplete, with the draft_reason if one
+exists), the approval records `from_status: draft`, and the EXCEPTION
+STREAM lists it — approving a document its producer declared incomplete is
+a review-board item, not a scolding. CONDUCTOR.md gains the matching Never:
+correct the producer's habit, never the human's act.
+
+Added: review ROUNDS (the author's registry change, absorbed whole).
+`codereview`, `qa` and `bugs` are now sequential (`-{seq}.md`) and
+registered `rounds: true` — a fixed name overwrote the previous verdict on
+every re-run, and the history of how a task got to green was gone. The
+vocabulary matters: an adr is sequential too, but each adr is its own
+decision; rounds are records of ONE verdict, and only the newest round per
+folder counts. Wired everywhere a stale round could have lied: gates and
+DECLARED DEBT read only the latest round (planted bug: an
+approved_with_comments from round 1 satisfied a gate after round 3 said
+changes_requested); status marks earlier rounds as history; verify names
+the round and whether it counts, and the codereview's upstream-smells
+opposition now runs against the LATEST qa round instead of a fixed
+`qa.md` that no longer exists. The reviewer agents gained the round rule
+(new numbered file per pass, claim-by-creation, history never deleted).
+
+specVersion → 1.22.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.21.0] — 2026-08-29
 
 The declared-links release — the whole check family the ledger's hub entry

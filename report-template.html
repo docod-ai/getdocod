@@ -184,6 +184,9 @@ const I18N={'pt-BR':{Documents:'Documentos',Tasks:'Tarefas',Flow:'Fluxo',Workstr
  'No tasks yet — task-extraction extracts them from the approved FRD.':'Nenhuma tarefa ainda — o task-extraction extrai do FRD aprovado.',
  'nothing — start with the prd or business-case':'nada — comece pelo prd ou business-case',
  'nothing blocked':'nada travado',
+ 'draft — incomplete, by its producer\'s own account; nobody should depend on it':'draft — incompleto, por conta do próprio produtor; ninguém deve depender dele',
+ 'review — complete, awaiting your gate':'review — completo, aguardando o seu gate',
+ 'approved — passed the gate; may be consumed downstream':'approved — passou o gate; pode ser consumido a jusante',
  'No workstream registered — the prd creates one when run in ws scope.':'Nenhuma frente registrada — o prd cria ao rodar em escopo ws.'}};
 const T=(k)=>(I18N[D.language]||{})[k]??k;
 document.getElementById('q').placeholder=T('filter…');
@@ -253,7 +256,13 @@ const el=(h)=>{const t=document.createElement('template');t.innerHTML=h.trim();r
 function chip(st){
   const cls=/INVALID/i.test(st)?'invalid':({draft:'draft',review:'review',approved:'approved',
     'approved?':'review',rejected:'rejected',blocked:'blocked','—':'none'}[st]||'none');
-  return '<span class="chip '+cls+'">'+esc(st)+'</span>';
+  // the chip carries the method's definition of the status (1.22.0): a reader
+  // opening a draft is NOT reviewing it into `review` — the report derives, it
+  // never writes; draft means the producer declared it incomplete
+  const meaning={draft:'draft — incomplete, by its producer\'s own account; nobody should depend on it',
+    review:'review — complete, awaiting your gate',
+    approved:'approved — passed the gate; may be consumed downstream'}[st];
+  return '<span class="chip '+cls+'"'+(meaning?' title="'+esc(T(meaning))+'"':'')+'>'+esc(st)+'</span>';
 }
 function openDoc(it){
   const head='<div class="dpath">'+esc(it.path)+'</div>'+

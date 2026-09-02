@@ -156,7 +156,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.21.0"
+specVersion: "1.22.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -383,8 +383,12 @@ It is your prompt: contract, postconditions (with the nature of each one),
    the caller, and record the waiver in the document's frontmatter). If node is
    missing on this machine, say so and check the requires MANUALLY against
    artifacts.yaml — never skip the gate.
-2. You NEVER write \`status: approved\` — not even on your own artifact. Deliver
-   in draft/review; approving is the human's act, via \`/docod:approve\`.
+2. You NEVER write \`status: approved\` — not even on your own artifact.
+   Approving is the human's act, via \`/docod:approve\`. A COMPLETE document,
+   the one you present for reading, is delivered in \`review\` ("complete,
+   awaiting the gate"); \`draft\` is YOUR declaration that it is NOT complete
+   (blocking questions open, declared gaps) and carries a \`draft_reason:\`.
+   Never stamp draft by habit on a finished document.
 3. Frontmatter of what you produce: \`status\` + \`inputs:\` with {artifact, key, hash}.
    The hash is COMPUTED (sha256:<hex>), never a placeholder — if you cannot
    compute it (source still draft, file absent), say so in the entry instead
@@ -533,6 +537,8 @@ $role_limit
 Non-negotiable harness rules:
 1. Run node .docod/docod.mjs status before starting and stop on blocked requires.
 2. Never write status: approved. Approval is the human's /docod:approve act.
+   A complete document is delivered in review; draft is your own declaration
+   that it is not complete, with a draft_reason. Never draft by habit.
 3. Compute every hash; never write a placeholder that looks like data.
 4. Product answers go to the append-only decisions artifact. Technical choices
    with alternatives require the adr owner. External-owner questions use
@@ -574,7 +580,7 @@ gen_cli start    "Where to enter, given what already exists" \
 gen_cli continue "Resume a workstream: focused status + next steps" \
   "Run \`$PY continue \$ARGUMENTS\`. More than one valid path → present ALL of them; the user decides."
 gen_cli approve  "The human gate: verdict with a hash, moves the status" \
-  "Run \`$PY approve \$ARGUMENTS --by <whoever the user says>\`. NEVER without an explicit request — approving is their act. Re-approving AMENDED content requires --impact <impact-file> or --no-impact \"<reason>\" (the runtime refuses otherwise): touched doc means mapped radius, mechanically. For a FACTUAL fix with no semantic change there is the light door: \`$PY approve <file> --by <who> --correction --reason \"...\"\` — the machine checks the edit stays inside the approval's recorded envelope (structure, IDs, inputs, protected spine) and refuses NAMING the broken leg if not; inside it, confirmation replaces re-review and downstream pins re-pin automatically. Then show the \`status\`."
+  "Run \`$PY approve \$ARGUMENTS --by <whoever the user says>\`. NEVER without an explicit request — approving is their act. If the document is still in \`draft\`, the runtime says what that means (the producer left it incomplete by its own account) and records the approval anyway with \`from_status: draft\` — you do NOT lecture the user about draft → review → approved: they read the document, approving it is their call, and a finished document stamped draft is the PRODUCER's slip, not theirs. Re-approving AMENDED content requires --impact <impact-file> or --no-impact \"<reason>\" (the runtime refuses otherwise): touched doc means mapped radius, mechanically. For a FACTUAL fix with no semantic change there is the light door: \`$PY approve <file> --by <who> --correction --reason \"...\"\` — the machine checks the edit stays inside the approval's recorded envelope (structure, IDs, inputs, protected spine) and refuses NAMING the broken leg if not; inside it, confirmation replaces re-review and downstream pins re-pin automatically. Then show the \`status\`."
 gen_cli ws       "Workstreams: list, done, abandon (reason mandatory)" \
   "Run \`$PY ws \$ARGUMENTS\`. Abandoning requires --reason — without one the command refuses, and it is right to."
 gen_cli report   "HTML dashboard: documents, task kanban, flow, workstreams" \

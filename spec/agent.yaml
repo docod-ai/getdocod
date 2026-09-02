@@ -1,4 +1,4 @@
-specVersion: "1.21.0"
+specVersion: "1.22.0"
 
 # =============================================================================
 # LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
@@ -485,6 +485,19 @@ write_order: |
   passes, an interruption leaves a file that FAILS verify as an incomplete
   run instead of passing looking whole. A registered artifact with a body and no `status` is therefore
   an INTERRUPTED RUN by definition, and `verify` fails it as such.
+
+  AND THE STAMP SAYS THE TRUTH (1.22.0). The final stamp of a COMPLETE run —
+  the document you present for reading — is `review`: method.yaml defines it
+  as "complete, awaiting the gate", which is exactly what a finished document
+  is. `draft` means "incomplete, nobody should depend on it", and it is YOUR
+  declaration, not a habit: stamp it only when you KNOW the document is not
+  done (blocking questions open, a section left as a declared gap), and say
+  why in `draft_reason:`. The `writes: {status: draft}` in a contract is the
+  status a document is BORN with, not the one it is delivered with. Field
+  case: producers stamped draft on finished documents, the human approved
+  what they had just read, and the conductor lectured them about a flow the
+  producer had skipped. Reading is not a transition; the report never
+  writes; the producer's stamp is the only honest place for `review`.
 
   Cheap by construction: no progress file, no heartbeat, no lock — the
   ABSENCE of the last write IS the marker. Field case that forced this: an

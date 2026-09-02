@@ -240,6 +240,27 @@ function projectState(root, inst, arts, ws = null) {
       const [st, aviso, verd] = a.endsWith(".md") ? effectiveStatus(a) : ["—", null, null];
       itens.push([path.relative(root, a), st, aviso, verd]);
     }
+    // ROUNDS (1.22.0): an artifact registered `rounds: true` is a sequence of
+    // RECORDS of the same verdict — codereview-0001, -0002 … — not distinct
+    // documents (an ADR is sequential too, but each ADR is its own decision).
+    // The newest round per folder is the one that COUNTS; older rounds are
+    // history, kept on disk, never deleted, and marked here so no gate is
+    // satisfied by a verdict a later round already replaced. Fifth element:
+    // true = latest round, false = superseded round, undefined = not a
+    // rounds artifact.
+    if (art.rounds && itens.length) {
+      const bySeq = (rel) => { const m = path.basename(rel).match(/(\d+)\D*$/); return m ? parseInt(m[1], 10) : -1; };
+      const latest = new Map(); // folder -> [seq, rel]
+      for (const it of itens) {
+        const dir = path.dirname(it[0]), n = bySeq(it[0]);
+        if (!latest.has(dir) || n > latest.get(dir)[0]) latest.set(dir, [n, it[0]]);
+      }
+      for (const it of itens) {
+        const [, top] = latest.get(path.dirname(it[0]));
+        it[4] = top === it[0];
+        if (!it[4]) it[2] = (it[2] ? it[2] + " · " : "") + `earlier round — the ${key} that counts is ${path.basename(top)}`;
+      }
+    }
     if (itens.length) estado[key] = itens;
   }
   return estado;
@@ -248,8 +269,12 @@ function projectState(root, inst, arts, ws = null) {
 function possibleActions(estado, agents) {
   const okStatus = {}, verdicts = {};
   for (const [k, v] of Object.entries(estado)) {
-    okStatus[k] = new Set(v.map(([, st]) => st));
-    verdicts[k] = new Set(v.map(([, , , verd]) => verd).filter(Boolean));
+    // rounds artifacts: only the LATEST round per folder feeds a gate — an
+    // approved_with_comments from round 1 must not satisfy anything after
+    // round 3 said changes_requested (1.22.0)
+    const live = v.filter((it) => it[4] !== false);
+    okStatus[k] = new Set(live.map(([, st]) => st));
+    verdicts[k] = new Set(live.map(([, , , verd]) => verd).filter(Boolean));
   }
   const possiveis = [], travadas = [];
   for (const [ag, d] of Object.entries(agents)) {
@@ -354,8 +379,8 @@ function cmdStatus(root, ws = null) {
   {
     const debt = [];
     for (const [k, v] of Object.entries(estado))
-      for (const [p, , , verd] of v)
-        if (verd === "approved_with_comments") debt.push([k, p]);
+      for (const [p, , , verd, latest] of v)
+        if (verd === "approved_with_comments" && latest !== false) debt.push([k, p]);
     if (debt.length) {
       console.log(`\nDECLARED DEBT — ${debt.length} standing 'approved_with_comments' verdict(s) (they satisfy gates; the comments remain owed):`);
       for (const [k, p] of debt.slice(0, 8)) console.log(`  ◦ ${k}: ${p} — read the comments in the reviewer's record; closing them retires this line`);
@@ -387,6 +412,8 @@ function cmdStatus(root, ws = null) {
           exceptions.push(["correction", `${rel} — approved by CONFIRMATION (${fm.approval.by ?? "?"}, ${fm.approval.at ?? "?"}), inside the envelope, not re-reviewed; the reason is on record`]);
         if (fm.approval?.rebless_scope)
           exceptions.push(["partial rebless", `${rel} — a batch re-approval swept a PARTIAL scope (${[].concat(fm.approval.rebless_scope).join(", ")}); what was scoped out was never looked at by that sweep`]);
+        if (fm.approval?.from_status === "draft")
+          exceptions.push(["approved from draft", `${rel} — approved by ${fm.approval.by ?? "?"} while its producer had it as INCOMPLETE${fm.draft_reason ? ` (draft_reason: ${String(fm.draft_reason).replace(/\s+/g, " ").slice(0, 50)})` : " (no draft_reason: a finished document stamped draft by habit, or a real gap nobody named)"}`]);
         if (fm.impact_waived)
           exceptions.push(["impact waived", `${rel} — approved with --no-impact: ${String(fm.impact_waived).replace(/\s+/g, " ").slice(0, 70)}`]);
         if (Array.isArray(fm.waived_requires))
@@ -578,8 +605,20 @@ function cmdApprove(root, arquivo, by, opt, correction = false) {
   const caminho = path.isAbsolute(arquivo) ? arquivo : path.join(root, arquivo);
   if (!fs.existsSync(caminho)) die(`✗ does not exist: ${arquivo}`);
   const [fm] = readFrontmatter(caminho);
-  if ((fm.status || "draft") === "draft")
-    console.log("⚠ it is in draft — the flow is draft → review → approved. Approving anyway (recorded).");
+  // Approving from `draft` (1.22.0): the message says what draft MEANS, and
+  // the record keeps the from-status. Before this, the runtime lectured the
+  // human about "the flow" — but the flow the human saw was a finished
+  // document the PRODUCER had stamped draft by habit (method.yaml: draft =
+  // "incomplete, nobody should depend on it"; a complete run is stamped
+  // review). Approving what you read is the human's call, always recorded;
+  // approving a document its producer declared incomplete is a standing
+  // exception — the EXCEPTION STREAM surfaces it, nobody has to remember.
+  const fromStatus = fm.status || "draft";
+  if (fromStatus === "draft") {
+    console.log("ℹ this document is in `draft` — by the method's definition, its producer left it INCOMPLETE" +
+      (fm.draft_reason ? ` (draft_reason: ${String(fm.draft_reason).replace(/\s+/g, " ").slice(0, 80)})` : " (no draft_reason recorded — most likely a finished document stamped draft by habit; the producer's stamp for a complete run is `review`)") + ".");
+    console.log("  Approving it is your call. Recorded with from_status: draft — status surfaces it in the EXCEPTION STREAM.");
+  }
   // agent gate before the human one, when it exists
   const { inst, arts } = loadModel(root);
   let selfKey = null, selfArt = null;
@@ -657,7 +696,8 @@ function cmdApprove(root, arquivo, by, opt, correction = false) {
   const h = sha256Body(caminho);
   fm.status = "approved";
   fm.approval = { by, at: new Date().toISOString().slice(0, 10), content_hash: h,
-    ...(selfArt ? { envelope: computeEnvelope(caminho, selfArt) } : {}) };
+    ...(selfArt ? { envelope: computeEnvelope(caminho, selfArt) } : {}),
+    ...(fromStatus === "draft" ? { from_status: "draft" } : {}) };
   writeFrontmatter(caminho, fm);
   console.log(`✓ approved by ${by} · ${h}`);
   console.log("  Validity is mechanical: edit the content and the approval invalidates itself.");
@@ -1115,6 +1155,16 @@ function cmdVerify(root, file) {
   for (const [k, a] of Object.entries(arts))
     if (findInstances(a, root, inst, "*").includes(p)) { selfKey = k; selfArt = a; break; }
   if (selfKey) oks.push(`registered artifact: ${selfKey}` + (selfArt.lineage === "snapshot" ? " (snapshot — inputs are observed-at)" : ""));
+  // ROUNDS (1.22.0): say which round this is, and whether it is the one that
+  // counts — a verdict from an earlier round is history, never a gate.
+  if (selfKey && selfArt.rounds) {
+    const seqOf = (f) => { const m = path.basename(f).match(/(\d+)\D*$/); return m ? parseInt(m[1], 10) : -1; };
+    const sib = findInstances(selfArt, root, inst, "*").filter(f => path.dirname(f) === path.dirname(p) && f.endsWith(".md") && fs.existsSync(f) && fs.statSync(f).isFile());
+    const top = sib.reduce((a, f) => (seqOf(f) > seqOf(a) ? f : a), sib[0] ?? p);
+    if (seqOf(p) < 0) warns.push(`${selfKey} is a rounds artifact but this file carries no sequence number — the path contract is ${selfKey}-{seq}.md; an unnumbered file cannot be ordered against its rounds`);
+    else if (top === p) oks.push(`round ${seqOf(p)} — the LATEST of ${sib.length} ${selfKey} round(s) in this folder; this is the one that counts for gates`);
+    else warns.push(`round ${seqOf(p)} is an EARLIER round — ${path.basename(top)} is the ${selfKey} that counts; this file is history (kept, never deleted)`);
+  }
   // THE QUEUE CHECKS — external-questions only. Born from a field loss
   // (2026-08-14): three parallel writers rewrote the whole file, the YAML
   // stopped parsing, and eight entries vanished while this command still
@@ -1658,9 +1708,17 @@ function cmdVerify(root, file) {
   // Neither alone is the alarm; the DISAGREEMENT is. Warn, not fail: two
   // low-confidence judgments disagreeing deserve eyes, not a halted line.
   if (selfKey === "codereview" && Array.isArray(fm.upstream_smells) && fm.upstream_smells.length) {
-    const qaP = path.join(path.dirname(p), "qa.md");
-    if (!fs.existsSync(qaP)) warns.push("upstream_smells declared but no sibling qa.md to oppose them against");
+    // the sibling qa is a ROUNDS artifact (1.22.0): oppose against the LATEST
+    // round in this folder, never a fixed name — qa-0001 opposing a
+    // codereview written after qa-0003 would judge against stale evidence
+    const qaArt = arts["qa"];
+    const qaRounds = (qaArt ? findInstances(qaArt, root, inst, "*") : [])
+      .filter(f => path.dirname(f) === path.dirname(p) && f.endsWith(".md") && fs.existsSync(f) && fs.statSync(f).isFile())
+      .sort((a, b) => (parseInt((path.basename(a).match(/(\d+)\D*$/) || [, "-1"])[1], 10)) - (parseInt((path.basename(b).match(/(\d+)\D*$/) || [, "-1"])[1], 10)));
+    const qaP = qaRounds.length ? qaRounds[qaRounds.length - 1] : path.join(path.dirname(p), "qa.md");
+    if (!fs.existsSync(qaP)) warns.push("upstream_smells declared but no sibling qa round to oppose them against");
     else {
+      if (qaRounds.length > 1) oks.push(`opposing against ${path.basename(qaP)} — the latest of ${qaRounds.length} qa rounds in this folder`);
       const [qfm] = readFrontmatter(qaP);
       const bugs = Object.fromEntries((qfm.bugs || []).map(x => [x.id, x.root_cause]));
       for (const id of fm.upstream_smells)

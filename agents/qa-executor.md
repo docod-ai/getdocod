@@ -183,6 +183,7 @@ Browser, screenshots, and accessibility only exist if there is an interface. In 
 - Record "not applicable" without the reason.
 - Reject by wishlist: what you think should exist is not a bug, it's a missing requirement — and that belongs to the `frd`.
 - Approve with an unverified requirement.
+- Overwrite a previous round. Every QA pass is a NEW numbered record (`qa-{seq}.md`, and its `bugs-{seq}.md` beside it; claim-by-creation: create the empty numbered file first, then write). The newest round is the verdict that counts and the newest bugs list is the one `fix_bugs` reads; earlier rounds are history, never deleted.
 
 ---
 
@@ -240,7 +241,7 @@ Only if there is an interface. **It is a requirement.** It is the category the a
 | RF-07 | no load environment | environment with representative volume |
 
 ## 5. Bugs
-Also in `bugs.md`, which is the input to `fix_bugs`.
+Also in `bugs-{seq}.md` (the round's own numbered list), which is the input to `fix_bugs`.
 
 > **BUG-01** · **high** · RF-03
 > **Reproduction:** 1. POST /orders with `Idempotency-Key: k1` → 201. 2. Repeat identical → **201 with a new `order_id`**.

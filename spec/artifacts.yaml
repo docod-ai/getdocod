@@ -1,4 +1,4 @@
-specVersion: "1.21.0"
+specVersion: "1.22.0"
 
 # =============================================================================
 # LAYER 2 — ARTIFACT REGISTRY  ·  NEUTRAL
@@ -734,8 +734,18 @@ artifacts:
     owner: code-review
     delivers: "The code review's verdict: standards, design, task, migration and contract"
     scope: [target]
+    numbering: sequential
+    rounds: true
+    # ROUNDS (1.22.0, the author's change): every review pass is a NEW numbered
+    # record — a fixed name overwrote the previous verdict on every re-run, and
+    # the history of how a task got to green was gone. `rounds: true` tells the
+    # runtime these are rounds of ONE verdict, not distinct documents (an adr
+    # is sequential too, but each adr is its own decision): the newest round
+    # per folder is the one that counts for gates and debt; earlier rounds are
+    # history, kept, marked by status and verify. Claim-by-creation applies
+    # (adr.md): create the empty numbered file first, then write.
     path:
-      target: "{target.tasksRoot}prd-{ws}/codereview.md"
+      target: "{target.tasksRoot}prd-{ws}/codereview-{seq}.md"
     sections: [Project Verification, Scope vs Task, Findings, The Two One-Way Doors,
                Conformance, Not Evaluated, Done Right]
     gate: true
@@ -791,8 +801,18 @@ artifacts:
     owner: qa-executor
     delivers: "Verdict: does what was built do what was promised? Requirement by requirement, with observed evidence"
     scope: [target]
+    numbering: sequential
+    rounds: true
+    # ROUNDS (1.22.0, the author's change): every review pass is a NEW numbered
+    # record — a fixed name overwrote the previous verdict on every re-run, and
+    # the history of how a task got to green was gone. `rounds: true` tells the
+    # runtime these are rounds of ONE verdict, not distinct documents (an adr
+    # is sequential too, but each adr is its own decision): the newest round
+    # per folder is the one that counts for gates and debt; earlier rounds are
+    # history, kept, marked by status and verify. Claim-by-creation applies
+    # (adr.md): create the empty numbered file first, then write.
     path:
-      target: "{target.tasksRoot}prd-{ws}/qa.md"
+      target: "{target.tasksRoot}prd-{ws}/qa-{seq}.md"
     sections: [Requirements, Methods Applied, Accessibility, Not Verified, Bugs, Conclusion]
     gate: true
     verdict:
@@ -819,8 +839,18 @@ artifacts:
     owner: qa-executor
     delivers: "Bugs found in QA, with reproduction and evidence — input to the fix_bugs action"
     scope: [target]
+    numbering: sequential
+    rounds: true
+    # ROUNDS (1.22.0, the author's change): every review pass is a NEW numbered
+    # record — a fixed name overwrote the previous verdict on every re-run, and
+    # the history of how a task got to green was gone. `rounds: true` tells the
+    # runtime these are rounds of ONE verdict, not distinct documents (an adr
+    # is sequential too, but each adr is its own decision): the newest round
+    # per folder is the one that counts for gates and debt; earlier rounds are
+    # history, kept, marked by status and verify. Claim-by-creation applies
+    # (adr.md): create the empty numbered file first, then write.
     path:
-      target: "{target.tasksRoot}prd-{ws}/bugs.md"
+      target: "{target.tasksRoot}prd-{ws}/bugs-{seq}.md"
 
   evals:
     stage: confirm
