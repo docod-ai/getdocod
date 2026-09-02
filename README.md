@@ -591,7 +591,7 @@ The report shows:
 - declared and effective status;
 - invalid approvals in red;
 - stale and observed-at relationships;
-- tasks grouped as todo, doing and done;
+- tasks grouped as todo, doing and done, each with its own records (evidence, QA, bugs, code review) inside it;
 - possible actions;
 - blocked actions and their reasons;
 - workstreams;

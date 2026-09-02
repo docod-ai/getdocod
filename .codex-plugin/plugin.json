@@ -1,6 +1,6 @@
 {
   "name": "docod",
-  "version": "1.22.0",
+  "version": "1.22.2",
   "description": "Executable governance for AI-native software engineering, with the stable /docod:* command namespace.",
   "author": {
     "name": "Fabio Valencio",

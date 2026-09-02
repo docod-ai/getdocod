@@ -138,7 +138,7 @@ You review the produced code against **the project's standards, the design and t
 - Approve a migration without a rollback.
 - Approve a PR too big for you to have actually read.
 - Approve out of fatigue, or reject out of habit.
-- Overwrite a previous round. Every review pass is a NEW numbered record (`codereview-{seq}.md`, claim-by-creation: create the empty numbered file first, then write). The newest round is the verdict that counts; the earlier ones are the history of how the task got to green, and history is never deleted.
+- Number a review with anything but the TASK's seq. `codereview-0003.md` is the review OF `0003_task.md`, beside it, like `evidencias-0003.md` — one record per task. A re-review of the same task rewrites that same record (the verdict of the latest pass); a new number would claim a task that does not exist.
 
 ---
 

@@ -194,8 +194,34 @@ function findInstances(art, root, inst, ws = null) {
     if (scope === "ws" && !ws) continue;
     for (const pat of resolvePaths(tpl, root, inst, ws))
       for (const f of globq(pat)) achados.add(f);
+    // PER-TASK records (1.22.2): the path became `<key>-{seq}.md`, and the
+    // pre-1.22.0 FIXED name (`codereview.md`, `qa.md`, `bugs.md`) stopped
+    // matching the glob — every existing project's legacy verdicts vanished
+    // from status in silence (field, 2026-09-02). A record the registry
+    // knew yesterday never becomes invisible: the fixed name is a FOLDER-
+    // LEVEL record (see recordSeq) and stays discoverable.
+    if (art.per_task && tpl.includes("-{seq}"))
+      for (const pat of resolvePaths(tpl.replace("-{seq}", ""), root, inst, ws))
+        for (const f of globq(pat)) achados.add(f);
   }
   return [...achados].sort();
+}
+
+// The TASK a per-task record belongs to. Field grammar (2026-09-02, a real
+// tasks folder): tasks are `1_task.md` (no padding), evidencias are
+// `evidencias-1.0.md` (the task's "1.0" heading id), the registry's own
+// contract says `qa-0003.md`. One rule for all: the FIRST number after the
+// artifact prefix, read numerically (1 == 01 == 0001; "1.0" is task 1).
+// No number at all (`qa-report.md`, legacy `qa.md`/`codereview.md`) is a
+// FOLDER-LEVEL record — the verdict of the whole task set, not an orphan.
+function recordSeq(key, file) {
+  const base = path.basename(file).replace(/\.md$/, "");
+  const m = new RegExp("^" + key.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&") + "[-_]?(\\d+)").exec(base);
+  return m ? parseInt(m[1], 10) : null;
+}
+function taskSeq(file) {
+  const m = path.basename(file).match(/^(\d+)/);
+  return m ? parseInt(m[1], 10) : null;
 }
 
 /* ─────────────────────────────────────────────────────────── derived state */
@@ -240,27 +266,6 @@ function projectState(root, inst, arts, ws = null) {
       const [st, aviso, verd] = a.endsWith(".md") ? effectiveStatus(a) : ["—", null, null];
       itens.push([path.relative(root, a), st, aviso, verd]);
     }
-    // ROUNDS (1.22.0): an artifact registered `rounds: true` is a sequence of
-    // RECORDS of the same verdict — codereview-0001, -0002 … — not distinct
-    // documents (an ADR is sequential too, but each ADR is its own decision).
-    // The newest round per folder is the one that COUNTS; older rounds are
-    // history, kept on disk, never deleted, and marked here so no gate is
-    // satisfied by a verdict a later round already replaced. Fifth element:
-    // true = latest round, false = superseded round, undefined = not a
-    // rounds artifact.
-    if (art.rounds && itens.length) {
-      const bySeq = (rel) => { const m = path.basename(rel).match(/(\d+)\D*$/); return m ? parseInt(m[1], 10) : -1; };
-      const latest = new Map(); // folder -> [seq, rel]
-      for (const it of itens) {
-        const dir = path.dirname(it[0]), n = bySeq(it[0]);
-        if (!latest.has(dir) || n > latest.get(dir)[0]) latest.set(dir, [n, it[0]]);
-      }
-      for (const it of itens) {
-        const [, top] = latest.get(path.dirname(it[0]));
-        it[4] = top === it[0];
-        if (!it[4]) it[2] = (it[2] ? it[2] + " · " : "") + `earlier round — the ${key} that counts is ${path.basename(top)}`;
-      }
-    }
     if (itens.length) estado[key] = itens;
   }
   return estado;
@@ -269,12 +274,8 @@ function projectState(root, inst, arts, ws = null) {
 function possibleActions(estado, agents) {
   const okStatus = {}, verdicts = {};
   for (const [k, v] of Object.entries(estado)) {
-    // rounds artifacts: only the LATEST round per folder feeds a gate — an
-    // approved_with_comments from round 1 must not satisfy anything after
-    // round 3 said changes_requested (1.22.0)
-    const live = v.filter((it) => it[4] !== false);
-    okStatus[k] = new Set(live.map(([, st]) => st));
-    verdicts[k] = new Set(live.map(([, , , verd]) => verd).filter(Boolean));
+    okStatus[k] = new Set(v.map(([, st]) => st));
+    verdicts[k] = new Set(v.map(([, , , verd]) => verd).filter(Boolean));
   }
   const possiveis = [], travadas = [];
   for (const [ag, d] of Object.entries(agents)) {
@@ -379,8 +380,8 @@ function cmdStatus(root, ws = null) {
   {
     const debt = [];
     for (const [k, v] of Object.entries(estado))
-      for (const [p, , , verd, latest] of v)
-        if (verd === "approved_with_comments" && latest !== false) debt.push([k, p]);
+      for (const [p, , , verd] of v)
+        if (verd === "approved_with_comments") debt.push([k, p]);
     if (debt.length) {
       console.log(`\nDECLARED DEBT — ${debt.length} standing 'approved_with_comments' verdict(s) (they satisfy gates; the comments remain owed):`);
       for (const [k, p] of debt.slice(0, 8)) console.log(`  ◦ ${k}: ${p} — read the comments in the reviewer's record; closing them retires this line`);
@@ -1155,15 +1156,22 @@ function cmdVerify(root, file) {
   for (const [k, a] of Object.entries(arts))
     if (findInstances(a, root, inst, "*").includes(p)) { selfKey = k; selfArt = a; break; }
   if (selfKey) oks.push(`registered artifact: ${selfKey}` + (selfArt.lineage === "snapshot" ? " (snapshot — inputs are observed-at)" : ""));
-  // ROUNDS (1.22.0): say which round this is, and whether it is the one that
-  // counts — a verdict from an earlier round is history, never a gate.
-  if (selfKey && selfArt.rounds) {
-    const seqOf = (f) => { const m = path.basename(f).match(/(\d+)\D*$/); return m ? parseInt(m[1], 10) : -1; };
-    const sib = findInstances(selfArt, root, inst, "*").filter(f => path.dirname(f) === path.dirname(p) && f.endsWith(".md") && fs.existsSync(f) && fs.statSync(f).isFile());
-    const top = sib.reduce((a, f) => (seqOf(f) > seqOf(a) ? f : a), sib[0] ?? p);
-    if (seqOf(p) < 0) warns.push(`${selfKey} is a rounds artifact but this file carries no sequence number — the path contract is ${selfKey}-{seq}.md; an unnumbered file cannot be ordered against its rounds`);
-    else if (top === p) oks.push(`round ${seqOf(p)} — the LATEST of ${sib.length} ${selfKey} round(s) in this folder; this is the one that counts for gates`);
-    else warns.push(`round ${seqOf(p)} is an EARLIER round — ${path.basename(top)} is the ${selfKey} that counts; this file is history (kept, never deleted)`);
+  // PER-TASK RECORDS (1.22.1): evidencias, qa, bugs and codereview are
+  // numbered with the TASK's seq — qa-0003.md is the qa OF 0003_task.md, the
+  // convention evidencias always had ("Task: {seq}_task.md"). 1.22.0 misread
+  // the author's numbering as review ROUNDS ("the newest counts") and would
+  // have marked task 1's qa as history behind task 3's; corrected here. The
+  // record without its task is an orphan: a number that claims a task that
+  // does not exist beside it.
+  if (selfKey && selfArt.per_task && selfKey !== "task") {
+    const n = recordSeq(selfKey, p);
+    if (n == null) oks.push(`${selfKey} with no task number — a FOLDER-LEVEL record (the verdict of the whole ${path.basename(path.dirname(p))} task set, not of one task)`);
+    else {
+      const taskArt = arts["task"];
+      const mate = (taskArt ? findInstances(taskArt, root, inst, "*") : []).find(f => path.dirname(f) === path.dirname(p) && taskSeq(f) === n);
+      if (mate) oks.push(`belongs to task ${n} — ${path.basename(mate)} is beside it`);
+      else warns.push(`numbered ${n} but NO task ${n} beside it — an orphan record claiming a task that does not exist in this folder (renumbered task, or a number invented as a round)`);
+    }
   }
   // THE QUEUE CHECKS — external-questions only. Born from a field loss
   // (2026-08-14): three parallel writers rewrote the whole file, the YAML
@@ -1708,17 +1716,20 @@ function cmdVerify(root, file) {
   // Neither alone is the alarm; the DISAGREEMENT is. Warn, not fail: two
   // low-confidence judgments disagreeing deserve eyes, not a halted line.
   if (selfKey === "codereview" && Array.isArray(fm.upstream_smells) && fm.upstream_smells.length) {
-    // the sibling qa is a ROUNDS artifact (1.22.0): oppose against the LATEST
-    // round in this folder, never a fixed name — qa-0001 opposing a
-    // codereview written after qa-0003 would judge against stale evidence
+    // the sibling qa is the SAME TASK's qa (1.22.1): codereview-0003 opposes
+    // qa-0003 — both numbered with the task's seq; the pre-1.22.0 fixed
+    // `qa.md` is read as a legacy fallback, never failed
+    const myN = recordSeq("codereview", p);
     const qaArt = arts["qa"];
-    const qaRounds = (qaArt ? findInstances(qaArt, root, inst, "*") : [])
-      .filter(f => path.dirname(f) === path.dirname(p) && f.endsWith(".md") && fs.existsSync(f) && fs.statSync(f).isFile())
-      .sort((a, b) => (parseInt((path.basename(a).match(/(\d+)\D*$/) || [, "-1"])[1], 10)) - (parseInt((path.basename(b).match(/(\d+)\D*$/) || [, "-1"])[1], 10)));
-    const qaP = qaRounds.length ? qaRounds[qaRounds.length - 1] : path.join(path.dirname(p), "qa.md");
-    if (!fs.existsSync(qaP)) warns.push("upstream_smells declared but no sibling qa round to oppose them against");
+    const qas = (qaArt ? findInstances(qaArt, root, inst, "*") : []).filter(f =>
+      path.dirname(f) === path.dirname(p) && fs.existsSync(f) && fs.statSync(f).isFile());
+    const qaMate = myN != null ? qas.find(f => recordSeq("qa", f) === myN) : null;
+    const qaFolder = qas.find(f => recordSeq("qa", f) == null);
+    const qaP = qaMate || qaFolder || path.join(path.dirname(p), "qa.md");
+    if (!fs.existsSync(qaP)) warns.push(`upstream_smells declared but no qa ${myN != null ? `for task ${myN} ` : ""}beside this review to oppose them against`);
     else {
-      if (qaRounds.length > 1) oks.push(`opposing against ${path.basename(qaP)} — the latest of ${qaRounds.length} qa rounds in this folder`);
+      if (qaMate) oks.push(`opposing against ${path.basename(qaP)} — the same task's qa`);
+      else if (qaFolder) oks.push(`opposing against ${path.basename(qaP)} — the folder-level qa${myN != null ? ` (no per-task qa for task ${myN})` : ""}`);
       const [qfm] = readFrontmatter(qaP);
       const bugs = Object.fromEntries((qfm.bugs || []).map(x => [x.id, x.root_cause]));
       for (const id of fm.upstream_smells)
@@ -1872,6 +1883,7 @@ function cmdReport(root) {
   const docsByGroup = {};
   const estado = {};   // for possible/blocked — same as status
   const tasks = [];
+  const taskDocs = []; // per-task records, attached to their task below
   for (const [key, art] of Object.entries(arts)) {
     if (String(art.owner ?? "").startsWith("{")) continue;
     // ws: "*" — the report shows ALL fronts, orphan folders included
@@ -1905,12 +1917,46 @@ function cmdReport(root) {
                       : (st === "approved" ? "done" : fm.execution?.started ? "doing" : "todo") });
         continue; // tasks live in the kanban, not duplicated among documents
       }
+      // PER-TASK RECORDS (1.22.1): evidencias, qa, bugs and codereview are
+      // numbered with their task's seq and belong to THAT task — in the
+      // report they ride inside the task on the Tasks tab, not among the
+      // system's documents. Parked here; attached once every task is known.
+      // An orphan (no task with that seq beside it) stays a document, with
+      // its warning — the report never hides a file.
+      if (art.per_task) {
+        taskDocs.push({ ...item, where: path.dirname(rel), seq: recordSeq(key, a) });
+        continue;
+      }
       const group = rel.startsWith(dr)
         ? (rel.slice(dr.length).split("/").length > 1 ? rel.slice(dr.length).split("/")[0] : "root")
         : "target · next to the code";
       (docsByGroup[group] ??= []).push(item);
     }
   }
+  // attach the per-task records to their task (same folder, same seq); the
+  // order is the cycle's: proof, verdict, bugs, diff review
+  const RECORD_ORDER = ["evidencias", "qa", "bugs", "codereview"];
+  for (const t of tasks) {
+    t.seq = taskSeq(t.path);
+    t.docs = taskDocs.filter(d => d.where === t.where && d.seq != null && d.seq === t.seq)
+      .sort((x, y) => RECORD_ORDER.indexOf(x.artifact) - RECORD_ORDER.indexOf(y.artifact));
+  }
+  // FOLDER-LEVEL records (no task number: `qa-report.md`, legacy `qa.md`,
+  // `codereview.md`, `bugs.md`) belong to the whole task set — they ride on
+  // the task GROUP's header, not on one task and not among the documents
+  const folderDocs = {};   // where -> records
+  const attached = new Set(tasks.flatMap(t => t.docs.map(d => d.path)));
+  for (const d of taskDocs) if (!attached.has(d.path)) {
+    if (d.seq == null && tasks.some(t => t.where === d.where)) {
+      (folderDocs[d.where] ??= []).push(d);
+      continue;
+    }
+    d.warning = (d.warning ? d.warning + " · " : "") +
+      (d.seq == null ? "folder-level record in a folder with no tasks" : `numbered ${d.seq} but no task ${d.seq} beside it — orphan record`);
+    (docsByGroup["target · next to the code"] ??= []).push(d);
+  }
+  for (const w of Object.keys(folderDocs))
+    folderDocs[w].sort((x, y) => RECORD_ORDER.indexOf(x.artifact) - RECORD_ORDER.indexOf(y.artifact));
 
   const ORDER = ["product", "design", "decisions", "quality", "ops", "releases",
                  "standards", "workstreams", "root", "target · next to the code"];
@@ -1929,7 +1975,7 @@ function cmdReport(root) {
     project: inst?.project?.name ?? path.basename(root),
     language: inst?.language ?? "en",
     docsRoot: dr, generatedAt: new Date().toISOString().replace("T", " ").slice(0, 16),
-    node: process.version, workstreams: wss, docs, tasks,
+    node: process.version, workstreams: wss, docs, tasks, folderDocs,
     possible: possible.sort().map(p => ({ label: p, stage: stageOf(p) })),
     blocked: blocked.sort((x, y) => x[0] < y[0] ? -1 : 1).map(([name, why]) => ({ name, why, stage: stageOf(name) })),
   };

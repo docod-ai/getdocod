@@ -459,31 +459,58 @@ migration:
         In the normal flow the human now opens a `review` document and
         approves with no message at all.
 
-    - id: review-rounds
+    - id: per-task-records
       was: minor
       issue: |
         codereview, qa and bugs had FIXED paths (qa.md, codereview.md,
-        bugs.md): every re-run overwrote the previous verdict, and the
-        history of how a task got to green — round 1 changes_requested,
-        round 2 with comments, round 3 approved — was gone. The author
-        changed the registry to `-{seq}.md` (uncommitted, found on disk
-        2026-09-02) and asked for it to be absorbed.
+        bugs.md) in a folder that holds N tasks — one verdict file for the
+        whole folder, overwritten by every task's pass. The author changed
+        the registry to `-{seq}.md` (found uncommitted on disk 2026-09-02)
+        and asked for it to be absorbed. `{seq}` is the TASK's seq — the
+        convention evidencias-{seq} always had ("Task: {seq}_task.md").
+      misread: |
+        1.22.0 absorbed the numbering as review ROUNDS — "rounds of one
+        verdict, the newest per folder counts, earlier ones are history" —
+        with a registry flag `rounds: true`, latest-round filtering in
+        gates and DECLARED DEBT, "earlier round" markers in status and
+        verify, and the codereview opposing the latest qa in the folder.
+        Internally consistent, planted-bug tested, and WRONG: under it the
+        runtime marked task 1's qa as "an earlier round — the qa that
+        counts is qa-0003" and dropped task 1's standing with-comments debt
+        because a later TASK existed (fixture: three tasks, qa-0001
+        approved_with_comments, qa-0003 changes_requested; 1.22.0 runtime +
+        1.22.0 spec → 0 debt lines, "earlier round" on qa-0001). The
+        maintainer's own gotcha, recorded: a field convention was invented
+        from a filename shape instead of read from the sibling artifact
+        that already carried it (evidencias' ## structure, one screen away).
       resolution: |
-        1.22.0, absorbed whole with the vocabulary it needed: `rounds:
-        true` on the three, because sequential alone is ambiguous — an adr
-        is sequential and each adr is its own decision; rounds are records
-        of ONE verdict and only the newest per folder counts. Wired at
-        every point a stale round could lie: possibleActions and DECLARED
-        DEBT read only the latest round (planted bug: round 1
-        approved_with_comments satisfied a gate after round 3 said
-        changes_requested — the old runtime listed it as standing debt);
-        status marks earlier rounds as history; verify names the round and
-        whether it counts, warns on an unnumbered file, and the
-        codereview's upstream-smells opposition runs against the latest qa
-        round instead of the fixed `qa.md` that no longer exists (the old
-        check warned "no sibling qa.md" over three qa rounds on disk).
-        Reviewer agents gained the round rule: new numbered file per pass,
-        claim-by-creation, history never deleted.
+        1.22.1, one day later. Every piece of the rounds machinery removed;
+        `per_task: true` on evidencias, qa, bugs and codereview — the flag
+        the runtime actually needed: verify names the task a record belongs
+        to and warns on an orphan (a number with no task beside it), the
+        codereview's upstream-smells opposition runs against the SAME
+        task's qa (legacy fixed qa.md still read as fallback), and the
+        report nests each task's records inside the task on the Tasks tab
+        (evidence, qa, bugs, code review as verdict-coloured chips; opening
+        a task shows its records strip) — they belong to the task, not to
+        the system's documents, which was the author's second field
+        request the same day. An orphan record stays on the Documents tab
+        with its warning: the report never hides a file. Reviewer agents'
+        rule rewritten: one record per task, numbered with the task's seq;
+        a re-run rewrites that record.
+        1.22.2, one hour later, from a REAL tasks folder (the author's
+        backend, prd-ws3): three more defects. The number was read as the
+        LAST digit run (`evidencias-3.0.md` → "task 0", every evidence
+        file an orphan) — now the FIRST number after the prefix,
+        numerically; a record with NO number (`qa-report.md`, legacy
+        `qa.md`/`codereview.md`) is a FOLDER-LEVEL record, not an orphan
+        (verify says so; the report puts it on the group header; the
+        codereview opposition falls back to it); and the silent one: the
+        `-{seq}` paths made the legacy fixed names invisible to the
+        registry — `code-review.re_review` showed BLOCKED over a
+        codereview.md sitting right there. Lesson doubled: the grammar was
+        again written from the CONTRACT's example (`qa-0003`) instead of
+        from the files a real run leaves on disk. Read the field first.
 
     - id: traceability-invariant
       was: major

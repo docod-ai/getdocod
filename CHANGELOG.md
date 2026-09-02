@@ -5,6 +5,57 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.22.2] — 2026-09-02
+
+Fixed, from a real tasks folder one hour after 1.22.1: three defects in the
+per-task grammar. (1) The task number was read as the LAST digit run in the
+name, so `evidencias-3.0.md` (the task's "3.0" heading id) became "task 0"
+and every evidence file in the field was an orphan; the number is now the
+FIRST number after the artifact prefix, read numerically — `1_task.md`,
+`evidencias-1.0.md` and the contract's `qa-0001.md` all say task 1. (2) A
+record with NO number — `qa-report.md`, and the pre-1.22.0 fixed
+`qa.md`/`codereview.md`/`bugs.md` — is not an orphan: it is a FOLDER-LEVEL
+record, the verdict of the whole task set; verify says so, the codereview
+opposition falls back to it when no per-task qa exists, and the report
+shows it on the task group's header instead of warning. (3) The silent
+one: when the paths became `<key>-{seq}.md`, the legacy fixed names
+stopped matching the registry glob and every existing project's
+`codereview.md` vanished from status — `code-review.re_review` showed as
+BLOCKED over a file sitting right there. Per-task artifacts now also
+discover their fixed legacy name; a record the registry knew yesterday
+never becomes invisible.
+
+specVersion → 1.22.2 in lockstep (5 spec files + install.sh + both plugin.json).
+
+## [1.22.1] — 2026-09-02
+
+Fixed: 1.22.0 misread the author's numbering. `qa-{seq}`, `codereview-{seq}`
+and `bugs-{seq}` were absorbed as review ROUNDS ("the newest per folder
+counts, earlier ones are history") when `{seq}` is the TASK's seq — the
+convention `evidencias-{seq}` always had ("Task: {seq}_task.md"): qa-0003
+is the qa OF task 0003, not a third pass. Under the shipped reading the
+runtime lied within a day of use: it marked task 1's qa as "an earlier
+round, the qa that counts is qa-0003" and dropped task 1's standing
+with-comments debt from DECLARED DEBT because a later TASK existed. Every
+piece of the rounds machinery is gone; in its place the vocabulary the
+numbering actually needed: `per_task: true` on evidencias, qa, bugs and
+codereview. verify says which task a record belongs to and warns on an
+orphan (a number with no task beside it); the codereview's upstream-smells
+opposition runs against the SAME task's qa (legacy fixed `qa.md` still
+read); the reviewer agents' rule is now "one record per task, numbered
+with the task's seq; a re-run rewrites that record". The misread is on
+record in the ledger with the fixture that proves it.
+
+Changed: the report nests each task's records inside the task. Evidence,
+qa, bugs and code review belong to the task they are numbered after, not
+to the system's documents, so the Documents tab no longer lists them; on
+the Tasks tab each task row shows them as chips coloured by verdict, and
+opening a task shows its records strip — each chip opens the record.
+An orphan record stays on the Documents tab with its warning: the report
+never hides a file.
+
+specVersion → 1.22.1 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.22.0] — 2026-09-02
 
 The producer's-stamp release — a field complaint that sounded like a

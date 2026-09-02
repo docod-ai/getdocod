@@ -104,6 +104,14 @@
   .dot.todo{background:var(--faint)} .dot.doing{background:var(--review)} .dot.done{background:var(--approved)}
   .trow .tt{flex:1;font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .trow .tp{font-family:var(--mono);font-size:12px;color:var(--muted);flex-shrink:0;font-variant-numeric:tabular-nums}
+  .trow .recs,.prd-head .recs{display:flex;gap:5px;flex-shrink:0}
+  .prd-head .recs{margin-left:auto}
+  .prd-head .recs:empty{display:none}
+  .rec{font-family:var(--mono);font-size:10.5px;padding:1px 7px;border-radius:99px;border:1px solid var(--rule);color:var(--muted);cursor:pointer}
+  .rec:hover{border-color:var(--accent);color:var(--accent)}
+  .rec.approved{color:var(--approved);border-color:var(--approved)} .rec.approved_with_comments{color:var(--review);border-color:var(--review)}
+  .rec.changes_requested,.rec.blocked,.rec.rejected{color:var(--invalid);border-color:var(--invalid)}
+  .drecs{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:10px 0 14px;font-size:12.5px;color:var(--muted)}
   .empty{color:var(--faint);font-size:13px;padding:12px 2px}
 
   /* flow & ws */
@@ -184,6 +192,7 @@ const I18N={'pt-BR':{Documents:'Documentos',Tasks:'Tarefas',Flow:'Fluxo',Workstr
  'No tasks yet — task-extraction extracts them from the approved FRD.':'Nenhuma tarefa ainda — o task-extraction extrai do FRD aprovado.',
  'nothing — start with the prd or business-case':'nada — comece pelo prd ou business-case',
  'nothing blocked':'nada travado',
+ 'records of this task':'registros desta tarefa','no records yet — evidencias, qa, bugs and codereview land here':'nenhum registro ainda — evidencias, qa, bugs e codereview aparecem aqui',
  'draft — incomplete, by its producer\'s own account; nobody should depend on it':'draft — incompleto, por conta do próprio produtor; ninguém deve depender dele',
  'review — complete, awaiting your gate':'review — completo, aguardando o seu gate',
  'approved — passed the gate; may be consumed downstream':'approved — passou o gate; pode ser consumido a jusante',
@@ -264,6 +273,14 @@ function chip(st){
     approved:'approved — passed the gate; may be consumed downstream'}[st];
   return '<span class="chip '+cls+'"'+(meaning?' title="'+esc(T(meaning))+'"':'')+'>'+esc(st)+'</span>';
 }
+// a per-task record (evidencias/qa/bugs/codereview — numbered with the task's
+// seq): a small chip coloured by its verdict when it has one, else by status
+function recChip(d){
+  const v=d.verdict||'', cls=v?esc(v):(/INVALID/i.test(d.status)?'rejected':'');
+  const c=el('<span class="rec '+cls+'" title="'+esc(d.path+(v?' · '+v:' · '+d.status))+'">'+esc(d.artifact)+(v?' · '+esc(v):'')+'</span>');
+  c.onclick=(e)=>{e.stopPropagation();openDoc(d)};
+  return c;
+}
 function openDoc(it){
   const head='<div class="dpath">'+esc(it.path)+'</div>'+
     '<div class="drow row">'+chip(it.status)+
@@ -271,6 +288,12 @@ function openDoc(it){
     (it.approval?'<span class="appr">'+T('approved by')+' <b>'+esc(it.approval.by)+'</b> '+T('on')+' '+esc(String(it.approval.at))+'</span>':'')+
     (it.warning?'<span class="warn">'+esc(it.warning)+'</span>':'')+'</div>';
   document.getElementById('dbody').innerHTML=head+'<div class="md">'+md(it.body||'*'+T('empty document')+'*')+'</div>';
+  if(Array.isArray(it.docs)){
+    const strip=el('<div class="drecs"><span>'+T('records of this task')+':</span></div>');
+    if(it.docs.length)it.docs.forEach(d=>strip.appendChild(recChip(d)));
+    else strip.appendChild(el('<span>'+T('no records yet — evidencias, qa, bugs and codereview land here')+'</span>'));
+    const body=document.getElementById('dbody'); body.insertBefore(strip,body.querySelector('.md'));
+  }
   document.getElementById('ov').classList.add('on');
   document.getElementById('ov').scrollTop=0;
 }
@@ -349,8 +372,12 @@ if(!D.tasks.length){
         '<span class="doing">'+nDoing+' '+T('doing')+'</span>'+
         '<span class="todo">'+nTodo+' '+T('todo')+'</span>'+
       '</span>'+
+      '<span class="recs"></span>'+
       '<span class="prd-n">'+items.length+' '+T('tasks')+'</span>'+
     '</button>');
+    // folder-level records (qa-report.md, legacy qa.md/codereview.md/bugs.md):
+    // the verdict of the whole task set rides on the group's header
+    ((D.folderDocs||{})[key]||[]).forEach(d=>head.querySelector('.recs').appendChild(recChip(d)));
     head.onclick=()=>g.classList.toggle('open');
     g.appendChild(head);
     const body=el('<div class="prd-tasks"></div>');
@@ -360,8 +387,10 @@ if(!D.tasks.length){
         '<span class="dot '+esc(t.lane)+'"></span>'+
         '<span class="tt">'+esc(t.title)+'</span>'+
         (t.changed?'<span class="chip invalid">'+T('changed since approval')+'</span>':'')+
+        '<span class="recs"></span>'+
         '<span class="tp">'+esc(prog)+'</span>'+
       '</div>');
+      (t.docs||[]).forEach(d=>r.querySelector('.recs').appendChild(recChip(d)));
       r.onclick=()=>openDoc(t); body.appendChild(r);
     }catch(e){body.appendChild(el('<div class="trow"><span class="tt">⚠ task failed to render</span><span class="tp">'+esc(String(e))+'</span></div>'))}
     });
