@@ -48,7 +48,7 @@ contract:
       scope: [project, target]
       requires:
         - artifact: infrastructure-design
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [infrastructure-design, slos, postmortem, impact-analysis, decisions]
       writes:

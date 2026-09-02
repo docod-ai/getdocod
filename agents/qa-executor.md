@@ -39,7 +39,7 @@ contract:
       scope: [project, target]
       requires:
         - artifact: evals
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [evals, coding-standards, testing-guidelines, cicd-guidelines, security-rules]
       writes:
@@ -61,7 +61,7 @@ contract:
       scope: [target]
       requires:
         - artifact: task
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [task, tasks, frd, prd, api-contract, user-stories, test-plan,
               system-design, evidencias, code, decisions]
@@ -93,7 +93,7 @@ contract:
       scope: [target]
       requires:
         - artifact: qa
-          status: [draft, approved]
+          status: [approved, review]
           waivable: false
       reads: [qa, bugs, evidencias, task, frd, code, decisions]
       writes:

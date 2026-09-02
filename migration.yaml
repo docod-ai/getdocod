@@ -430,6 +430,47 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: draft-satisfies-nothing
+      was: major
+      issue: |
+        The author, one hour after 1.22.2, from the field: "task-executor.
+        execute_task exige task em [approved, draft], não renunciável. A
+        tarefa 1 está em review." And the diagnosis, which is the entry:
+        "esse runtime precisa de cuidado, voce nao pode apenas fazer as
+        mudancas, tem que entender a fundo o que é cada pedaco." 1.22.0
+        changed the MEANING of `draft` (a complete run now delivers in
+        `review`) and did not read the consumers of the old meaning. The
+        audit that should have preceded it, done now: 53 requires lists in
+        28 agents — 20 `[approved]` (the human gate), 31 `[approved,
+        draft]` (ALL blocked by a document in review), 1 `[review]`
+        (design-review, made natural by 1.22.0), 1 `[approved, review]`
+        (rfc), 1 `[draft]` (assess_observation finishing the half-filled
+        record observe --record creates). Runtime literals: report lane,
+        effectiveStatus, approve, rebless — none depended on draft-as-
+        delivered; only possibleActions compared the value.
+      misread: |
+        The maintainer's first fix was a LADDER (draft < review < approved,
+        a requires list read as an interval) — it kept draft satisfying the
+        31 gates. The author overruled it in the same hour: "o que é draft
+        agora não se aprova, não executa." Right, and already in the text:
+        method.yaml defined draft as "incomplete, nobody should depend on
+        it" since v1; the 31 lists contradicted the definition from day
+        one, and the interval would have kept the contradiction alive with
+        a nicer name.
+      resolution: |
+        1.22.3, the author's rule. The 31 lists rewritten to `[approved,
+        review]`; `[draft]` kept for assess_observation alone (completing
+        is not depending); `approve` refuses a draft and names the way out
+        (the owner agent delivers in review; never a hand-edited stamp);
+        the from_status record of 1.22.0–1.22.2 is no longer written, still
+        read. Planted: task in review → execute_task and run_qa POSSIBLE;
+        every task in draft → BLOCKED naming [approved, review]; approve on
+        a draft → exit 1, frontmatter untouched. Migration is detection
+        only (install.sh M5 counts legacy drafts and names the way out) —
+        completeness is the producer's judgment. The process rule went to
+        CONTRIBUTING's config-eval list: a change to a value's meaning is
+        not done until every consumer has been READ.
+
     - id: producer-stamp
       was: minor
       issue: |

@@ -16,7 +16,7 @@ contract:
       scope: [project, ws]
       requires:
         - artifact: tasks
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [tasks, task, user-stories, frd, prd, business-case,
               impact-analysis, roadmap, decisions]
@@ -42,7 +42,7 @@ contract:
       scope: [project, ws]
       requires:
         - artifact: roadmap
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [roadmap, tasks, evidencias, impact-analysis, decisions]
       writes:

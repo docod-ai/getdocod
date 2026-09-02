@@ -16,7 +16,7 @@ contract:
       scope: [project]
       requires:
         - artifact: slos
-          status: [approved, draft]
+          status: [approved, review]
           waivable: true
       reads: [slos, runbook, system-design, infrastructure-design, prd,
               security-design, postmortem, decisions]
@@ -42,7 +42,7 @@ contract:
       scope: [project]
       requires:
         - artifact: postmortem
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [postmortem, playbook, runbook, slos, decisions]
       writes:

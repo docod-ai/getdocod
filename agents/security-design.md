@@ -55,7 +55,7 @@ contract:
       scope: [project, target]
       requires:
         - artifact: security-design
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [security-design, system-design, api-contract, data-design,
               impact-analysis, postmortem, code, decisions]

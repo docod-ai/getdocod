@@ -50,7 +50,7 @@ contract:
       scope: [target]
       requires:
         - artifact: tasks
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [tasks, task, impact-analysis, design-review, adr, decisions]
       writes:

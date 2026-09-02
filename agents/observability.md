@@ -16,7 +16,7 @@ contract:
       scope: [project, target]
       requires:
         - artifact: slos
-          status: [approved, draft]
+          status: [approved, review]
           waivable: true
       reads: [slos, code, decisions, adr]
       writes:
@@ -98,7 +98,7 @@ contract:
       scope: [project, target]
       requires:
         - artifact: slos
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [slos, postmortem, impact-analysis, code, decisions]
       writes:

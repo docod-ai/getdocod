@@ -43,7 +43,7 @@ contract:
       scope: [project, target]
       requires:
         - artifact: postmortem
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [postmortem, code, runbook, slos, tasks, decisions]
       writes:

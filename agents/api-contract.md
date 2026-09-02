@@ -46,7 +46,7 @@ contract:
       scope: [project, target]
       requires:
         - artifact: api-contract
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [api-contract, frd, code, impact-analysis, adr, decisions]
       writes:

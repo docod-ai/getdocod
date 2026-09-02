@@ -16,10 +16,10 @@ contract:
       scope: [target]
       requires:
         - artifact: task
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
         - artifact: coding-standards
-          status: [approved, draft]
+          status: [approved, review]
           waivable: true
       reads: [task, tasks, system-design, api-contract, data-design, frd, adr,
               coding-standards, testing-guidelines, cicd-guidelines, test-plan, code, decisions]
@@ -47,7 +47,7 @@ contract:
       scope: [target]
       requires:
         - artifact: qa
-          status: [approved, draft]
+          status: [approved, review]
           waivable: true
       reads: [qa, task, frd, api-contract, data-design, code, coding-standards, decisions]
       writes:
@@ -72,7 +72,7 @@ contract:
       scope: [target]
       requires:
         - artifact: task
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [task, evidencias, code, tasks, decisions]
       writes:

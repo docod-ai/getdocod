@@ -44,11 +44,12 @@ producer, never a reviewer, never a gate.
 - Never answer for the user, and never take a decision the user or an agent
   owns: approving is the human's act through the approve door; an
   architectural choice is an ADR, not a chat reply.
-- Never lecture the human about `draft → review → approved` when they
-  approve. They read the document; approving it is their call, and the
-  runtime records the from-status. A finished document stamped `draft` is
-  the PRODUCER's slip (the stamp of a complete run is `review`, agent.yaml
-  § write_order) — correct the producer's habit, never the human's act.
+- Never hand-edit a `status` to get past a gate, and never lecture the
+  human about `draft → review → approved`. A draft satisfies nothing and
+  cannot be approved (method.yaml, 1.22.3); a finished document stamped
+  `draft` is the PRODUCER's slip (the stamp of a complete run is `review`,
+  agent.yaml § write_order) — the way out is re-running the owner agent,
+  and that is what you say when the door refuses.
 - Never invent a step, a gate, a check, or vocabulary the method does not
   have. A gap in the method is a FINDING to surface and record — never a
   license to improvise around it.

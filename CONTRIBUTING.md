@@ -109,7 +109,17 @@ name, now, not just by habit:
   and `observe` over a bands fixture;
 - every fix lands with its bug PLANTED first: the planted case must fail on
   the old code and pass on the new, in the same change. A check that was
-  never seen failing has never been tested.
+  never seen failing has never been tested;
+- a change to the MEANING of a value (a status, a verdict, a placeholder, a
+  filename grammar) is not done until every consumer of that value has been
+  READ: `requires` lists in agents/, literal comparisons in docod.mjs, the
+  installer's heredocs, the report template, the validators. Grep them, list
+  them in the change, and run the planted case against the ones that
+  depend on the old meaning. (1.22.0 made complete runs deliver in `review`
+  and did not read the 31 contracts gated on `[approved, draft]`; the
+  runtime blocked task-executor over a task in review. The author's words:
+  "voce nao pode apenas fazer as mudancas, tem que entender a fundo o que
+  é cada pedaco.")
 
 A change to the specs or agents is a configuration change, and configuration
 steers the machine — it gets the regression testing code gets. That sentence

@@ -156,7 +156,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.22.2"
+specVersion: "1.22.3"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -284,6 +284,22 @@ for f in "$TARGET"/decisions/*.yaml; do [ -e "$f" ] && mig_mv "decisions/$(basen
 # M4: rich ADR ledger — judgment call, refuse to guess (lossless recipe instead)
 if [ -f "$TARGET/${DR}decisions/adr.yaml" ]; then
   MANUAL="$MANUAL\n     ${DR}decisions/adr.yaml is a rich ADR ledger (pre-1.0 shape). Do NOT convert to the\n     inquiry log: fold each entry's decision content into its ${DR}decisions/adr/NNNN-slug.md\n     (completing a record is not an immutability breach), then archive the ledger."
+fi
+# M5 (1.22.3): a `draft` satisfies no gate and cannot be approved — by the
+# method's own definition it is incomplete. Projects governed before 1.22.0
+# hold COMPLETE documents stamped draft by the old habit; they now block what
+# depends on them. Completeness is the producer's judgment, never guessed
+# here: detection only, and the way out named (the owner agent delivers in
+# review). NEVER edited by the installer.
+TR="$(sed -n 's/^ *tasksRoot: *//p' "$TARGET/docod.yaml" | head -1)"; TR="${TR:-tasks/}"
+NDRAFT=0
+for d in "$TARGET/$DR" "$TARGET/$TR"; do
+  [ -d "$d" ] || continue
+  n="$( { grep -rl --include='*.md' '^status: draft$' "$d" 2>/dev/null || true; } | wc -l | tr -d ' ')"
+  NDRAFT=$((NDRAFT + n))
+done
+if [ "${NDRAFT:-0}" -gt 0 ]; then
+  MANUAL="$MANUAL\n     $NDRAFT document(s) in \`draft\` under $DR and $TR. Since 1.22.3 a draft satisfies no gate\n     and cannot be approved (it is incomplete by definition). If one is complete, its OWNER\n     agent delivers it in \`review\` (re-run it, or ask it to close the run); \`status\` names\n     what each blocks. Never hand-edit the stamp."
 fi
 [ -n "$MIGRATED" ] && printf "   ✓ migrated old layout:%b\n" "$MIGRATED"
 [ -n "$MANUAL" ]   && printf "   ⚠ needs your hand (never guessed):%b\n" "$MANUAL"
@@ -580,7 +596,7 @@ gen_cli start    "Where to enter, given what already exists" \
 gen_cli continue "Resume a workstream: focused status + next steps" \
   "Run \`$PY continue \$ARGUMENTS\`. More than one valid path → present ALL of them; the user decides."
 gen_cli approve  "The human gate: verdict with a hash, moves the status" \
-  "Run \`$PY approve \$ARGUMENTS --by <whoever the user says>\`. NEVER without an explicit request — approving is their act. If the document is still in \`draft\`, the runtime says what that means (the producer left it incomplete by its own account) and records the approval anyway with \`from_status: draft\` — you do NOT lecture the user about draft → review → approved: they read the document, approving it is their call, and a finished document stamped draft is the PRODUCER's slip, not theirs. Re-approving AMENDED content requires --impact <impact-file> or --no-impact \"<reason>\" (the runtime refuses otherwise): touched doc means mapped radius, mechanically. For a FACTUAL fix with no semantic change there is the light door: \`$PY approve <file> --by <who> --correction --reason \"...\"\` — the machine checks the edit stays inside the approval's recorded envelope (structure, IDs, inputs, protected spine) and refuses NAMING the broken leg if not; inside it, confirmation replaces re-review and downstream pins re-pin automatically. Then show the \`status\`."
+  "Run \`$PY approve \$ARGUMENTS --by <whoever the user says>\`. NEVER without an explicit request — approving is their act. If the document is still in \`draft\`, the runtime REFUSES (draft = incomplete by the producer's own account; nothing depends on a draft, nothing approves one). Relay the refusal and its way out: the owner agent delivers a complete document in \`review\`, so re-run it or ask it to close the run. NEVER hand-edit \`status\` to get past the door, and do not lecture the user about the flow — a finished document stamped draft is the PRODUCER's slip. Re-approving AMENDED content requires --impact <impact-file> or --no-impact \"<reason>\" (the runtime refuses otherwise): touched doc means mapped radius, mechanically. For a FACTUAL fix with no semantic change there is the light door: \`$PY approve <file> --by <who> --correction --reason \"...\"\` — the machine checks the edit stays inside the approval's recorded envelope (structure, IDs, inputs, protected spine) and refuses NAMING the broken leg if not; inside it, confirmation replaces re-review and downstream pins re-pin automatically. Then show the \`status\`."
 gen_cli ws       "Workstreams: list, done, abandon (reason mandatory)" \
   "Run \`$PY ws \$ARGUMENTS\`. Abandoning requires --reason — without one the command refuses, and it is right to."
 gen_cli report   "HTML dashboard: documents, task kanban, flow, workstreams" \

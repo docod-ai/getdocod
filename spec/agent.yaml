@@ -1,4 +1,4 @@
-specVersion: "1.22.2"
+specVersion: "1.22.3"
 
 # =============================================================================
 # LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
@@ -335,7 +335,13 @@ contract:
 
   requires_schema:
     artifact: "key of the required artifact"
-    status:   "list of statuses that satisfy — usually [approved]"
+    status:   |
+      list of statuses that satisfy — usually [approved]; [approved, review]
+      when the action needs the document produced but not gated. `draft`
+      never appears here (method.yaml, 1.22.3: draft is incomplete, nobody
+      depends on it) — with ONE exception, the owner finishing its own
+      incomplete record (assess_observation: [draft]). Completing is not
+      depending.
     waivable: |
       false (default) — hard gate: without the artifact, the action does not run.
       true            — gate with an escape: the user may waive it, and the

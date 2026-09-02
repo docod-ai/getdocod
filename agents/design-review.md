@@ -46,7 +46,7 @@ contract:
       scope: [project, ws, target]
       requires:
         - artifact: design-review
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [design-review, system-design, data-design, api-contract, adr, impact-analysis, decisions]
       writes:

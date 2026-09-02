@@ -5,6 +5,40 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.22.3] — 2026-09-02
+
+The author's rule, stated in the field one hour after 1.22.2: "o que é
+draft agora não se aprova, não executa." A draft satisfies no gate and
+cannot be approved.
+
+Fixed: 1.22.0 changed what `draft` means and did not read who depended on
+the old meaning — 31 of the 53 `requires` lists in the agents' contracts
+said `[approved, draft]`, and a task delivered in `review` BLOCKED
+`task-executor.execute_task` and `qa-executor.run_qa` (the author's
+backend, task 1). The audit of every consumer of the status vocabulary is
+in the ledger: 20 lists `[approved]` (the human gate), 31 `[approved,
+draft]`, 1 `[review]`, 1 `[approved, review]`, 1 `[draft]`; in the runtime
+only `possibleActions` compared the value. The 31 lists always contradicted
+method.yaml's own definition ("draft: incomplete, nobody should depend on
+it"); 1.22.0's truthful stamp exposed it. They now say `[approved,
+review]`. The one `[draft]` stays: `assess_observation` FINISHES the
+half-filled record `observe --record` creates, and completing is not
+depending. `approve` on a draft now REFUSES with the way out named (the
+owner agent delivers in review; never a hand-edited stamp), so the
+`from_status: draft` record of 1.22.0–1.22.2 is no longer written — the
+EXCEPTION STREAM still reads the ones on disk. CONDUCTOR's Never rewritten
+accordingly. The rule lives in method.yaml and agent.yaml § requires_schema.
+
+Migration, detection only: projects governed before 1.22.0 hold complete
+documents stamped draft by the old habit, and they now block what depends
+on them. `install.sh` (step 2b, M5) counts them and names the way out;
+completeness is the producer's judgment and the installer never edits a
+stamp. The process rule that should have prevented all of this is now in
+CONTRIBUTING: a change to a value's meaning is not done until every
+consumer of that value has been read.
+
+specVersion → 1.22.3 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.22.2] — 2026-09-02
 
 Fixed, from a real tasks folder one hour after 1.22.1: three defects in the

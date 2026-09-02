@@ -46,7 +46,7 @@ contract:
       scope: [ws, target]
       requires:
         - artifact: test-plan
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [test-plan, frd, qa, bugs, impact-analysis, code, decisions]
       writes:

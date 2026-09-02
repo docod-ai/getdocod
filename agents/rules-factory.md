@@ -45,7 +45,7 @@ contract:
       scope: [project, target]
       requires:
         - artifact: coding-standards
-          status: [approved, draft]
+          status: [approved, review]
           waivable: true
       reads: [coding-standards, testing-guidelines, cicd-guidelines, security-rules,
               adr, code, codereview, impact-analysis, decisions, evals]

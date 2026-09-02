@@ -43,7 +43,7 @@ contract:
       scope: [project, target]
       requires:
         - artifact: integration-guide
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [integration-guide, api-contract, code, decisions]
       writes:
@@ -65,7 +65,7 @@ contract:
       scope: [project, target]
       requires:
         - artifact: api-contract
-          status: [approved, draft]
+          status: [approved, review]
           waivable: false
       reads: [api-contract, integration-guide, impact-analysis, decisions]
       writes:

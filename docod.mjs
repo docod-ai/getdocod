@@ -414,7 +414,7 @@ function cmdStatus(root, ws = null) {
         if (fm.approval?.rebless_scope)
           exceptions.push(["partial rebless", `${rel} — a batch re-approval swept a PARTIAL scope (${[].concat(fm.approval.rebless_scope).join(", ")}); what was scoped out was never looked at by that sweep`]);
         if (fm.approval?.from_status === "draft")
-          exceptions.push(["approved from draft", `${rel} — approved by ${fm.approval.by ?? "?"} while its producer had it as INCOMPLETE${fm.draft_reason ? ` (draft_reason: ${String(fm.draft_reason).replace(/\s+/g, " ").slice(0, 50)})` : " (no draft_reason: a finished document stamped draft by habit, or a real gap nobody named)"}`]);
+          exceptions.push(["approved from draft", `${rel} — approved by ${fm.approval.by ?? "?"} while its producer had it as INCOMPLETE (a 1.22.0–1.22.2 record; since 1.22.3 the approve door refuses drafts — this one stands as approved, on record here)`]);
         if (fm.impact_waived)
           exceptions.push(["impact waived", `${rel} — approved with --no-impact: ${String(fm.impact_waived).replace(/\s+/g, " ").slice(0, 70)}`]);
         if (Array.isArray(fm.waived_requires))
@@ -606,19 +606,20 @@ function cmdApprove(root, arquivo, by, opt, correction = false) {
   const caminho = path.isAbsolute(arquivo) ? arquivo : path.join(root, arquivo);
   if (!fs.existsSync(caminho)) die(`✗ does not exist: ${arquivo}`);
   const [fm] = readFrontmatter(caminho);
-  // Approving from `draft` (1.22.0): the message says what draft MEANS, and
-  // the record keeps the from-status. Before this, the runtime lectured the
-  // human about "the flow" — but the flow the human saw was a finished
-  // document the PRODUCER had stamped draft by habit (method.yaml: draft =
-  // "incomplete, nobody should depend on it"; a complete run is stamped
-  // review). Approving what you read is the human's call, always recorded;
-  // approving a document its producer declared incomplete is a standing
-  // exception — the EXCEPTION STREAM surfaces it, nobody has to remember.
-  const fromStatus = fm.status || "draft";
-  if (fromStatus === "draft") {
-    console.log("ℹ this document is in `draft` — by the method's definition, its producer left it INCOMPLETE" +
-      (fm.draft_reason ? ` (draft_reason: ${String(fm.draft_reason).replace(/\s+/g, " ").slice(0, 80)})` : " (no draft_reason recorded — most likely a finished document stamped draft by habit; the producer's stamp for a complete run is `review`)") + ".");
-    console.log("  Approving it is your call. Recorded with from_status: draft — status surfaces it in the EXCEPTION STREAM.");
+  // DRAFT IS NOT APPROVED (1.22.3, the author's rule: "o que é draft agora
+  // não se aprova, não executa"). method.yaml: draft = "incomplete, nobody
+  // should depend on it" — the producer's own declaration. There is nothing
+  // to approve: a complete document is delivered in `review` by its
+  // producer (agent.yaml § write_order). 1.22.0–1.22.2 recorded such
+  // approvals with from_status: draft; from here the door refuses, and the
+  // human is pointed at the producer, never at the frontmatter.
+  if ((fm.status || "draft") === "draft" && !correction) {
+    console.log("✗ this document is in `draft` — by the method's definition its producer left it INCOMPLETE" +
+      (fm.draft_reason ? ` (draft_reason: ${String(fm.draft_reason).replace(/\s+/g, " ").slice(0, 80)})` : " (no draft_reason recorded)") + ".");
+    console.log("  Draft is not approved and nothing downstream may depend on it. If the document IS complete, its");
+    console.log("  producer delivers it in `review` (the producer's stamp, agent.yaml § write_order) — re-run the owner");
+    console.log("  agent, or ask it to close the run. Do not hand-edit `status`: the stamp is the producer's record.");
+    return 1;
   }
   // agent gate before the human one, when it exists
   const { inst, arts } = loadModel(root);
@@ -697,8 +698,7 @@ function cmdApprove(root, arquivo, by, opt, correction = false) {
   const h = sha256Body(caminho);
   fm.status = "approved";
   fm.approval = { by, at: new Date().toISOString().slice(0, 10), content_hash: h,
-    ...(selfArt ? { envelope: computeEnvelope(caminho, selfArt) } : {}),
-    ...(fromStatus === "draft" ? { from_status: "draft" } : {}) };
+    ...(selfArt ? { envelope: computeEnvelope(caminho, selfArt) } : {}) };
   writeFrontmatter(caminho, fm);
   console.log(`✓ approved by ${by} · ${h}`);
   console.log("  Validity is mechanical: edit the content and the approval invalidates itself.");
