@@ -347,7 +347,7 @@ It requires proof for the observable class.
 
 It leaves judgment where judgment belongs.
 
-The same rule covers references between documents. A component that declares which requirements it serves, a traceability table that assigns them, a requirement that promises acceptance scenarios, a decision that names the automated check holding it up: each of these is a declared link, and since 1.21.0 `verify` crosses every one of them. Set differences are reported by id and by side, never as a count, because two counts can match while the content diverges.
+The same rule covers references between documents. A component that declares which requirements it serves, a traceability table that assigns them, a requirement that promises acceptance scenarios, a decision that names the automated check holding it up: each of these is a declared link, and since 1.21.0 `verify` crosses every one of them. Set differences are reported by id and by side, never as a count, because two counts can match while the content diverges. Since 1.23.0 a requirement that restricts declares who it restricts and what stays possible, and `verify` checks that a declared restriction travels whole: a workstream that sees only its own goal must not be able to remove a capability the rest of the system depends on.
 
 ---
 

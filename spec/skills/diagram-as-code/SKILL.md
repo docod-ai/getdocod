@@ -5,7 +5,6 @@ description: Turning design into a figure that survives. Choosing the type by th
 layer: 2
 neutral: true
 owner: null
-used_by: [system-design, data-design, api-contract, observability, runbook, postmortem, task-extraction]
 requires_capabilities: []
 ---
 

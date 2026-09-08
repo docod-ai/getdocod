@@ -1404,6 +1404,28 @@ function cmdVerify(root, file) {
         const hasScenario = li >= 0 && block.slice(li + 1).some(l => /^\s*>?\s*[-*]\s+\S/.test(l) || /\*\*Acceptance criteria:\*\*\s*\S/.test(block[li]));
         if (!hasScenario) bare.push(id);
       });
+      // THE BOUNDED-RESTRICTION FLOOR (1.23.0) — a declared restriction travels
+      // whole or it warns. The machine does NOT guess what a restriction is
+      // (that needs a word list, which false-fires and trains the reader to
+      // skip); it checks that a restriction the producer DECLARED with
+      // `Restricts:` also carries its `Keeps possible:` — who is restricted
+      // never without what survives. Field case (2026-09-02): "never a global
+      // list of users" forbade a capability the objective only wanted to
+      // gate; undeclared, it passes here in silence — correctly — and the
+      // detection net downstream (executor stop-row, qa "taken away", the
+      // test-plan backstop) is what catches the undeclared one.
+      const halfBound = [];
+      defs.forEach(([start, id], k) => {
+        const end = k + 1 < defs.length ? defs[k + 1][0] : lines.length;
+        const block = lines.slice(start, end);
+        const hasR = block.some(l => /\*\*Restricts:\*\*\s*\S/.test(l));
+        const hasK = block.some(l => /\*\*Keeps possible:\*\*\s*\S/.test(l));
+        if (hasR && !hasK) halfBound.push(id);
+      });
+      if (halfBound.length)
+        warns.push(`bounded restriction: ${halfBound.length} requirement(s) declare \`Restricts:\` with no \`Keeps possible:\` — ${halfBound.slice(0, 6).join(", ")}${halfBound.length > 6 ? ", …" : ""}. A restriction declared without what survives it is a law nobody downstream can weigh; name what stays possible, and for whom`);
+      else if (defs.some(([start, id], k) => { const end = k + 1 < defs.length ? defs[k + 1][0] : lines.length; return lines.slice(start, end).some(l => /\*\*Restricts:\*\*\s*\S/.test(l)); }))
+        oks.push(`bounded restriction: every requirement that declares \`Restricts:\` also declares \`Keeps possible:\``);
       if (bare.length)
         warns.push(`scenario floor: ${bare.length} requirement(s) with no \`Acceptance criteria:\` scenario under the definition — ${bare.slice(0, 6).join(", ")}${bare.length > 6 ? ", …" : ""}. A requirement with no scenario is acceptance nobody can check; the label is method vocabulary (content localizes; labels do not)`);
       else oks.push(`scenario floor: all ${defs.length} requirement(s) carry at least one acceptance criterion under an \`Acceptance criteria:\` label`);

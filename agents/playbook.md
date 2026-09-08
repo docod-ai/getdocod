@@ -179,6 +179,8 @@ What you do **without knowing the cause**, to stop the bleeding.
 | degrade search | search down for [x]min | [role] |
 | roll back the last deploy | loses today's feature | [role] |
 
+Apply `decision-reversibility` to every row: a containment that cannot be undone (a purge, a data rollback, a forced migration) is a one-way door decided at 3 a.m. by whoever is on call — name it as such here, in calm, with the person who authorizes it and what stays possible while it holds. A two-way door (degrade, feature flag off, scale up) needs only the accepted cost.
+
 **"Accepted cost" is what makes this a decision and not panic.** If nobody decided beforehand which loss is tolerable, someone decides at 3 a.m., alone, with worse information.
 
 ## 4. Escalation

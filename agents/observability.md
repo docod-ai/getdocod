@@ -4,7 +4,7 @@ name: Observability
 description: "Defines, with numbers, how you know the system is healthy — and how you find out it isn't before the customer does. SLI, SLO, error budget, actionable alerts, log and trace contracts. Without a number it's not an SLO: it's a wish."
 interactive: true
 capabilities: [ask_user, code_search, doc_lookup, calculator]
-skills: [measurable-goals, data-privacy, diagram-as-code]
+skills: [measurable-goals, data-privacy]
 contract:
   owns:
     artifact: [slos, bands, observation]

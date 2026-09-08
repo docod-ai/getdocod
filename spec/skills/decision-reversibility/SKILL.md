@@ -5,7 +5,6 @@ description: How much rigor a decision deserves. One-way vs two-way door, the tr
 layer: 2
 neutral: true
 owner: null
-used_by: [adr, tradeoffs, rfc, design-review]
 requires_capabilities: []
 ---
 

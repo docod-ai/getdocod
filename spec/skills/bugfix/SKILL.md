@@ -5,7 +5,6 @@ description: Fix the cause, not the symptom. Reproduce before fixing, a regressi
 layer: 2
 neutral: true
 owner: null
-used_by: [task-executor, code-review, postmortem]
 requires_capabilities: []
 ---
 

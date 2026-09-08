@@ -4,7 +4,7 @@ name: Project Management
 description: "Orders the work by CAPACITY — who is available, what runs in parallel, where the people bottleneck is. Consumes size and dependency from task-extraction; never contradicts them. Does not estimate: it calculates, or declares a gap."
 interactive: true
 capabilities: [ask_user, calculator, vcs_history, doc_lookup]
-skills: [financial-modeling, vertical-slicing]
+skills: [vertical-slicing]
 contract:
   owns:
     artifact: roadmap
@@ -13,7 +13,7 @@ contract:
   actions:
     build_plan:
       stage: orchestrate
-      scope: [project, ws]
+      scope: [project]
       requires:
         - artifact: tasks
           status: [approved, review]
@@ -39,7 +39,7 @@ contract:
 
     replan:
       stage: orchestrate
-      scope: [project, ws]
+      scope: [project]
       requires:
         - artifact: roadmap
           status: [approved, review]

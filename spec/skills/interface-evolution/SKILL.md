@@ -5,7 +5,6 @@ description: Changing the contract without breaking whoever consumes it. What a 
 layer: 2
 neutral: true
 owner: null
-used_by: [api-contract, code-review, impact-analysis, task-executor]
 requires_capabilities: []
 ---
 

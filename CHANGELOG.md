@@ -5,6 +5,81 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.23.0] — 2026-09-03
+
+The bounded-restriction release — ring 1 of the amputation audit, and
+nothing more. The audit (28 agents, 13 skills, registry, conductor; on
+record in the ledger with file:line evidence) found that the method has a
+developed immune system against OMISSION — what should exist and is
+missing — and none against AMPUTATION — what existed and was taken away.
+Every justification it demands is for adding; none for removing,
+forbidding or narrowing. Field case: a hardening workstream's FRD wrote
+"never a global list of users" (forbidding a capability the objective only
+wanted to gate), task-extraction turned it into "remove user_id from the
+access serializers", and the literal executor stopped only because the
+code happened to contradict it.
+
+Added: the BOUNDED RESTRICTION, vocabulary first. A requirement that
+restricts, forbids or removes declares WHO it restricts (`Restricts:`) and
+WHAT stays possible for everyone else (`Keeps possible:`) — two more
+never-translate labels in the frd's RF template, beside `Traces:`, which
+names the objective whose reach the restriction does not exceed. The frd's
+contract gains the conditional postcondition (a prohibition wider than its
+objective is a defect of the document, listed under Gaps), the role says
+it plainly ("you write for a literal reader"), and `code_search` is back in
+`create_frd` — the body already told the agent to anchor in code and the
+action never granted it. The sensor lives where the FRD is shaped: one row
+in requirements-elicitation's ambiguity table (`never / always / no one`
+hides an unstated scope; a prohibition is a solution, not a need) and one
+anti-pattern in verifiable-requirements ("requirement wider than its
+objective") with its closing test.
+
+Added: the floor the producer does not control. `verify` warns on every RF
+that declares `Restricts:` without its `Keeps possible:` — a declared
+restriction travels whole. The machine does not guess what a restriction
+is (that needs a word list, which false-fires); it checks that a declared
+one came complete, the exact shape of the scenario floor and the evals
+labels. The undeclared prose absolute passes here in silence, correctly,
+and is the detection net's job.
+
+Added: the detection net, one line each, on the incident's path. The
+task carries the bound into its `<requirements>` block (task-extraction
+postcondition + template line), so the executor reads the why with the
+order. The task-executor's stop-table gains its seventh row: a task that
+orders the removal of something outside it still uses stops, because one
+code_search names the dependents and who accepts losing them is not the
+executor's call — the incident's accidental stop, made contractual. The
+qa-executor's wishlist rule is cut at its real joint: a behavior the system
+HAD and no longer has is a bug even with no RF in scope, root-caused
+upstream, triggering impact-analysis. The design-review gains the `reach`
+finding, symmetric with its orphan-component line: a design that conforms
+to a requirement which removes a capability evidenced in use elsewhere is
+a finding against the FRD, evidence on both sides, the frd decides. And
+the test-plan backstop: a case orphaned by a removed RF is deleted only
+after the behavior is confirmed intentionally gone — the orphan case is the
+last witness that the capability existed, and the complete suite was the
+only thing that stopped the incident.
+
+Hygiene that removes doctrine: three skill declarations no role ever
+invoked are gone (observability and runbook: diagram-as-code;
+project-management: financial-modeling), and the fourth is invoked where it
+always belonged instead of removed — decision-reversibility in the
+playbook's containment section, the agent that pre-authorizes irreversible
+actions. The `used_by` field in the twelve SKILL.md frontmatters, a mirror
+of method.yaml that no validator read, is deleted: the registry is the
+source. project-management's actions align with the registry (roadmap is
+project-scoped; a ws roadmap needs a ws path first, the author's call).
+
+Held, on record with the audit's evidence: rings 2 and 3 (the removal
+obligations in system-design, data-design, api-contract, security-design,
+rules-factory, postmortem; the skills' remaining halves), each waiting for
+its own field miss — an invariant added without a real miss behind it is a
+checklist item, and checklists rot. And two decisions deferred until the
+ring is measured: whether impact-analysis becomes required anywhere (today:
+zero requires in 28 agents), and whether `reads` gains an upward form.
+
+specVersion → 1.23.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.22.3] — 2026-09-02
 
 The author's rule, stated in the field one hour after 1.22.2: "o que é

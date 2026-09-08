@@ -80,6 +80,7 @@ contract:
         - "judgment: No code was fixed — a found bug goes back to the task-executor"
         - "deterministic: The qa frontmatter carries bugs: [{id: BUG-nn, root_cause: local | <upstream-artifact-key>}] — machine-readable, agreeing with the prose"
         - "judgment: Before attributing a bug to this task's code, the spec side was checked: a bug whose fix requires behavior the upstream artifact never specifies is UPSTREAM by definition — under-attribution (blaming local code) is the failure mode that disarms the gate"
+        - "judgment: A behavior the system HAD before this change and no longer has is a BUG even when no RF in scope covers it — the wishlist rule covers what never existed, never what was taken away; such a bug is root-caused UPSTREAM (the requirement or task that removed it) and triggers impact-analysis"
         - "judgment: Every bug is root-caused to a LAYER: this task's code, or a named upstream artifact. An upstream root cause is flagged UPSTREAM — it triggers impact-analysis and blocks forward-patching; it is never silently absorbed into code"
 
       note: |

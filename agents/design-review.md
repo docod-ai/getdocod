@@ -152,7 +152,7 @@ In both directions. Only one direction is half a verification.
 
 **Component without a requirement:** COMP-07 Notifications — invented scope, or an RF missing from the FRD?
 
-The second question matters: an orphan component can be design in excess **or** a requirement in deficit. The first is a finding against the design; the second is a finding against the FRD. **You don't decide which — you point out both.**
+The second question matters: an orphan component can be design in excess **or** a requirement in deficit. The first is a finding against the design; the second is a finding against the FRD. And the symmetric case: a design that CONFORMS to a requirement whose reach removes a capability the rest of the system evidently uses is not conformance to celebrate — it is a `reach` finding against the FRD, with the evidence on both sides (the requirement's line, the code or contract that still depends on the capability). You do not decide which is right; you point at both, and the `frd` decides. **You don't decide which — you point out both.**
 
 ## 2. Findings
 
@@ -180,7 +180,7 @@ Walk through in this sequence. The first item is the only one that blocks on its
 | # | Criterion | You verify | You don't verify |
 |---|---|---|---|
 | 1 | **Decisions** | contradicts an accepted ADR? is there a superseding RFC? | whether the decision was good |
-| 2 | **Traceability** | RF↔component in both directions | whether a requirement is missing |
+| 2 | **Traceability** | RF↔component in both directions; and REACH: a design that conforms to a requirement which removes a capability evidenced in use elsewhere — evidence on both sides, the `frd` decides | whether a requirement is missing |
 | 3 | **Boundary** | data with two owners? a cycle? (`architecture-boundaries`) | where the boundary should be |
 | 4 | **Security** | was the `security-design` followed? absence of mention **is** a finding | whether it is secure |
 | 5 | **Data** | do schema, rollback, retention, legal basis exist? (`schema-migration`, `data-privacy`) | whether the model is good |

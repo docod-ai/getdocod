@@ -5,7 +5,6 @@ description: The craft of extracting requirements from people. Peeling the solut
 layer: 2
 neutral: true
 owner: null
-used_by: [business-case, prd, frd, user-stories-epics]
 requires_capabilities: []
 ---
 
@@ -87,6 +86,7 @@ A vague word is not imprecise language: it is **a decision nobody has made yet**
 | etc. / among others | an incomplete list | "which others? can you list them all?" |
 | should | optionality | "is it mandatory or desirable?" |
 | better | a criterion | "better at what? compared to what?" |
+| never / always / no one / any | an unstated scope — a prohibition is a solution, not a need | "never for whom, and in which path? what must stay possible, and for whom?" |
 
 **"Etc." is the most treacherous.** It signals that the person did not finish thinking and you accepted it. Never let it through.
 

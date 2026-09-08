@@ -5,7 +5,6 @@ description: Writing atomic requirements and verifiable acceptance criteria. Ato
 layer: 2
 neutral: true
 owner: null
-used_by: [frd, user-stories-epics, test-plan, task-extraction, design-review]
 requires_capabilities: []
 ---
 
@@ -157,6 +156,7 @@ RF-001  ←── PRD Success Criterion
 | **Recycled ID** | RF-007 becomes something else | breaks history, tests and tasks |
 | **"Should" / "it would be nice"** | undeclared optionality | nobody knows if it is mandatory |
 | **Hidden subject** | "validates the token" | who validates? |
+| **Requirement wider than its objective** | "never X" where the objective asked to restrict who | forbids a capability the objective never asked to remove; a literal executor removes it |
 
 ---
 
@@ -170,3 +170,4 @@ RF-001  ←── PRD Success Criterion
 6. Does every requirement trace to a PRD objective?
 7. Does every PRD objective have at least one requirement?
 8. Was any ID reused?
+9. Does any requirement forbid more than its objective requires? A restriction names who it restricts and what stays possible.

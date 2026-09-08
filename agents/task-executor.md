@@ -129,6 +129,7 @@ license to edit the integration line directly.
 | **it changes a contract with another component** | `api-contract` decides; a broken consumer has no rollback |
 | **it involves a secret or credential** outside the project's flow | never improvise here |
 | **the dependency is not ready** | see below |
+| **the task orders the removal or narrowing of something outside it still uses** | you have `code_search`: one search names the dependents; who accepts losing them is not your call — a task wider than the code is a scope error upstream, not yours to narrow |
 
 **Dependency not ready: stop. Never create a stub to unblock.**
 

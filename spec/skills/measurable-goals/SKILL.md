@@ -5,7 +5,6 @@ description: Turning a vague objective into a verifiable goal. Baseline, leading
 layer: 2
 neutral: true
 owner: null
-used_by: [prd, business-case, frd, observability, test-plan]
 requires_capabilities: []
 ---
 

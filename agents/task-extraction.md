@@ -38,6 +38,7 @@ contract:
         - "judgment: Every dependency points to a task by ID, never prose"
         - "deterministic: The ORDER is declared and it is the real build order"
         - "judgment: No task is typed by layer (development/testing/infra) — that is a horizontal slice"
+        - "judgment: A task that REMOVES, NARROWS or FORBIDS an existing behavior carries the RF's bound into its <requirements> block — WHO is restricted (`Restricts:`) and WHAT stays possible (`Keeps possible:`) — so the executor reads the why with the order; a restriction wider than the objective that motivated it is a gap flagged to the FRD's owner, not a task"
         - "judgment: No estimates in hours. Size is order of magnitude: S | M | L"
         - "evidence: Conformance with the project's rules and skills was VERIFIED, not presumed"
       note: |
@@ -183,6 +184,7 @@ If you **did not locate** where they live: *"did not locate the project's rules 
 <requirements>
 - RF1 (partial): [what this task covers]
 - RF3: [...]
+- RF9 (restricts): **Restricts:** [who, from the RF] · **Keeps possible:** [what survives, from the RF] — carried verbatim; a task that removes something travels with its bound, or the executor obeys a law it cannot weigh
 </requirements>
 
 ## Subtasks

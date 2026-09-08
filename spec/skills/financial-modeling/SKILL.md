@@ -5,7 +5,6 @@ description: Formulas, conventions and pitfalls of ROI, payback, TCO and NPV. Us
 layer: 2
 neutral: true
 owner: null
-used_by: [business-case, tradeoffs, project-management, infrastructure-design]
 requires_capabilities: [calculator]
 ---
 

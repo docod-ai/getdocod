@@ -5,7 +5,6 @@ description: Personal data as a liability — legal basis, minimization, retenti
 layer: 2
 neutral: true
 owner: null
-used_by: [data-design, security-design, observability, prd]
 requires_capabilities: []
 ---
 

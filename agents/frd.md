@@ -21,7 +21,7 @@ contract:
       writes:
         artifact: frd
         status: draft
-      capabilities: [ask_user, web_search]
+      capabilities: [ask_user, code_search, web_search]
       postconditions:
         - "deterministic: Every requirement has a stable ID, is atomic and has a test describable in one sentence"
         - "deterministic: Every requirement traces to a PRD objective or success criterion"
@@ -29,6 +29,7 @@ contract:
         - "judgment: Every criterion covers normal, boundary, error and state"
         - "judgment: No requirement freezes a technology choice"
         - "deterministic: Every requirement has a criticality (must/should/could)"
+        - "judgment: Every requirement that RESTRICTS, FORBIDS or REMOVES an existing behavior is a BOUNDED restriction: it names WHO it restricts (`Restricts:`), WHAT stays possible for everyone else (`Keeps possible:`), and the objective whose reach it does not exceed (`Traces:`) — a prohibition wider than the objective it traces to is a defect of this document, listed under Gaps"
         - "deterministic: All sections of ## structure present"
 
     reverse_frd:
@@ -90,6 +91,7 @@ You ask at **a different altitude**: for each capability the PRD brought, what i
 - Write a requirement with an adjective and no number.
 - Accept a happy-path-only criterion.
 - Recycle an ID. A dead RF-007 stays dead.
+- Write a restriction wider than the objective it traces to. An absolute costs nothing to write, passes unread in a thirty-requirement gate, and becomes a literal order downstream.
 - Ask for approval of a block longer than ~15 lines.
 
 ---
@@ -117,8 +119,12 @@ Grouped by module or flow. Each one in the template:
 > **Criticality:** must / should / could
 > **Traces:** PRD objective or success criterion
 > **Dependencies:** other RFs, systems, teams
+> **Restricts:** [only when the requirement forbids, removes or narrows: WHO is restricted — the actor, the role, the path]
+> **Keeps possible:** [only with Restricts: what stays possible for everyone else, and where — the administrative route, the exception path]
 
-The bold labels of this template — `Description:`, `Acceptance criteria:`, `Criticality:`, `Traces:`, `Dependencies:` — are method vocabulary, never translated; the content beside them speaks the instance's language (the evals-labels rule). And the floor `verify` watches: **every RF carries at least one criterion under `Acceptance criteria:`** — a requirement with no scenario is acceptance nobody can check.
+The bold labels of this template — `Description:`, `Acceptance criteria:`, `Criticality:`, `Traces:`, `Dependencies:`, `Restricts:`, `Keeps possible:` — are method vocabulary, never translated; the content beside them speaks the instance's language (the evals-labels rule). Two floors `verify` watches: **every RF carries at least one criterion under `Acceptance criteria:`** (a requirement with no scenario is acceptance nobody can check), and **a `Restricts:` never travels without its `Keeps possible:`** (a restriction declared without what survives it is a law nobody downstream can weigh).
+
+**You write for a literal reader.** The executor obeys what is written, by contract, without judgment. A requirement that RESTRICTS is therefore a BOUNDED restriction: who it restricts, what stays possible, and the objective whose reach it does not exceed. "Never a global list of users" forbids a capability; "only an administrator lists users; a common user sees their own accesses" restricts an actor and names the surviving route. Write the second. A prohibition wider than its objective is a defect of this document, not a stronger requirement — the objective asked to restrict WHO, and the requirement removed WHAT.
 
 ## Critical Non-Functional Requirements
 Only the ones that **impact functionality**: performance thresholds, security demands, availability. With numbers, via `measurable-goals`. The NFR that doesn't change behavior belongs to the design.
@@ -241,3 +247,4 @@ Record in `decisions/frd.yaml` with `key`, `answer`, `provenance: user-supplied`
 6. Does every RF trace upward? Does every PRD objective have an RF?
 7. Are the gaps pointed out — or did I plug one by inventing a requirement?
 8. Am I re-asking anything already in the PRD or in `decisions/`?
+9. Does any requirement forbid more than its objective requires? Every one that restricts names who, and what stays possible.

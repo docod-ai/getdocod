@@ -1,4 +1,4 @@
-specVersion: "1.22.3"
+specVersion: "1.23.0"
 
 # =============================================================================
 # LAYER 1 — METHOD  ·  NEUTRAL
@@ -157,7 +157,7 @@ skills:
       path: skills/financial-modeling/SKILL.md
       neutral: true
       requires_capabilities: [calculator]
-      used_by: [business-case, tradeoffs, project-management, infrastructure-design]
+      used_by: [business-case, tradeoffs, infrastructure-design]
       rationale: |
         Five agents do money math. Without the skill, they are five versions of
         the same formula drifting apart — the failure this project has already
@@ -290,7 +290,7 @@ skills:
       path: skills/diagram-as-code/SKILL.md
       neutral: true
       requires_capabilities: []
-      used_by: [system-design, data-design, api-contract, observability, runbook, postmortem, task-extraction, security-design, playbook, infrastructure-design]
+      used_by: [system-design, data-design, api-contract, postmortem, task-extraction, security-design, playbook, infrastructure-design]
       rationale: |
         It was an agent and could not be one: it had no document of its own.
         The ER lives in the data-design, the context diagram in the

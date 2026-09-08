@@ -5,7 +5,6 @@ description: Changing the shape of the data without losing the data or taking do
 layer: 2
 neutral: true
 owner: null
-used_by: [data-design, task-executor, code-review, qa-executor]
 requires_capabilities: []
 ---
 

@@ -4,6 +4,95 @@
 # -----------------------------------------------------------------------------
 migration:
   pending:
+    - id: amputation-asymmetry
+      severity: major
+      issue: |
+        The audit of 2026-09-02/03 (28 agents, 13 skills, registry,
+        conductor; lens: "uma WS que não tem a visão toda do negócio não
+        pode destruir o sistema para alcançar um ponto"). Finding: the
+        method has a developed immune system against OMISSION and none
+        against AMPUTATION. Every justification demanded is for ADDING —
+        system-design.md:28 "Every component traces to at least one RF",
+        data-design.md:32 "Every index points to the query that justifies
+        it", api-contract.md:30, security-design.md:33 "a control without
+        a threat goes out", rules-factory.md:31 "Every rule has
+        provenance" — and no mirrored obligation exists anywhere for a
+        removal, a prohibition or a narrowing. Structural causes, each
+        with file:line in the audit: impact-analysis in `requires:` of
+        ZERO agents (reads/triggers of 24); `reads:` is scope-blind (a ws
+        `reads: [frd]` is the ws frd; no syntax for the project's);
+        traceability checks existence never proportionality
+        (frd.md:28, verifiable-requirements/SKILL.md:141-144); every gate
+        on the destruction path is armed against omission (task-
+        extraction :34, test-plan :29, qa :75, code-review :179); the
+        whole-view actors are outside the path or barred from merit
+        (design-review.md:80 "Conformance is verifiable; correctness is
+        opinion"; rfc/adr/tradeoffs project-only; tradeoffs.triggered_by
+        omits frd); and the bounded-restriction form already exists four
+        times in the corpus (release-notes :149-157 "You are affected if /
+        What to do / Deadline"; runbook :168-172 "Do NOT use when",
+        "Needs approval: who"; playbook :177-180 "Accepted cost / Who
+        authorizes"; interface-evolution :60 and schema-migration :39,129
+        "who consumes it, how many"), never named, never required where
+        the restriction is born.
+      decision: |
+        Ring by ring, each ring only when it has a field miss behind it —
+        the author's brake: "acrescentar aqui seria virar a completude-
+        maximizadora que a gente acabou de frear." Ring 1 (the incident's
+        path) shipped in 1.23.0 as `bounded-restriction`; rings 2 and 3 are
+        listed under `held` with the evidence already collected; the two
+        structural decisions under `decisions_deferred` wait for ring 1 to
+        be measured.
+      resolution_so_far: |
+        1.23.0 shipped RING 1 only — the incident's path — with the
+        author's brake explicit: "acrescentar aqui seria virar a
+        completude-maximizadora que a gente acabou de frear." See the
+        resolved entry `bounded-restriction`.
+      held: |
+        RINGS 2 AND 3, each waiting for its OWN field miss (coverage-
+        invariants: "an invariant added without a real miss behind it is a
+        checklist item, and checklists rot"). Evidence already collected:
+        system-design.update_design has `requires: []` and ZERO
+        postconditions (system-design.md:36-48) — a component can be
+        deleted with no obligation; data-design.plan_migration justifies
+        the IRREVERSIBILITY of a drop, never the drop (data-design.md:57-
+        58, reads no frd/api-contract :51); api-contract.evolve_contract
+        identifies WHO a removal hits (:58), never WHY it goes; security-
+        design's § 4 table has no column for what a control forbids and to
+        whom (:200), and hands the norm to rules-factory (:151) whose only
+        "why" is a style line (:247), not a postcondition, with no reviewer
+        anywhere (design-review reads the rules as the yardstick, never
+        the object); postmortem asks "what made it look right at the time"
+        of the past decision (:199-204) and never of its own PREVENT
+        actions (:217-238), immutable and ungated; code-review's "no way
+        back" list has two members, data and declared contract (:94-97),
+        and no row for a capability the task ordered removed; impact-
+        analysis has no `target` scope (:17,37) and no mode keyed on
+        breadth, only on staleness (:76-86); vertical-slicing asks "what
+        capability does it unlock?" never "what does it close, and for
+        whom?" (:139); measurable-goals' counter-metric ("what must not
+        get worse", :92) is the generic primitive, applied only to gamed
+        goals; architecture-boundaries orders merges/splits with no "who
+        crosses the line today" (:93,137,167); bugfix teaches deleting a
+        guard without finding who it protected (:52-56,110).
+      decisions_deferred: |
+        Both the author's, both after ring 1 is measured in the field:
+        (1) whether impact-analysis becomes REQUIRED anywhere — candidates:
+        create_frd in ws scope on a project with code (waivable, recorded),
+        or `approve` of an artifact that declares a restriction, the same
+        `--impact | --no-impact` fork the runtime has for AMENDED content,
+        extended from "amended" to "restricts" (possible only because the
+        restriction now declares itself: the machine never guesses);
+        (2) whether `reads:` gains an upward form ("the project's frd" from
+        a ws) — it contradicts the deliberate "the WS PRD stands on its
+        own" (artifacts.yaml:172-174), and `code_search` in the frd may
+        already give the essential (who calls the list) without it.
+        Also open: postmortem and release-notes actions declare `target`
+        scope the registry does not model (artifacts.yaml:1160,1174);
+        aligning to project is right only if no incident or release ever
+        deserves a per-target record — if one does, the registry gains
+        `target`, not the action losing it. Left untouched for the author.
+
     - id: diagnostic-mode
       severity: major
       progress: |
@@ -430,6 +519,61 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: bounded-restriction
+      was: major
+      issue: |
+        Ring 1 of `amputation-asymmetry` (pending, above): the incident's
+        path. Field case, the author's backend, 2026-09-02: a hardening
+        ws FRD wrote "nunca uma lista global de usuários" (forbidding the
+        capability when the objective asked to restrict WHO enumerates);
+        task-extraction turned it into "Remover user_id dos serializadores
+        de acesso" (destructive verb, ambiguous noun, over-broad scope);
+        the literal executor stopped only because the code contradicted it
+        in practice. The author's framing that shaped the fix: "não é
+        questão com os verbos, é criar leis que vão quebrar o sistema; uma
+        descrição precisa ser melhor justificada" and "isso tem a ver com
+        a descrição da função dos agentes" — the reader's function was
+        written ("obey what is written"), the writers' was not ("you write
+        for one who will obey"). Lint and word lists refused: they
+        false-fire and train the reader to skip.
+      resolution: |
+        1.23.0. VOCABULARY FIRST, then the floor the producer does not
+        control, then the detection net — the runbook's whole shape
+        (literal reader made safe by a document that carries its own
+        envelope), never only the sensor (a sensor is still a rule the
+        producer holds; the 1.12.0 lesson). Vocabulary: the frd's RF
+        template gains `Restricts:` (who) and `Keeps possible:` (what
+        survives), never-translate labels beside `Traces:` (the objective
+        whose reach is not exceeded); create_frd gains the CONDITIONAL
+        postcondition (fires only when a requirement restricts — the
+        per-document tax the author refused stays refused), the role says
+        "you write for a literal reader", the Never and test 9 follow, and
+        `code_search` returns to create_frd (the body assumed it, the
+        action never granted it: a bug). Sensor, where the FRD is shaped:
+        one row in requirements-elicitation's ambiguity table (never /
+        always / no one → an unstated scope) and one anti-pattern in
+        verifiable-requirements (requirement wider than its objective).
+        Floor: verify warns on `Restricts:` without `Keeps possible:` — the
+        machine checks that a DECLARED restriction came whole; the
+        undeclared prose absolute passes in silence, correctly. Net, one
+        line each on the incident's path: the task carries the bound in
+        its <requirements> block; the executor's stop-table gains row 7
+        (removal of something outside still uses → stop, one code_search
+        names the dependents); qa's wishlist rule cut at its joint (taken
+        away ≠ never existed); design-review's `reach` finding, symmetric
+        with its orphan-component line (:155); test-plan's orphan case
+        stays until the behavior is confirmed gone (the last witness).
+        Planted, two cases as the author specified: A, a declared
+        restriction without `Keeps possible:` → verify warns naming the
+        RF (old runtime silent); B, the literal incident as prose → the
+        floor stays silent (correct) and the net is the catch — judgment-
+        class, verified by reading the contracts, not by the runtime.
+        Hygiene that removes doctrine: three dead skill declarations gone,
+        decision-reversibility invoked in playbook § 3 instead of removed,
+        the SKILL.md `used_by` mirror deleted (registry is the source),
+        project-management aligned to the registry's project-only roadmap.
+
+
     - id: draft-satisfies-nothing
       was: major
       issue: |

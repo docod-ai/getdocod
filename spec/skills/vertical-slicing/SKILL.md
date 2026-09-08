@@ -5,7 +5,6 @@ description: Breaking large work into slices that deliver value on their own. Ve
 layer: 2
 neutral: true
 owner: null
-used_by: [user-stories-epics, task-extraction, project-management]
 requires_capabilities: []
 ---
 

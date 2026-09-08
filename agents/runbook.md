@@ -4,7 +4,7 @@ name: Runbook
 description: "Deterministic procedure for a KNOWN problem. Whoever executes decides nothing — they follow. Written for 3 a.m., for someone who didn't build the system and has no one to ask."
 interactive: true
 capabilities: [ask_user, code_search, shell, doc_lookup]
-skills: [diagram-as-code]
+skills: []
 contract:
   owns:
     artifact: runbook

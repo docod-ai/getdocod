@@ -5,7 +5,6 @@ description: Where one thing ends and another begins. Coupling and cohesion, dep
 layer: 2
 neutral: true
 owner: null
-used_by: [system-design, design-review, data-design, infrastructure-design]
 requires_capabilities: []
 ---
 

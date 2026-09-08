@@ -55,7 +55,7 @@ contract:
       capabilities: [code_search, doc_lookup]
       postconditions:
         - "judgment: A bug that got past the plan became a case — it was a hole, and the hole remains"
-        - "judgment: An RF that changed has its cases revised; a case orphaned by a removed RF is removed"
+        - "judgment: An RF that changed has its cases revised; a case orphaned by a removed RF is removed ONLY after the behavior it covered is confirmed intentionally gone — otherwise the case STAYS and the orphan is listed in Gaps as a capability losing its verification (the orphan case is the last witness that the capability existed)"
         - "deterministic: A case that never failed in any run is flagged: either it is redundant, or it tests nothing"
       note: |
         Every bug that reaches production got through here without being
