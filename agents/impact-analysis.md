@@ -22,7 +22,7 @@ contract:
         status: draft
       capabilities: [ask_user, code_search, vcs_diff]
       postconditions:
-        - "judgment: Every stale artifact was found — the transitive closure of the inputs graph is complete, not sampled"
+        - "evidence: Every stale artifact was found — the transitive closure of the inputs graph is complete, not sampled — and the search that established it is PUBLISHED: which artifacts were walked, which inputs[] were followed, which greps ran over the code, exactly enough to re-run. A completeness claim without its method is a hunch with authority"
         - "deterministic: Every proposal has a named OWNER: the agent that owns that artifact"
         - "judgment: Every proposal is concrete: what changes, not 'review'"
         - "judgment: A task already EXECUTED whose input changed appears highlighted — its code is suspect"

@@ -93,6 +93,93 @@ migration:
         deserves a per-target record — if one does, the registry gains
         `target`, not the action losing it. Left untouched for the author.
 
+    - id: external-reading-2026-09
+      severity: minor
+      issue: |
+        Reading of 2026-09-07/08, at the author's request, of a published
+        16-agent SDLC toolkit (Medium: "How We Built a 16-Agent SDLC";
+        repository atelier-fashion/adlc-toolkit, agents/skills/commands
+        read file by file, comments included) against DOCOD — "não uma
+        cópia mas o conceito". PROVENANCE LIVES HERE ONLY: the tool's name
+        never enters a shipped document (third-party-names rule). The
+        reading's verdict, confirmed by the runtime-side agent that
+        verified it: the article sells orchestration and the repository
+        five months later is the top comment's proof (derived state
+        maintained by hand, 12/36 stale; four reviewer checklists recopied
+        inline; the producer reviewing itself in subagent mode; model
+        names materialized in agents). On all of that DOCOD is on the
+        right side by construction. What they have better is the
+        REVIEWER'S EPISTEMICS — and every item of it that entered maps to
+        a miss of OUR OWN (1.24.0: `reviewer-refutation`, `benign-path`,
+        resolved below). The rest is held here, each waiting for its own
+        field miss, none entering on the strength of a reading.
+      decision: |
+        Three entered in 1.24.0 as postconditions in the classes agent.yaml
+        defines (a written refutation is deterministic + judgment, never
+        evidence: the reader cannot verify judgment by re-running it),
+        floors advisory at birth. Everything below stays out until a field
+        miss arms it — the author's brake, and the reviewer's: "an
+        invariant added without a real miss behind it is a checklist item,
+        and checklists rot."
+      held: |
+        HELD, with the landing already designed: (a) VACUOUS-RUN GATE — a
+        verification run that exits 0 having executed zero cases or
+        scanned zero files is a failure, count read from the runner the
+        artifact names, never a runner fixed in the skill; landing:
+        postcondition in run_qa / evidencias / run_evals and a verify check
+        where the record declares the count; sibling of the truncation
+        detector (the FRD that passed with a hundred ✓), no field case of
+        our own yet. (b) APPROVED REACH — design-review's `approved`
+        verdict must carry a NON-EMPTY "Not assessed" (which lenses ran,
+        which were skipped and why); today :204 calls the omission the
+        commonest lie but only requires the section to exist; one clause
+        when a clean pass is caught hollow in the field. (c) ASSUMPTIONS
+        REGISTER — prd :86 orders "Assumption, never choose in silence"
+        and nothing collects the assumption afterwards; landing is a
+        structural clone of `external-questions` (append-only, sequential
+        ids, status validated/invalidated/unresolved, mandatory reason on
+        close, single writer under the queue's lock, status listing the
+        open ones beside DECLARED DEBT); waits for the first assumption
+        that silently became a fact. (d) UNTRUSTED INPUT CLASS —
+        `untrusted: true` on an `inputs[]` entry, parallel to `external:
+        true` (quoted literally, never citable as evidence, actionable only
+        through a named validator); load-bearing the day one of our agents
+        reads another model's output; no such reader exists today.
+        (e) BASELINE IDENTITY — verify/status print the bundle identity
+        they measured against, so a stale canonical copy cannot produce a
+        confident "drift" that overwrites the newer file with the older.
+        (f) READ-ONLY TOOL BINDING — layer-3 deny-list in the adapters
+        omitting `code_edit` for the three gate reviewers; "No code was
+        altered" (code-review.md:39) is prose today; the adapter is where
+        agent.yaml already says the judgment executes. (g) TRIAL-MERGE —
+        a non-mutating merge dry-run whose exit code never collapses "the
+        world is not ready" (dirty tree, unfetched ref) into "there is a
+        conflict"; feeds the pending `git-approval-flow`. Also noted from
+        the runtime-side verification: an INTAKE GAP REGISTER (which
+        requirement the intake dropped and why), ENUM PARITY between the
+        registry's status vocabulary and every consumer's literal set
+        (the 1.22.3 lesson as a validator), and a VETO-ONLY RULE for
+        reviewers (a reviewer may block, never rewrite).
+      rejected: |
+        With the law that rejects each: the nine-phase autonomous
+        orchestrator and auto-resuming sprint (commands.yaml: no
+        orchestrator decides; agent.yaml § cascade); auto-fix and the
+        orchestrator applying findings (one artifact, one owner; the round
+        trip IS the governance); the producer reviewing itself in
+        subagent mode ("never the machine that did the work"); the
+        executor closing its own task (co_writer); a maintained
+        pipeline-state file (derived, never maintained — their 12/36 is
+        the proof); a lessons corpus retrieved by similarity (memory
+        between sessions rejected; a lesson becomes a rule or a case);
+        materialized model names and stack names inside roles
+        (neutrality; `tier:` as a class is legal, the materialization is
+        the defect); cost/latency estimates as findings (a metric is
+        MEASURED by the verifier, never trusted from the producer); the
+        delegation/telemetry apparatus (layer-3 cost optimization written
+        as layer-2 prose); a global id counter with remote reservation
+        (seq-race solved it in three lines); three severity scales
+        reconciled by a fourth actor (severity-vocabulary's specimen).
+
     - id: diagnostic-mode
       severity: major
       progress: |
@@ -519,6 +606,81 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: reviewer-refutation
+      was: major
+      issue: |
+        Our three reviewers (design-review, code-review, qa-executor) were
+        read-only by judgment and reported without the rigor the reading
+        of 2026-09-07 (`external-reading-2026-09`, pending) named: a
+        finding was asserted, never attacked by its author before
+        publication; a verdict said "no problem" as a claim about the
+        artifact when all the reviewer could claim was a statement about
+        its own attack; an ABSENCE claim ("no test covers X", "the
+        closure is complete, not sampled" — impact-analysis :25) carried
+        no search the reader could re-run. The field motives were already
+        ours: 1.22.0 shipped a finding about "rounds" that a single
+        attempt to refute (open evidencias-1.0.md, read "Task: 1_task.md")
+        would have killed; 1.22.1 shipped a grammar read from the wrong
+        end of the filename that the first field file refuted; the audit
+        of 2026-09-02 was credible precisely because every absence it
+        claimed ("impact-analysis in requires of ZERO agents") published
+        the grep. The method demanded of the audit what it never demanded
+        of its reviewers. A published article's comment thread said the
+        same thing from outside: an agent that cannot be wrong is worth
+        nothing as a reviewer.
+      resolution: |
+        1.24.0, "the reviewer's epistemics". Four postconditions in each of
+        the three reviewers, in the classes agent.yaml defines and the
+        verifying agent corrected: `deterministic:` every finding block
+        (DR/CR/BUG) carries a `Refuted:` line; `judgment:` the line records
+        a real attempt to kill the finding and the reason it survived
+        (findings the refutation kills are dropped silently — a
+        "considered and discarded" list is theatre); `judgment:` the
+        verdict says what the review PROVES ("no problem found", never "no
+        problem"; NOT VERIFIED names what was tried); `evidence:` an
+        absence claim publishes the search that produced it, exact enough
+        to re-run. impact-analysis :25 promoted to `evidence:` with the
+        walk published (the completeness claim names its method).
+        Template: `> **Refuted:**` line in the DR/CR/BUG blocks; one
+        doctrine paragraph per reviewer ("every finding survives its own
+        refutation"). Floor: verify's REFUTATION FLOOR warns on a finding
+        block without `Refuted:` — advisory at birth, the machine checks
+        the field exists, never its quality. Planted: design-review with
+        DR-002 lacking the line → old runtime silent, new warns naming
+        DR-002. Classes matter: a written refutation is not evidence — the
+        reader cannot verify a judgment by re-running it — which is why
+        the first draft's `evidence:` was wrong and was corrected before
+        shipping.
+
+    - id: benign-path
+      was: minor
+      issue: |
+        Our own miss, 24 hours old. 1.23.0 gave the FRD `Keeps possible:`
+        (what survives a restriction) and gave the test-plan an orphan-
+        case backstop for the behavior being REMOVED — and nobody consumed
+        the surviving side. `Keeps possible:` was a declaration without a
+        consumer: the literal executor could narrow the surviving path,
+        every test on the removed side would pass, and no case existed to
+        notice. Found by the reading of 2026-09-07 against a published
+        toolkit's "benign path" obligation (a detector validated only
+        against adversarial input ships broken and passes its own suite);
+        the runtime-side agent confirmed it as failure #1 of 1.23.0, ours,
+        not theirs.
+      resolution: |
+        1.24.0. test-plan gains the benign postcondition (deterministic:
+        every RF that declares `Restricts:` has at least one TC on the
+        `Keeps possible:` side, the case carrying `**Keeps possible:**`
+        and naming the RF), the TC-07 template, a `benign` family row and
+        a Gaps row for the uncovered ones. Floor: verify's BENIGN-PATH
+        FLOOR collects the restricting RFs from every frd instance and the
+        TC blocks carrying `Keeps possible:`, and warns naming the RFs
+        with no case on the surviving side — advisory, same pattern as
+        bounded-restriction. Planted: frd with RF-002/RF-003 restricting,
+        test-plan with TC-04 keeping RF-003 possible → old runtime silent,
+        new warns `benign path: 1 ... RF-002`. Lesson for the ledger, not
+        for a rule: a vocabulary word shipped without its consumer is the
+        `used_by` mirror all over again — declared, read by no one.
+
     - id: bounded-restriction
       was: major
       issue: |

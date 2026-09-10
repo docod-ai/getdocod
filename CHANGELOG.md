@@ -5,6 +5,60 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.24.0] — 2026-09-10
+
+The reviewer's epistemics — three concepts, each with a miss of our own
+behind it, chosen by the field's brake ("an invariant added without a real
+miss behind it is a checklist item"). A study of a third-party toolkit's
+adversarial reviewer (named in the dev ledger only) is what made us look;
+what sustains each item is our own tree.
+
+Added: every finding survives its own refutation before it exists.
+design-review, code-review and qa-executor gain a never-translate
+`Refuted:` line per finding — what was tried to kill it and why it
+survived — as a deterministic postcondition (the line exists), a judgment
+postcondition (the attempt was real; a finding the refutation kills is
+dropped in silence, never listed as "considered"), and the verdict rule: an
+`approved` says that no problem was FOUND, never that there is none. The
+doctrine was already on record without a mechanism ("a reviewer who always
+finds something is performing rigor, not exercising it"); the miss is the
+review loop's measured exhaustion. `verify` gains the REFUTATION FLOOR:
+warn per finding block (DR/CR/BUG) with no `Refuted:` line — the machine
+checks the label, the reviewer owns the argument.
+
+Added: an absence claim publishes the search that produced it. Evidence
+postconditions on the three reviewers ("no test for X", "no handling of
+Y", "nothing depends on Z" name the command or grep and its scope, exactly
+enough to re-run) and on impact-analysis, whose "the transitive closure is
+complete, not sampled" was a completeness claim with no published method —
+now `evidence:`, with the walk written down.
+
+Added: the benign path — the half 1.23.0 left with nobody on the other
+side. The frd declared `Restricts:` / `Keeps possible:`, task-extraction
+carried them, and NOTHING verified the surviving side: a declared
+reference with no consumer, this project's recurring failure #1, 24 hours
+old. test-plan gains the deterministic postcondition (every RF that
+declares `Restricts:` has at least one case carrying `Keeps possible:`,
+asserting the legitimate actor the restriction must NOT stop), the case
+template, a `benign` family row and the Gaps row; `verify` gains the
+BENIGN-PATH FLOOR, a cross-artifact check in the traceability invariant's
+shape (frd RFs with `Restricts:` × test-plan cases citing them with `Keeps
+possible:`), warn at birth. A detector verified only against the actor it
+blocks ships broken and passes its own suite.
+
+Corrected on the way, by the verifying agent: the classes. A written
+refutation is argument, not observation — `deterministic:` + `judgment:`,
+never `evidence:` (agent.yaml: evidence is "verifiable by the reader, not
+by the writer"); the absence-search and the published walk ARE evidence.
+Held in the ledger with the study's remaining concepts: the vacuous-run
+gate (no miss of ours; needs a count vocabulary), coverage stated on an
+approved verdict (a design question — our `unreviewable` section is
+negative, theirs is positive), an assumptions register, an untrusted-input
+class, baseline identity before measuring, read-only tool binding per
+adapter, trial-merge.
+
+specVersion → 1.24.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.23.0] — 2026-09-03
 
 The bounded-restriction release — ring 1 of the amputation audit, and

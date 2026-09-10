@@ -30,6 +30,7 @@ contract:
         - "judgment: Requirement without a case AND case without a requirement are both in the gaps section"
         - "deterministic: Every case has a declared level — and the distribution is justified"
         - "deterministic: Every case has a priority, and P0 has the reason written down"
+        - "deterministic: Every RF that declares `Restricts:` has at least one case for the OTHER side — a case carrying `Keeps possible:` that asserts the legitimate actor or path the restriction must NOT stop. A detector verified only against the actor it blocks ships broken and passes its own suite; the surviving side is the half of the requirement that proves the restriction is bounded"
         - "deterministic: Every error in the `api-contract`'s closed list has a case"
         - "deterministic: Every `data-design` migration has a case with representative volume"
         - "judgment: The STRATEGY came from `testing-guidelines` — it was not redefined here"
@@ -181,12 +182,22 @@ In both directions. **One direction is half a verification.**
 > **Then:** 201 with the **same** `order_id` (api-contract § API-01)
 > **P0 because:** a failure here charges the customer twice.
 
+> **TC-07 — administrator still lists users** · RF-031 · **integration** · **P0**
+> **Keeps possible:** the administrator route lists users of a product (the RF restricts common users, not the capability)
+> **Given:** an administrator of product P
+> **When:** GET /products/P/users
+> **Then:** 200 with the list
+> **P0 because:** the restriction in RF-031 is only bounded if this path survives — a plan with the 403 case and no 200 case verifies the block and never the boundary.
+
+`Keeps possible:` is the same never-translate label the frd uses on the requirement: an RF that carries `Restricts:` owes this plan at least one case on the surviving side, and `verify` warns when it is missing.
+
 | Family | Covers |
 |---|---|
 | happy | the expected |
 | boundary | zero, one, many, maximum, empty, null, duplicate |
 | error | **all** of them from the contract's closed list |
 | state | first time, repetition, concurrency, **after a partial failure** |
+| benign | the legitimate actor or path a restriction must NOT stop — one per RF with `Restricts:` |
 
 ## 4. Distribution
 | Level | Cases | |
@@ -207,6 +218,7 @@ What each case needs. **Real data in a test environment is a privacy finding** �
 |---|---|---|
 | RF-018 without a case | requirement without verification | me |
 | TC-30 without an RF | testing the unrequested | `frd` decides |
+| RF-031 restricts, no surviving-side case | restriction verified only against the actor it blocks | me |
 | "the system must be intuitive" | **not verifiable** | `frd` — no case can be written |
 
 The third row is the most valuable: **a requirement that cannot become a case is a defect of the requirement**, and you are the one who finds it.

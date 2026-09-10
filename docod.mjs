@@ -1461,6 +1461,70 @@ function cmdVerify(root, file) {
       else fails.push(`enforcement edge EV-${m[1]} is DANGLING — no such case in the evals suite; the decision claims a check that does not exist, which is exactly the broken link this edge exists to name`);
     }
   }
+  // THE REFUTATION FLOOR (1.24.0) — a finding survives its own refutation
+  // before it exists, and the survival is WRITTEN: every finding block in a
+  // reviewer's record (DR-nn, CR-nn, BUG-nn) carries a `Refuted:` line. The
+  // machine checks the label, not the argument: the argument is the
+  // reviewer's judgment (its postcondition); the label's presence is what a
+  // producer cannot self-attest. Warn tier: legacy records predate the label.
+  // Field motive: the review loop's exhaustion ("um vai e vem que confunde")
+  // and the doctrine already on record without a mechanism — design-review
+  // "a reviewer who always finds something is performing rigor, not
+  // exercising it".
+  if (["design-review", "codereview", "qa"].includes(selfKey) && p.endsWith(".md")) {
+    const lines = body0.split("\n");
+    const heads = [];
+    lines.forEach((l, i) => { const m = /^>\s*\*\*((?:DR|CR|BUG)-\d{1,4})\*\*/.exec(l); if (m) heads.push([i, m[1]]); });
+    if (heads.length) {
+      const bare = [];
+      heads.forEach(([start, id], k) => {
+        const end = k + 1 < heads.length ? heads[k + 1][0] : lines.length;
+        if (!lines.slice(start, end).some(l => /\*\*Refuted:\*\*\s*\S/.test(l))) bare.push(id);
+      });
+      if (bare.length)
+        warns.push(`refutation floor: ${bare.length} finding(s) with no \`Refuted:\` line — ${bare.slice(0, 6).join(", ")}${bare.length > 6 ? ", …" : ""}. A finding that never faced its own refutation is an opinion with a severity; write what was tried to kill it and why it survived (the label is method vocabulary, never translated)`);
+      else oks.push(`refutation floor: all ${heads.length} finding(s) carry a \`Refuted:\` line`);
+    }
+  }
+  // THE BENIGN-PATH FLOOR (1.24.0) — the other half of the bounded
+  // restriction, the half 1.23.0 left with nobody on the other side: the frd
+  // declares `Restricts:` / `Keeps possible:`, task-extraction carries them,
+  // and NOTHING verified the surviving side. A cross-artifact check, the
+  // shape of the traceability invariant: every RF that declares `Restricts:`
+  // in the frd(s) must have, in this test-plan, at least one case citing the
+  // RF and carrying `Keeps possible:`. A detector verified only against the
+  // actor it blocks ships broken and passes its own suite. Warn tier at birth.
+  if (selfKey === "test-plan" && p.endsWith(".md")) {
+    const restricting = new Map(); // RF -> frd file
+    const frdArt = arts["frd"];
+    for (const f of frdArt ? findInstances(frdArt, root, inst, "*") : []) {
+      if (!f.endsWith(".md") || !fs.existsSync(f) || !fs.statSync(f).isFile()) continue;
+      const fl = readFrontmatter(f)[1].split("\n");
+      const defRx = /^\s*(?:#{1,6}\s|>+\s*\*\*|\*\*|[-*]\s+\*\*|\|\s*\*\*)/;
+      const defs = [];
+      fl.forEach((l, i) => { if (defRx.test(l)) { const m = l.match(/\bRF-\d{1,4}\b/); if (m && !defs.some(([, id]) => id === m[0])) defs.push([i, m[0]]); } });
+      defs.forEach(([start, id], k) => {
+        const end = k + 1 < defs.length ? defs[k + 1][0] : fl.length;
+        if (fl.slice(start, end).some(l => /\*\*Restricts:\*\*\s*\S/.test(l)) && !restricting.has(id)) restricting.set(id, path.relative(root, f));
+      });
+    }
+    if (restricting.size) {
+      const lines = body0.split("\n");
+      const cases = [];
+      lines.forEach((l, i) => { if (/^>\s*\*\*TC-\d{1,4}\b/.test(l)) cases.push(i); });
+      const covered = new Set();
+      cases.forEach((start, k) => {
+        const end = k + 1 < cases.length ? cases[k + 1] : lines.length;
+        const block = lines.slice(start, end);
+        if (!block.some(l => /\*\*Keeps possible:\*\*\s*\S/.test(l))) return;
+        for (const rf of block[0].match(/\bRF-\d{1,4}\b/g) || []) covered.add(rf);
+      });
+      const missing = [...restricting].filter(([rf]) => !covered.has(rf));
+      if (missing.length)
+        warns.push(`benign path: ${missing.length} restricting requirement(s) with no case on the surviving side — ${missing.slice(0, 6).map(([rf, src]) => `${rf} (${src})`).join(", ")}${missing.length > 6 ? ", …" : ""}. The RF declares \`Restricts:\`; this plan has no TC citing it that carries \`Keeps possible:\`. A restriction verified only against the actor it blocks is verified on one side`);
+      else oks.push(`benign path: every restricting RF (${restricting.size}) has a case on the surviving side (\`Keeps possible:\`)`);
+    }
+  }
   // COMPLETENESS — the truncation detector. The contract (artifacts.yaml)
   // declares the MINIMUM sections; a run that died mid-write leaves fewer
   // `##` heads than the contract. COUNT, not names: instance docs are written

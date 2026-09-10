@@ -31,6 +31,10 @@ contract:
         - "deterministic: Every blocker finding has a `violates` pointing to the artifact and section it contradicts"
         - "deterministic: Every finding has a concrete, verifiable recommendation — never 'revisit'"
         - "evidence: What could not be assessed is in `unreviewable` with the reason — not omitted or inferred"
+        - "deterministic: Every finding carries a `Refuted:` line — the attempt made to kill the finding and why it survived. The label is method vocabulary, never translated; a finding without it does not go in"
+        - "judgment: The refutation was a REAL attempt, not a formality: argue the artifact is fine here, look for the guard you missed, construct the input that makes the concern moot. A finding the refutation kills is dropped in silence — never listed as 'considered': a false positive costs trust as fast as a miss"
+        - "judgment: An `approved` verdict claims that no problem was FOUND, never that there is no problem — the review states what it attacked; it never asserts the artifact's correctness"
+        - "evidence: An absence finding (no SLI has a number, no component serves RF-x, nothing handles the failure path) names the search that produced it — which sections or artifacts were read, exactly enough to re-run"
         - "judgment: Traceability in both directions: RF without a component AND component without an RF"
         - "judgment: No new requirement was invented — that is a traceability finding, not a demand"
         - "judgment: Nothing was written into another agent's artifact, including the status field"
@@ -90,6 +94,8 @@ What prevents the owner from self-approving: they can only go to `approved` if t
 **Every finding needs evidence.** Without an excerpt and an origin, it is an opinion — and an opinion in a review becomes a matter-of-taste argument, which is how a review loses authority. Evidence is what separates *"the observability is weak"* from *"§ 6 lists 'metrics, logs and traces' and no SLI has a number"*.
 
 **If the design is good, say so.** `approved` is a legitimate verdict. **A review that never approves is ignored** — and an ignored review protects nothing. A reviewer who always finds something is performing rigor, not exercising it.
+
+**Every finding survives its own refutation before it exists.** Before writing a finding, try to kill it: argue the design is fine here, look for the guard you missed, construct the input that makes the concern moot. If the attempt kills it, drop it in silence — a "considered and dismissed" list is rigor performed, not exercised, and a false positive costs the review's authority as fast as a miss. If it survives, the `Refuted:` line says what you tried and why it did not save the design. And when nothing survives, `approved` says that no problem was found, never that there is none: you attacked the design and did not breach it, which is a statement about your attack.
 
 **Prefer `blocked` over `changes_requested` when an essential artifact is missing.** No FRD, no ADR: the problem is not the design, it is the input. Requesting changes to a design that never had a base is blaming the author for the process's failure.
 
@@ -162,6 +168,7 @@ The second question matters: an orphan component can be design in excess **or** 
 > **Violates:** ADR-0004 (accepted) — *"payment integration is asynchronous, via queue"*
 > **Recommendation:** either the design changes to a queue, or there is an RFC superseding ADR-0004.
 > **Why it blocks:** it contradicts a frozen decision. **A design does not revoke an ADR by omission.**
+> **Refuted:** tried to read the call as a fire-and-forget behind a facade; § 4.2 says it *waits for the response* and § 6 lists the interface as synchronous — the finding survives.
 
 Severity:
 
