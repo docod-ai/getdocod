@@ -156,7 +156,7 @@ echo "   ✓ bundle → .docod/"
 # ── 2. the instance (the user's; never overwrite)
 if [ ! -f "$TARGET/docod.yaml" ]; then
   cat > "$TARGET/docod.yaml" <<YAML
-specVersion: "1.24.0"
+specVersion: "1.26.0"
 
 # DOCOD INSTANCE — layer 4. This file is YOURS: the installer never overwrites
 # it. Adjust topology and targets to the shape of your repo.
@@ -300,6 +300,21 @@ for d in "$TARGET/$DR" "$TARGET/$TR"; do
 done
 if [ "${NDRAFT:-0}" -gt 0 ]; then
   MANUAL="$MANUAL\n     $NDRAFT document(s) in \`draft\` under $DR and $TR. Since 1.22.3 a draft satisfies no gate\n     and cannot be approved (it is incomplete by definition). If one is complete, its OWNER\n     agent delivers it in \`review\` (re-run it, or ask it to close the run); \`status\` names\n     what each blocks. Never hand-edit the stamp."
+fi
+# M6 (1.25.0): a `superseded_approval` key written BY HAND into frontmatters —
+# the field preserving the approval hash the runtime used to discard on every
+# re-approve. The runtime now records it itself (approval.previous, every
+# door). Detection only: the key is read by verify in any shape, never
+# rewritten here; the next approve through any door records the lineage, and
+# the hand key is deleted by its owner after that, never before.
+NHAND=0
+for d in "$TARGET/$DR" "$TARGET/$TR"; do
+  [ -d "$d" ] || continue
+  n="$( { grep -rl --include='*.md' '^superseded_approval:' "$d" 2>/dev/null || true; } | wc -l | tr -d ' ')"
+  NHAND=$((NHAND + n))
+done
+if [ "${NHAND:-0}" -gt 0 ]; then
+  MANUAL="$MANUAL\n     $NHAND document(s) carry a hand-written \`superseded_approval\` key under $DR and $TR. Since 1.25.0\n     every approve door records the approval it replaces in approval.previous, and \`verify\` names a\n     hash cited downstream as the superseded approval it came from. The key is read as-is; after the\n     next approve of each document records its own lineage, delete the hand key (a mirror kept by hand\n     is right until the day someone forgets it). Never edited here."
 fi
 [ -n "$MIGRATED" ] && printf "   ✓ migrated old layout:%b\n" "$MIGRATED"
 [ -n "$MANUAL" ]   && printf "   ⚠ needs your hand (never guessed):%b\n" "$MANUAL"

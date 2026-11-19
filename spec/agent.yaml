@@ -1,4 +1,4 @@
-specVersion: "1.24.0"
+specVersion: "1.26.0"
 
 # =============================================================================
 # LAYER 2 — WHAT AN AGENT IS  ·  NEUTRAL
@@ -504,6 +504,15 @@ write_order: |
   what they had just read, and the conductor lectured them about a flow the
   producer had skipped. Reading is not a transition; the report never
   writes; the producer's stamp is the only honest place for `review`.
+
+  AND THE STAMP NAMES ITS HAND (1.26.0). With `status`, the producer writes
+  `produced_by: <agent-key>.<action>` — qa-executor.revalidate, not
+  qa-executor; the ACTION, because two actions of one agent write the same
+  record with different obligations (run_qa redoes the plan, revalidate
+  re-executes the bugs) and the field could not tell from the file which one
+  had run. `verify` checks the name against the registry (the action exists
+  and its contract writes this artifact); a record without it is legacy, not
+  wrong. Derived from nothing: it is the run's own signature, written once.
 
   Cheap by construction: no progress file, no heartbeat, no lock — the
   ABSENCE of the last write IS the marker. Field case that forced this: an

@@ -573,6 +573,128 @@ function envelopeDiff(rec, cur, art) {
   return broken;
 }
 
+function previousOf(ap) {
+  // ONE GENERATION OF LINEAGE (1.25.0). Every door that writes `approval`
+  // overwrote the record it replaced and lost the content_hash the previous
+  // approval blessed — the full door kept nothing, --correction kept {by, at}
+  // without the hash, rebless kept only its reason. The field filled the hole
+  // by hand: a `superseded_approval` key written by whoever re-approved,
+  // never by the runtime, never read by it — a maintained mirror of what the
+  // runtime discarded. The runtime records what it overwrites, at the moment
+  // it overwrites it; the whole chain is git's, derived, never kept here.
+  // The value this buys is concrete: a hash quoted downstream that matches
+  // nothing today can be NAMED as the superseded approval it was copied
+  // from, instead of "matches nothing" (verify's PROSE REFERENCES).
+  if (!ap?.content_hash) return {};
+  return { previous: { by: ap.by ?? "?", at: ap.at ?? "?", content_hash: ap.content_hash } };
+}
+
+function defAt(line, idPat, { cell = false } = {}) {
+  // POSITIONAL DEFINITION (1.26.0) — where an id DEFINES, by the shape of the
+  // line and never by its mere presence on it. Sixth instance of the founding
+  // parse class (COMP got its positional grammar in 1.21.0; RF, DIV and the
+  // coverage ids were still first-match on any definition-shaped line):
+  // planted, `> **Dependencies:** RF-002` before RF-001's criteria made the
+  // old runtime name RF-001 as the requirement without a scenario — RF-001
+  // had one, RF-002 had none — and `> **Traces:** OBJ-1` DEFINED an id that
+  // COVERAGE then demanded of every task. Three shapes define:
+  //   heading — the first id in a heading's text (`### RF-001`, `### 4.2
+  //             RF-002 — title`, `### Requisito RF-003`): a heading is a
+  //             title, not a label, and FRDs outside the template number
+  //             and prefix theirs;
+  //   bold    — an id INSIDE the line's first bold span, when that span is
+  //             not a LABEL (a span ending in `:` — `**Dependencies:**`,
+  //             `**Description:**`, `**Talks to:**` — is the method's label
+  //             grammar, and what follows a label is a mention);
+  //   cell    — the same bold rule in a table's first cell.
+  // A PLAIN first cell (`| DIV-01 | … |`) defines only where the caller asks
+  // (cell: true) — the DIV tables. The first draft of this function accepted
+  // it for every id and was caught by the verifying agent before the commit:
+  // a summary table above the definitions (`| RF-001 | A |`) became the
+  // definition, RF-001 read as having no origin, RF-002 inherited RF-001's
+  // provenance line, and `| SHA-256 | … |` in a system-design became an id
+  // every task owed. Returns { id, kind, level } or null.
+  const idRx = new RegExp(String.raw`\b(` + idPat + String.raw`)\b`);
+  let m = /^\s*(?:>+\s*)?(#{1,6})\s+(.*)$/.exec(line);
+  if (m) { const h = idRx.exec(m[2]); return h ? { id: h[1], kind: "heading", level: m[1].length } : null; }
+  m = /^\s*(\|\s*)?(?:>+\s*)?(?:[-*]\s+)?\*\*([^*]*)(?:\*\*|$)/.exec(line);
+  if (m) {
+    const span = m[2].trim();
+    if (!/[:：]$/.test(span)) { const h = idRx.exec(span); if (h) return { id: h[1], kind: m[1] ? "cell" : "bold", level: 6 }; }
+    return null;
+  }
+  if (cell) { m = new RegExp(String.raw`^\s*\|\s*(` + idPat + String.raw`)\b`).exec(line); if (m) return { id: m[1], kind: "cell", level: 6 }; }
+  return null;
+}
+
+function idBlocks(lines, idPat) {
+  // The block an id OWNS, for every check that reads "under the definition".
+  // One definition per id: a heading or bold definition wins over a table
+  // row (a summary table above the requirements indexes them, it does not
+  // define them); with only table rows, the first row stands. A block ends at
+  // the next chosen definition, or at a heading that closes it — any heading
+  // for a bold/cell definition, a heading of the same or a higher level for a
+  // heading definition. Without that bound the LAST requirement owned the
+  // rest of the document: a references section citing DIV-07 after the last
+  // RF was read as that RF building on DIV-07.
+  const chosen = new Map();
+  lines.forEach((line, i) => {
+    const d = defAt(line, idPat);
+    if (!d) return;
+    const cur = chosen.get(d.id);
+    if (!cur || (cur.kind === "cell" && d.kind !== "cell")) chosen.set(d.id, { ...d, start: i });
+  });
+  const defs = [...chosen.values()].sort((a, b) => a.start - b.start);
+  return defs.map((d, k) => {
+    let end = k + 1 < defs.length ? defs[k + 1].start : lines.length;
+    for (let i = d.start + 1; i < end; i++) {
+      const h = /^\s*(?:>+\s*)?(#{1,6})\s+\S/.exec(lines[i]);
+      if (h && h[1].length <= d.level) { end = i; break; }
+    }
+    return { id: d.id, start: d.start, end };
+  });
+}
+
+function provenanceCensus(body) {
+  // THE PROVENANCE CENSUS (1.26.0) — per RF, the class of its `Provenance:`
+  // line: evidence (file:line + fragment), decision (ADR / log), user-supplied,
+  // inferred. The frd contract demanded provenance since the reverse was born
+  // ("every claim carries provenance: evidence, inferred or user-supplied")
+  // and gave it no label and no reader: the field marked inferences in two
+  // homemade spellings (`[inferred]` in the title, "premissa inferida" in the
+  // criterion) and NOTHING counted them — 287 criticalities inferred, 92
+  // numbers invented, 29 requirements with no origin, all approved in one
+  // gate, because the one who approved was never told the number. Homemade
+  // marks are READ (an inference marked any way is an inference), never
+  // rewritten, and named as homemade so the next FRD uses the label.
+  const lines = body.split("\n");
+  const defs = idBlocks(lines, String.raw`RF-\d{1,4}`);
+  const c = { defs: defs.length, evidence: 0, decision: 0, user: 0, inferred: 0, none: [], homemade: [], unparsed: [], divCites: [] };
+  const ALIAS = /\[inferr?ed\]|\[inferid[ao]\]|premissa inferida|\binferid[ao]s?\b|\*\*Assumption\*\*|\bAssumption:/i;
+  defs.forEach(({ id, start, end }) => {
+    const block = lines.slice(start, end);
+    for (const l of block) for (const m of l.matchAll(/\bDIV-\d{1,4}\b/g)) c.divCites.push([id, m[0]]);
+    const pl = block.find(l => /\*\*Provenance:\*\*/.test(l));
+    if (pl) {
+      // The class is the value's LEADING word — the template's grammar
+      // (`evidence …`, `decision …`, `user-supplied …`, `inferred`). Content
+      // heuristics only when no keyword leads, and decision before evidence:
+      // `decision … docs/decisions/adr/0003.md:12` cites a file:line and is
+      // still a decision (the first draft tested evidence first and classed
+      // it wrong).
+      const v = pl.replace(/^.*\*\*Provenance:\*\*/, "").trim();
+      const lead = (/^[`*_\s]*(inferr?ed|inferid[ao]|evidence|decision|user[- ]supplied)\b/i.exec(v) || [])[1]?.toLowerCase();
+      const cls = lead ? (lead.startsWith("infer") ? "inferred" : lead.startsWith("user") ? "user" : lead)
+        : /\bADR-\d|decisions?\//i.test(v) ? "decision"
+        : /[\w./-]+\.[a-z]{1,4}:\d{1,5}\b/i.test(v) ? "evidence"
+        : /\binferr?ed\b|\binferid[ao]\b/i.test(v) ? "inferred" : null;
+      if (cls) c[cls]++; else c.unparsed.push(id);
+    } else if (block.some(l => ALIAS.test(l))) { c.inferred++; c.homemade.push(id); }
+    else c.none.push(id);
+  });
+  return c;
+}
+
 function repinDownstream(root, inst, arts, srcKey, oldHash, newHash) {
   // The correction's radius, executed instead of waived: every LIVE edge
   // that pinned the corrected artifact's previous hash moves to the new one.
@@ -653,7 +775,7 @@ function cmdApprove(root, arquivo, by, opt, correction = false) {
     fm.approval = {
       by, at: new Date().toISOString().slice(0, 10), content_hash: h0, envelope: cur,
       correction: true, correction_reason: reason.trim(),
-      previous: { by: ap.by ?? "?", at: ap.at ?? "?" },
+      ...previousOf(ap),
     };
     writeFrontmatter(caminho, fm);
     console.log(`✓ corrected & re-approved by ${by} · ${h0} — recorded as CORRECTION (confirmed, not re-reviewed)`);
@@ -695,10 +817,26 @@ function cmdApprove(root, arquivo, by, opt, correction = false) {
     console.log(`ℹ content changed since the approval by ${fm.approval.by ?? "?"} on ${fm.approval.at ?? "?"}.`);
     console.log(`  See what changed before approving, e.g.: git log -p --since="${fm.approval.at ?? ""}" -- ${path.relative(root, caminho)}`);
   }
+  // THE RATIFICATION MOMENT (1.26.0) — approving an FRD ratifies every
+  // inference in it. The census verify prints is printed HERE too, because
+  // this is where the human is being asked and the field showed the asking
+  // never happened: 287 inferred criticalities, 92 invented numbers, 29
+  // requirements with no origin, approved in one gate with nobody told.
+  // Printed, never blocking: the machine counts, the human judges.
+  if (selfKey === "frd") {
+    const pc = provenanceCensus(readFrontmatter(caminho)[1]);
+    if (pc.defs) {
+      console.log(`ℹ you are ratifying ${pc.defs} requirement(s): ${pc.evidence} evidence · ${pc.decision} decision · ${pc.user} user-supplied · ${pc.inferred} INFERRED · ${pc.none.length} with NO origin` +
+        (pc.none.length ? ` (${pc.none.slice(0, 6).join(", ")}${pc.none.length > 6 ? ", …" : ""})` : "") + ".");
+      if (pc.inferred || pc.none.length)
+        console.log("  An inferred requirement becomes YOUR decision at this stamp. Read those first; a number an agent chose is a target after you approve it.");
+    }
+  }
   const h = sha256Body(caminho);
   fm.status = "approved";
   fm.approval = { by, at: new Date().toISOString().slice(0, 10), content_hash: h,
-    ...(selfArt ? { envelope: computeEnvelope(caminho, selfArt) } : {}) };
+    ...(selfArt ? { envelope: computeEnvelope(caminho, selfArt) } : {}),
+    ...previousOf(fm.approval) };
   writeFrontmatter(caminho, fm);
   console.log(`✓ approved by ${by} · ${h}`);
   console.log("  Validity is mechanical: edit the content and the approval invalidates itself.");
@@ -1122,7 +1260,7 @@ function cmdVerify(root, file) {
   // trains the user to ignore the alert — hence COUNT, which is language-
   // neutral), and judgment/evidence postconditions (not computable — they
   // remain gated by reviewers).
-  const { inst, arts, statuses } = loadModel(root);
+  const { inst, arts, statuses, agents } = loadModel(root);
   const p = path.isAbsolute(file) ? file : path.join(root, file);
   if (!fs.existsSync(p)) die(`✗ does not exist: ${file}`);
   const oks = [], fails = [], warns = [];
@@ -1156,6 +1294,21 @@ function cmdVerify(root, file) {
   for (const [k, a] of Object.entries(arts))
     if (findInstances(a, root, inst, "*").includes(p)) { selfKey = k; selfArt = a; break; }
   if (selfKey) oks.push(`registered artifact: ${selfKey}` + (selfArt.lineage === "snapshot" ? " (snapshot — inputs are observed-at)" : ""));
+  // PRODUCED BY (1.26.0) — the record names the action that wrote it,
+  // stamped with `status` (agent.yaml § write_order). Field case: the author
+  // could not tell whether a second QA pass had been `run_qa` again or
+  // `revalidate` — the records looked the same, and the method's economy
+  // (revalidate re-executes the bugs, run_qa redoes the plan) was invisible.
+  // Read when present; legacy records without it are not warned.
+  if (fm.produced_by != null) {
+    const m = String(fm.produced_by).match(/^([a-z0-9-]+)\.([a-z0-9_]+)$/);
+    const act = m ? agents?.[m[1]]?.contract?.actions?.[m[2]] : null;
+    const writesSelf = act && selfKey && [].concat(act.writes?.artifact ?? []).includes(selfKey);
+    if (!m) warns.push(`produced_by '${fm.produced_by}' does not parse — the grammar is <agent-key>.<action>, e.g. qa-executor.revalidate`);
+    else if (!act) warns.push(`produced_by names ${fm.produced_by}, an action no registered agent declares — a record signed by nobody the registry knows`);
+    else if (selfKey && !writesSelf) warns.push(`produced_by names ${fm.produced_by}, whose contract does not write '${selfKey}' — the record claims a producer that could not have produced it`);
+    else oks.push(`produced by ${fm.produced_by}` + (selfKey ? ` (declared writer of ${selfKey})` : ""));
+  }
   // PER-TASK RECORDS (1.22.1): evidencias, qa, bugs and codereview are
   // numbered with the TASK's seq — qa-0003.md is the qa OF 0003_task.md, the
   // convention evidencias always had ("Task: {seq}_task.md"). 1.22.0 misread
@@ -1387,18 +1540,12 @@ function cmdVerify(root, file) {
   // as evals: `Acceptance criteria:` is method vocabulary; the content
   // beside it speaks the instance's language.
   if (selfKey === "frd" && p.endsWith(".md")) {
-    const defRx = /^\s*(?:#{1,6}\s|>+\s*\*\*|\*\*|[-*]\s+\*\*|\|\s*\*\*)/;
     const lines = body0.split("\n");
-    const defs = [];   // [idx, RF-id] — definition-shaped lines only; citations do not open a block
-    lines.forEach((line, i) => {
-      if (!defRx.test(line)) return;
-      const m = line.match(/\bRF-\d{1,4}\b/);
-      if (m && !defs.some(([, id]) => id === m[0])) defs.push([i, m[0]]);
-    });
+    // [start, RF-id, end] — POSITIONAL definitions and bounded blocks (idBlocks); a mention never opens a block
+    const defs = idBlocks(lines, String.raw`RF-\d{1,4}`).map(b => [b.start, b.id, b.end]);
     if (defs.length) {
       const bare = [];
-      defs.forEach(([start, id], k) => {
-        const end = k + 1 < defs.length ? defs[k + 1][0] : lines.length;
+      defs.forEach(([start, id, end]) => {
         const block = lines.slice(start, end);
         const li = block.findIndex(l => /\*\*Acceptance criteria:\*\*/.test(l));
         const hasScenario = li >= 0 && block.slice(li + 1).some(l => /^\s*>?\s*[-*]\s+\S/.test(l) || /\*\*Acceptance criteria:\*\*\s*\S/.test(block[li]));
@@ -1415,8 +1562,7 @@ function cmdVerify(root, file) {
       // detection net downstream (executor stop-row, qa "taken away", the
       // test-plan backstop) is what catches the undeclared one.
       const halfBound = [];
-      defs.forEach(([start, id], k) => {
-        const end = k + 1 < defs.length ? defs[k + 1][0] : lines.length;
+      defs.forEach(([start, id, end]) => {
         const block = lines.slice(start, end);
         const hasR = block.some(l => /\*\*Restricts:\*\*\s*\S/.test(l));
         const hasK = block.some(l => /\*\*Keeps possible:\*\*\s*\S/.test(l));
@@ -1424,11 +1570,72 @@ function cmdVerify(root, file) {
       });
       if (halfBound.length)
         warns.push(`bounded restriction: ${halfBound.length} requirement(s) declare \`Restricts:\` with no \`Keeps possible:\` — ${halfBound.slice(0, 6).join(", ")}${halfBound.length > 6 ? ", …" : ""}. A restriction declared without what survives it is a law nobody downstream can weigh; name what stays possible, and for whom`);
-      else if (defs.some(([start, id], k) => { const end = k + 1 < defs.length ? defs[k + 1][0] : lines.length; return lines.slice(start, end).some(l => /\*\*Restricts:\*\*\s*\S/.test(l)); }))
+      else if (defs.some(([start, , end]) => lines.slice(start, end).some(l => /\*\*Restricts:\*\*\s*\S/.test(l))))
         oks.push(`bounded restriction: every requirement that declares \`Restricts:\` also declares \`Keeps possible:\``);
       if (bare.length)
         warns.push(`scenario floor: ${bare.length} requirement(s) with no \`Acceptance criteria:\` scenario under the definition — ${bare.slice(0, 6).join(", ")}${bare.length > 6 ? ", …" : ""}. A requirement with no scenario is acceptance nobody can check; the label is method vocabulary (content localizes; labels do not)`);
       else oks.push(`scenario floor: all ${defs.length} requirement(s) carry at least one acceptance criterion under an \`Acceptance criteria:\` label`);
+    }
+    // THE PROVENANCE CENSUS (1.26.0) — see provenanceCensus(). Reported, not
+    // judged: inferred is honest; the machine counts and the human ratifies at
+    // approve, where the same census prints again. What WARNS is what no
+    // reader can count — a requirement with no provenance at all, a mark in a
+    // homemade spelling, a value the grammar cannot class.
+    const pc = provenanceCensus(body0);
+    // NEVER A SILENT ZERO. An frd whose requirements are written in a shape
+    // the grammar does not read (plain table rows, ids buried in prose) has
+    // no definitions here — and every floor above and the census below would
+    // simply not run, which reads as "nothing to report". Say it.
+    if (!pc.defs) {
+      const seen = new Set([...body0.matchAll(/\bRF-\d{1,4}\b/g)].map(m => m[0]));
+      if (seen.size)
+        warns.push(`${seen.size} RF id(s) appear in this document and NONE is defined in a shape verify reads (a heading or a bold title carrying the id — the template's \`> **RF-001 — title**\`). The scenario floor, the bounded-restriction floor and the provenance census DID NOT RUN: this is not a clean result, it is an unread document`);
+    }
+    if (pc.defs) {
+      oks.push(`provenance census: ${pc.defs} requirement(s) — ${pc.evidence} evidence · ${pc.decision} decision · ${pc.user} user-supplied · ${pc.inferred} inferred · ${pc.none.length} without origin` +
+        (pc.inferred ? ` (an inferred requirement is honest; approving this document RATIFIES ${pc.inferred} inference(s) — the approve door prints this count again)` : ""));
+      if (pc.none.length)
+        warns.push(`provenance: ${pc.none.length} requirement(s) with NO \`Provenance:\` line and no inference mark — ${pc.none.slice(0, 6).join(", ")}${pc.none.length > 6 ? ", …" : ""}. A requirement nobody can trace to code, decision, person or inference is the one an agent invented without saying so; write the line (evidence · decision · user-supplied · inferred)`);
+      if (pc.homemade.length)
+        warns.push(`provenance: ${pc.homemade.length} requirement(s) mark an inference in a homemade way (\`[inferred]\`, "premissa inferida", Assumption) instead of \`Provenance: inferred\` — ${pc.homemade.slice(0, 6).join(", ")}${pc.homemade.length > 6 ? ", …" : ""}. Read as inferred here; the label is method vocabulary, and a mark outside it is counted by nobody else`);
+      if (pc.unparsed.length)
+        warns.push(`provenance: ${pc.unparsed.length} \`Provenance:\` value(s) outside the four classes (evidence · decision · user-supplied · inferred) — ${pc.unparsed.slice(0, 6).join(", ")}`);
+      // THE RATIFICATION EDGE — an RF that cites DIV-nn is building on a
+      // divergence an agent recorded. Recorded is not ratified (agent.yaml §
+      // census: `external` and the reverse's findings are "recorded, not
+      // ratified, never citable as evidence"). Field case: a reverse
+      // diagnosis never approved by the human classified a legacy behavior
+      // as accidental; the FRD built a rule on it that the legacy schema
+      // contradicted. The DIV's home document must be APPROVED (hash valid)
+      // for the citation to stand as ratified; a DIV defined in THIS document
+      // is ratified together with it and is not checked here.
+      if (pc.divCites.length) {
+        const homes = new Map(); // DIV-id → [file, ratified]
+        for (const [k2, a2] of Object.entries(arts))
+          for (const f2 of findInstances(a2, root, inst, "*")) {
+            if (!f2.endsWith(".md") || f2 === p || !fs.existsSync(f2) || !fs.statSync(f2).isFile()) continue;
+            const [fm2, b2] = readFrontmatter(f2);
+            const ratified = fm2.status === "approved" && fm2.approval?.content_hash === sha256Body(f2);
+            for (const l of b2.split("\n")) {
+              const d = defAt(l, String.raw`DIV-\d{1,4}`, { cell: true })?.id; // DIVs live in tables: the plain first cell defines here, and only here
+              if (d && !homes.has(d)) homes.set(d, [path.relative(root, f2), ratified, k2, fm2.status ?? "no status"]);
+            }
+          }
+        const selfDivs = new Set(body0.split("\n").map(l => defAt(l, String.raw`DIV-\d{1,4}`, { cell: true })?.id).filter(Boolean));
+        const unrat = [], nowhere = [];
+        for (const [rf, div] of pc.divCites) {
+          if (selfDivs.has(div)) continue;
+          const h = homes.get(div);
+          if (!h) nowhere.push(`${rf} → ${div}`);
+          else if (!h[1]) unrat.push(`${rf} → ${div} (${h[0]}, ${h[3]})`);
+        }
+        if (unrat.length)
+          warns.push(`ratification: ${unrat.length} requirement(s) build on a divergence NO HUMAN RATIFIED — ${[...new Set(unrat)].slice(0, 4).join("; ")}${unrat.length > 4 ? "; …" : ""}. A DIV an agent recorded is an observation until its document is approved; until then the requirement's provenance is inferred, and the question belongs to the human before the gate`);
+        if (nowhere.length)
+          warns.push(`ratification: ${nowhere.length} requirement(s) cite a DIV defined in no registered artifact — ${[...new Set(nowhere)].slice(0, 4).join("; ")}. A divergence with no home document is a claim nobody can ratify`);
+        if (!unrat.length && !nowhere.length)
+          oks.push(`ratification: every DIV this document builds on lives in an approved document (or in this one, ratified together)`);
+      }
     }
   }
   // THE ENFORCEMENT EDGE (1.21.0) — the decision → check link, fourth member
@@ -1500,11 +1707,7 @@ function cmdVerify(root, file) {
     for (const f of frdArt ? findInstances(frdArt, root, inst, "*") : []) {
       if (!f.endsWith(".md") || !fs.existsSync(f) || !fs.statSync(f).isFile()) continue;
       const fl = readFrontmatter(f)[1].split("\n");
-      const defRx = /^\s*(?:#{1,6}\s|>+\s*\*\*|\*\*|[-*]\s+\*\*|\|\s*\*\*)/;
-      const defs = [];
-      fl.forEach((l, i) => { if (defRx.test(l)) { const m = l.match(/\bRF-\d{1,4}\b/); if (m && !defs.some(([, id]) => id === m[0])) defs.push([i, m[0]]); } });
-      defs.forEach(([start, id], k) => {
-        const end = k + 1 < defs.length ? defs[k + 1][0] : fl.length;
+      idBlocks(fl, String.raw`RF-\d{1,4}`).forEach(({ id, start, end }) => {
         if (fl.slice(start, end).some(l => /\*\*Restricts:\*\*\s*\S/.test(l)) && !restricting.has(id)) restricting.set(id, path.relative(root, f));
       });
     }
@@ -1614,21 +1817,48 @@ function cmdVerify(root, file) {
   // rotted. Presence of backticks is not a free pass (that is gameable); the
   // machine checks the fragment, the same "what a machine can check, a machine
   // checks" the correction gate will use.
+  // THE HAND-MAINTAINED LINEAGE KEY (1.25.0). Field case, three artifacts:
+  // the runtime overwrote every approval it replaced and kept no hash of the
+  // previous one, so whoever re-approved wrote `superseded_approval` into the
+  // frontmatter by hand — true lineage, read by nobody, and a mirror that rots
+  // the first time an approve happens without the hand remembering. The
+  // runtime now records the generation it overwrites (approval.previous, all
+  // three doors). The hand key is READ here, never written, never rewritten:
+  // its hashes count as superseded (below), and its presence is named.
+  if (fm.superseded_approval != null)
+    warns.push("frontmatter carries `superseded_approval` — a hand-maintained key the runtime never wrote and never read; since 1.25.0 every approve door records the approval it replaces in approval.previous, so the next approve through any door records this lineage itself. Then delete the hand key: a mirror kept by hand is right until the day someone forgets it, and that day it reassures");
   {
     const citedHashes = [...body0.matchAll(/sha256:([0-9a-f]{8,64})/g)].map(m => m[1]);
     if (citedHashes.length) {
       const current = new Set();
-      for (const a of Object.values(arts))
+      // superseded: hash prefix → "artifact (replaced on AT by BY)". The
+      // runtime's own record first; the field's hand key read in ANY shape
+      // (a deep scan for sha256 strings — the shape was never ours to fix).
+      const superseded = new Map();
+      for (const [k, a] of Object.entries(arts))
         for (const f of findInstances(a, root, inst, "*"))
-          if ((f.endsWith(".md") || f.endsWith(".yaml")) && fs.existsSync(f) && fs.statSync(f).isFile())
+          if ((f.endsWith(".md") || f.endsWith(".yaml")) && fs.existsSync(f) && fs.statSync(f).isFile()) {
             current.add(sha256Body(f).slice("sha256:".length));
+            if (!f.endsWith(".md")) continue;
+            const [ofm] = readFrontmatter(f);
+            const prev = ofm.approval?.previous;
+            const pm = String(prev?.content_hash ?? "").match(/^sha256:([0-9a-f]+)$/);
+            if (pm) superseded.set(pm[1].slice(0, 16), `${k} (replaced on ${ofm.approval?.at ?? "?"} by ${ofm.approval?.by ?? "?"}; the superseded approval was ${prev.by ?? "?"}'s on ${prev.at ?? "?"})`);
+            if (ofm.superseded_approval != null)
+              for (const m of JSON.stringify(ofm.superseded_approval).matchAll(/sha256:([0-9a-f]{8,64})/g))
+                if (!superseded.has(m[1].slice(0, 16))) superseded.set(m[1].slice(0, 16), `${k} (recorded in its hand-written superseded_approval key)`);
+          }
       for (const i of (fm.inputs || [])) {
         const m = String(i.hash ?? "").match(/^sha256:([0-9a-f]+)$/);
         if (m) current.add(m[1].slice(0, 16));
       }
       for (const h of new Set(citedHashes)) {
         const pre = h.slice(0, 16);
-        if (![...current].some(c => c.startsWith(pre) || pre.startsWith(c)))
+        if ([...current].some(c => c.startsWith(pre) || pre.startsWith(c))) continue;
+        const sup = [...superseded.entries()].find(([c]) => c.startsWith(pre) || pre.startsWith(c));
+        if (sup)
+          warns.push(`body cites hash sha256:${h.slice(0, 12)}… which is a SUPERSEDED approval of ${sup[1]} — the text was written against a version that no longer stands; re-read it against the current approval and re-cite, or drop the hash`);
+        else
           warns.push(`body cites hash sha256:${h.slice(0, 12)}… that matches NO current artifact and NO declared input — a prose hash nothing watches; declare it in inputs[] or drop it from the text`);
       }
     }
@@ -1726,8 +1956,7 @@ function cmdVerify(root, file) {
   // citation, including a declared gap in the index, is visibility; zero
   // citations is a hole nobody has looked at.
   if (selfKey === "tasks") {
-    const defRx = /^\s*(?:#{1,6}\s|>+\s*\*\*|\*\*|[-*]\s+\*\*|\|\s*\*\*)/;
-    const idRx = /\b([A-Z]{2,6}(?:-[A-Z]{2,6})*-\d{1,4})\b/;
+    const ID_GRAMMAR = String.raw`[A-Z]{2,6}(?:-[A-Z]{2,6})*-\d{1,4}`; // one ID vocabulary (computeEnvelope's), as a pattern source — no regex sliced by position
     const defined = new Map(); // id -> defining file (relative)
     for (const srcKey of ["system-design", "frd"]) {
       const art = arts[srcKey]; if (!art) continue;
@@ -1735,10 +1964,9 @@ function cmdVerify(root, file) {
         if (!f.endsWith(".md") || !fs.existsSync(f) || !fs.statSync(f).isFile()) continue;
         const [, sbody] = readFrontmatter(f);
         for (const line of sbody.split("\n")) {
-          if (!defRx.test(line)) continue;
-          const m = line.match(idRx);
-          if (m && !m[1].startsWith("ADR-") && !defined.has(m[1]))
-            defined.set(m[1], path.relative(root, f));
+          const id = defAt(line, ID_GRAMMAR)?.id; // the COVERAGE grammar, positional: `> **Traces:** OBJ-1` defines nothing, and neither does a plain table cell (`| SHA-256 | … |`)
+          if (id && !id.startsWith("ADR-") && !defined.has(id))
+            defined.set(id, path.relative(root, f));
         }
       }
     }
@@ -1949,7 +2177,7 @@ function cmdRebless(root, by, reason, yes, repin, only = []) {
   }
   for (const p of plan) {
     for (const [inp, srcFile] of p.stale) inp.hash = sha256Body(srcFile);
-    if (p.invalid) p.fm.approval = { by, at: new Date().toISOString().slice(0, 10), content_hash: null, rebless_reason: reason, ...(scope.length ? { rebless_scope: scope } : {}) };
+    if (p.invalid) p.fm.approval = { by, at: new Date().toISOString().slice(0, 10), content_hash: null, rebless_reason: reason, ...(scope.length ? { rebless_scope: scope } : {}), ...previousOf(p.fm.approval) };
     writeFrontmatter(p.f, p.fm);
     if (p.invalid) { const [fm2] = readFrontmatter(p.f); fm2.approval.content_hash = sha256Body(p.f); writeFrontmatter(p.f, fm2); }
     console.log(`  ok ${path.relative(root, p.f)}`);

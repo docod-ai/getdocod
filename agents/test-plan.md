@@ -32,6 +32,7 @@ contract:
         - "deterministic: Every case has a priority, and P0 has the reason written down"
         - "deterministic: Every RF that declares `Restricts:` has at least one case for the OTHER side — a case carrying `Keeps possible:` that asserts the legitimate actor or path the restriction must NOT stop. A detector verified only against the actor it blocks ships broken and passes its own suite; the surviving side is the half of the requirement that proves the restriction is bounded"
         - "deterministic: Every error in the `api-contract`'s closed list has a case"
+        - "deterministic: Every case that must be observed through a real interface carries `Surface: ui`; a case without it is verified with `shell`. The QA runs the browser for the cases that declare it and that the change reaches — never for the whole plan"
         - "deterministic: Every `data-design` migration has a case with representative volume"
         - "judgment: The STRATEGY came from `testing-guidelines` — it was not redefined here"
         - "judgment: A non-verifiable requirement is flagged as an FRD defect, not worked around"
@@ -188,6 +189,14 @@ In both directions. **One direction is half a verification.**
 > **When:** GET /products/P/users
 > **Then:** 200 with the list
 > **P0 because:** the restriction in RF-031 is only bounded if this path survives — a plan with the 403 case and no 200 case verifies the block and never the boundary.
+
+> **TC-09 — empty state of the users screen** · RF-031 · **end-to-end** · **P1**
+> **Surface:** ui
+> **Given:** a product with no users, an administrator signed in
+> **When:** the users screen opens
+> **Then:** the empty state names the next action; no spinner outlives 2 s; the heading is announced by the screen reader
+
+`Surface: ui` is a never-translate label too, and it is OPTIONAL by design: a case carries it only when the behavior can be observed nowhere but through the real interface (what the screen shows, keyboard, focus, contrast, the empty and error states). Every other case, including those about an interface's API, is verified with `shell`. The QA reads this label to know where the browser is owed; a plan that puts the browser on every case buys minutes, not rigor — field case: 35 to 60 minutes of QA per task with a real browser on everything, in a project where most cases were API behavior.
 
 `Keeps possible:` is the same never-translate label the frd uses on the requirement: an RF that carries `Restricts:` owes this plan at least one case on the surviving side, and `verify` warns when it is missing.
 

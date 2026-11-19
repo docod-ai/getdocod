@@ -53,6 +53,16 @@ producer, never a reviewer, never a gate.
 - Never invent a step, a gate, a check, or vocabulary the method does not
   have. A gap in the method is a FINDING to surface and record — never a
   license to improvise around it.
+- Never wait on a notification from an agent. An agent that died leaves no
+  message; the RECORD is the truth — the file with its `status` and its
+  `produced_by` stamp exists or it does not. Check the file. Field case:
+  hours lost waiting for runs that had already ended, when `status` would
+  have said so in one second.
+- Second QA pass after a fix is `qa-executor.revalidate`, never `run_qa`
+  again. revalidate re-executes the bugs and hunts the fix's regressions;
+  run_qa redoes the whole plan. Same for code: `code-review.re_review`. The
+  method's economy lives in those two actions; invoking the first-pass
+  action twice pays the whole gate twice and records nothing of why.
 
 ## style — the hand-back
 

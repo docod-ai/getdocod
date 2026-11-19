@@ -1,4 +1,4 @@
-specVersion: "1.24.0"
+specVersion: "1.26.0"
 
 # =============================================================================
 # LAYER 1 — METHOD  ·  NEUTRAL
@@ -439,12 +439,14 @@ approval:
     at:           "when (ISO date)"
     content_hash: "sha256 of the approved content, excluding the frontmatter"
     envelope:     "structural fingerprint of what was blessed (1.19.0): section count, heading-structure hash, explicit ID inventory, inputs[] set hash, and a hash per protected section — recorded so `approve --correction` can compare the CURRENT document against what the approval actually covered, without a VCS"
-    correction:   "true when this approval was recorded through `approve --correction` — confirmed inside the envelope, not re-reviewed; correction_reason and previous {by, at} ride with it"
+    correction:   "true when this approval was recorded through `approve --correction` — confirmed inside the envelope, not re-reviewed; correction_reason rides with it"
+    previous:     "{by, at, content_hash} of the approval this one REPLACED (1.25.0) — one generation, written by the runtime at the moment any door (approve, approve --correction, rebless) overwrites a record; the whole chain is the VCS's, derived, never kept here. The field used to preserve this by hand (a `superseded_approval` key nobody read); the runtime now records what it discards, and `verify` names a hash cited downstream as the superseded approval it was copied from"
   rules:
     - "Status `approved` is only VALID while content_hash matches the current content."
     - "Edited after approval → the approval no longer holds, and the `status` shows it. The hash remembers; nobody has to."
     - "An artifact with an agent gate (design-review, qa, codereview) requires the agent's verdict BEFORE the human approve — the human confirms on top, not in place."
     - "Who records it is the `approve` command (see spec/commands.yaml). An agent never records an approval — not even its own."
+    - "The runtime writes every field of this record, `previous` included. A lineage key kept by hand beside it is a mirror: right until the day someone forgets it, and that day it reassures. `verify` names one when it finds it."
   note: |
     It is what closes the contradiction recorded in `who_approves`: the status
     lives in the artifact, the artifact has an owner, and still nobody

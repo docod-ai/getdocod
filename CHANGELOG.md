@@ -5,6 +5,162 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.26.0] — 2026-11-19
+
+Provenance — the line that keeps the agent from inventing, and the census
+that tells the human how much it inferred. Two field reports on the same
+day, same project, same root. One: a reverse diagnosis never ratified by
+the human classified a legacy behavior as "accidental"; the FRD agent built
+a requirement on it and went further than the fix, inventing a rule the
+legacy schema contradicted (`SET NULL` in the code, "dies with its creator"
+in the RF); criticality marked `[inferred]`, nobody asked, approved with
+286 others. Measured across that FRD: 195 of 287 requirements cite the
+legacy as origin, all 287 criticalities inferred, 92 criteria with numbers
+marked "premissa inferida", 29 requirements with no origin at all, 8 that
+"close a v1 defect" judged by an agent every time. Two: tasks costing 3 to
+5 clock hours through five gates, with proposals to cut them.
+
+Added: `Provenance:` on the RF template — a never-translate label with four
+values: evidence (file:line with the fragment), decision (ADR or log),
+user-supplied (who, when), inferred. The frd contract had demanded
+provenance since the reverse existed ("every claim carries provenance") and
+had given it no label and no reader; the field marked inferences in two
+homemade spellings and nothing counted them. create_frd gains the
+deterministic postcondition and the RATIFICATION rule (evidence class): a
+requirement that overrides observed legacy behavior cites a ratified source
+— a DIV in an approved document, or a human decision; an unratified
+divergence is an observation an agent made, and the requirement built on it
+is `inferred`. Never: turn an unratified divergence into a requirement;
+mark an inference your own way.
+
+Added: `verify` on the frd prints the PROVENANCE CENSUS (per class, with the
+requirements that have none named) and reads the homemade marks as
+inferred, warning that they are homemade; and the RATIFICATION EDGE: an RF
+citing DIV-nn whose home document is not approved (hash valid) warns
+"builds on a divergence NO HUMAN RATIFIED", naming the file and its status;
+a DIV defined nowhere warns; a DIV defined in this same document is ratified
+together with it and is not checked. `approve` on an frd prints the census
+before stamping — "you are ratifying N requirements: … I INFERRED · M with
+NO origin" — because that is the question nobody asked in the field, and the
+stamp is where it must be asked. Printed, never blocking: the machine counts,
+the human judges.
+
+Added: `produced_by: <agent>.<action>` stamped with `status` (agent.yaml §
+write_order). The author could not tell whether a second QA pass had been
+`run_qa` again or `revalidate`; the records looked the same. `verify` checks
+the name against the registry (action exists; its contract writes this
+artifact); legacy records without it are not warned.
+
+Added: `Surface: ui` on the test-plan case, optional by design — the one
+design gap in the cost report. `browser_e2e` was a QA capability with no
+plan-side signal of WHERE the browser is owed, so it ran on everything (35
+to 60 minutes per task, mostly API behavior). The case that can only be
+observed through the real interface declares it; qa-executor reads it (and
+in `revalidate`, the browser runs for the ui bugs and the screens the fix
+touched). CONDUCTOR gains two rules from the same report: never wait on an
+agent's notification (the record is the truth; check the file), and the
+second pass is `revalidate` / `re_review`, never the first-pass action
+again.
+
+Fixed: the SIXTH instance of the founding parse class — RF, DIV and the
+coverage ids were still first-match on a definition-shaped line, so a
+mention opened a block (`> **Dependencies:** RF-002` before RF-001's
+criteria made the scenario floor name RF-001, which had a scenario, instead
+of RF-002, which had none) and `> **Traces:** OBJ-1` DEFINED an upstream id
+that COVERAGE then demanded of every task — a false positive on every FRD
+written with the template. Definitions are now read by SHAPE (`defAt`): the
+first id in a heading (`### RF-001`, `### 4.2 RF-002 — title`); an id
+inside the line's first bold span when that span is not a label (a span
+ending in `:` is the method's label grammar, and what follows a label is a
+mention); the same in a table's first cell. A PLAIN first cell defines only
+for DIVs, whose home is a table. And blocks are bounded (`idBlocks`): a
+heading or bold definition wins over a table row, and a block ends at the
+next definition or at a heading that closes it.
+
+Corrected before the commit, by the verifying agent: the first draft of
+that fix was strict adjacency plus the plain table cell for every id, and
+it traded one parse bug for three. A summary table above the requirements
+(`| RF-001 | A |`) became the definition — RF-001 read as having no origin
+and RF-002 was counted with RF-001's provenance; `| SHA-256 | … |` in a
+system-design became an id every task owed; and a prefixed heading (`###
+Requisito RF-001`), which the old grammar read, vanished from the census in
+silence. Also from that review: the provenance class is now the value's
+LEADING word (`decision … docs/adr.md:12` was classed as evidence because
+the file:line test ran first), a references section after the last
+requirement no longer belongs to it (its DIV citations were attributed to
+the last RF), and an frd with RF ids and zero readable definitions now says
+so instead of printing nothing — the floors did not run, and a silent zero
+reads as clean. All planted against the pre-fix runtime, and kept: the
+fixture ships as `tests/verify-grammar.sh`, the grammar held in both
+directions (what must stop defining, what must keep defining).
+
+Not done, and why: the other three cost proposals. Code review batched at
+the end for "pattern" tasks — the author delimiting the class (the 1.3.0
+fork), and it saves zero clock time: the review runs in parallel with the
+QA. Agent context kept across stages — allowed within a role (build → fix;
+QA pass 1 → 2) and the harness's business; forbidden across roles ("never
+the machine that did the work"). Mutation testing narrowed to new guards —
+the project's verification, not the method's. And the measurement itself
+is held in the ledger as contaminated: fifteen watchdog kills on a machine
+at load 150 cost more hours than the method did; the first clean numbers
+are the next tasks'.
+
+specVersion → 1.26.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
+## [1.25.0] — 2026-10-06
+
+The approval's previous generation — one field, written by the runtime at
+the moment it used to throw the information away. Field case, three
+artifacts (an api-contract, a data-design, a system-design review): their
+bodies cited `sha256:` hashes that matched nothing, and `verify` said so
+("matches NO current artifact and NO declared input"). Under the ⚠ was a
+convention the project had invented in its documents only: a
+`superseded_approval` frontmatter key, written by hand on every
+re-approve, that preserved exactly what the runtime discarded — every door
+that writes `approval` overwrote the record it replaced, the full door kept
+nothing of it, `--correction` kept `{by, at}` without the hash, `rebless`
+kept only its reason. True lineage, read by nobody, maintained by hand:
+the `used_by` mirror again, this time in the user's frontmatter.
+
+Added: `approval.previous: {by, at, content_hash}` — the approval this one
+REPLACED, recorded by all three doors (approve, approve --correction,
+rebless). One generation, never a chain: the chain is the VCS's, derived.
+`--correction`'s `previous {by, at}` becomes a superset of itself (the hash
+joins it); records written before 1.25.0 are read as they are.
+
+Added: `verify` reads the lineage both ways. The cited-hash check gains a
+third set — the `previous.content_hash` of every current artifact — and a
+hash that matches it is named: "a SUPERSEDED approval of system-design
+(replaced on DATE by WHO) — the text was written against a version that no
+longer stands; re-read against the current approval and re-cite, or drop
+the hash", instead of "matches nothing". A hand-written
+`superseded_approval` key is read IN ANY SHAPE (a deep scan for sha256
+strings — the shape was never ours to fix) so its hashes count as
+superseded too, and its presence draws its own warn: the runtime now
+records this lineage itself; after the next approve, delete the hand key.
+Never rewritten by the machine.
+
+Fixed on the way: commands.yaml's approve text still read "on an artifact
+in review (or draft, with a warning)" — the 1.22.3 rule had not reached
+it; it now says the door refuses a draft and names the way out. install.sh
+gains M6, detection only: counts hand-written `superseded_approval` keys
+and names the way out, never edits them (the M5 shape).
+
+Not done, and why: no `superseded_approval` enters artifacts.yaml as a
+recognized key. The field's dichotomy was right (recognized or dead) and
+the proposal was to recognize; but recognizing a key that only a hand
+writes is giving `verify` a reason to reassure on the day the hand forgets.
+Derived, never maintained: the runtime writes what the runtime reads.
+
+Planted (old runtime 1.24.0 vs new, same fixture): a body citing the hash
+of a re-approved input → old "matches NO current artifact", new names the
+superseded approval, its date and its approver; the same through the
+correction door and through rebless, `previous` carrying the replaced hash
+in all three; a hand key in an invented list shape → old silent on the
+key, new warns on the key and resolves the hash it holds.
+
+specVersion → 1.25.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.24.0] — 2026-09-10
 
 The reviewer's epistemics — three concepts, each with a miss of our own

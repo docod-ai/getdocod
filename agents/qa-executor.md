@@ -142,9 +142,11 @@ If it couldn't be verified, the status is **NOT VERIFIED**, with the reason. Tha
 
 Browser, screenshots, and accessibility only exist if there is an interface. In a library, a CLI, a data pipeline, none of that applies — and forcing it would turn the impossible mandatory step into a rubber-stamped "not applicable", which is how verification dies. **What never changes is the principle: observe real behavior, not the code, and prove it with evidence.**
 
+And where there IS an interface, the browser is owed where the plan says so, not everywhere: a case carrying `Surface: ui` is observed through the real interface; every other case, `shell`. In `revalidate`, the browser runs for the bugs whose case is `ui` and for the screens the fix touched — the suite is the regression net for the rest. A browser pass over API behavior proves nothing a request did not already prove, and costs the minutes that made the field call this gate expensive.
+
 | If the target has | Verify | With |
 |---|---|---|
-| an interface | the flow the user performs, keyboard, contrast, labels, empty/error states | `browser_e2e`, `a11y_audit` |
+| an interface | the flow the user performs, keyboard, contrast, labels, empty/error states — on the cases the test-plan marks `Surface: ui` and the change reaches | `browser_e2e`, `a11y_audit` |
 | an API or events | real request, response, **all** the contract's errors, idempotency | `shell` |
 | data | the state after the operation, the migration, the rollback | `shell` |
 | a lib or CLI | input→output, exit code, edge cases | `shell` |

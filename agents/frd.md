@@ -29,6 +29,8 @@ contract:
         - "judgment: Every criterion covers normal, boundary, error and state"
         - "judgment: No requirement freezes a technology choice"
         - "deterministic: Every requirement has a criticality (must/should/could)"
+        - "deterministic: Every requirement carries `Provenance:` — evidence (file:line with the observed fragment), decision (the ADR or log entry), user-supplied (who, when), or inferred. Criticality is never evidence: the code does not know what is essential, so a criticality nobody stated is inferred and says so"
+        - "evidence: A requirement that OVERRIDES observed legacy behavior (closes a divergence, corrects what the old system did) cites a RATIFIED source: a DIV in an approved diagnostic or reverse, or a human decision. An unratified divergence is an observation an agent made; a requirement built on it has `Provenance: inferred`, and the human is asked"
         - "judgment: Every requirement that RESTRICTS, FORBIDS or REMOVES an existing behavior is a BOUNDED restriction: it names WHO it restricts (`Restricts:`), WHAT stays possible for everyone else (`Keeps possible:`), and the objective whose reach it does not exceed (`Traces:`) — a prohibition wider than the objective it traces to is a defect of this document, listed under Gaps"
         - "deterministic: All sections of ## structure present"
 
@@ -42,7 +44,7 @@ contract:
         status: draft
       capabilities: [code_search, ask_user]
       postconditions:
-        - "evidence: Every claim carries provenance: evidence, inferred or user-supplied"
+        - "evidence: Every claim carries provenance: evidence, inferred or user-supplied — written on the RF's `Provenance:` line (the same label create_frd uses), never as a homemade mark; the census verify prints is the reader's count of what the reverse inferred"
         - "evidence: Every requirement derived from code points to file:line plus the observed fragment as evidence"
         - "evidence: Criticality is never evidence — the code doesn't know what is essential"
         - "deterministic: Every doc-vs-code divergence is a DIV-nn entry with evidence on BOTH sides (file:line WITH the observed fragment, and doc section); divergences corroborated by another reverse cross-reference each other"
@@ -92,6 +94,8 @@ You ask at **a different altitude**: for each capability the PRD brought, what i
 - Accept a happy-path-only criterion.
 - Recycle an ID. A dead RF-007 stays dead.
 - Write a restriction wider than the objective it traces to. An absolute costs nothing to write, passes unread in a thirty-requirement gate, and becomes a literal order downstream.
+- Turn an unratified divergence into a requirement. A DIV an agent recorded and no human approved is an observation; the requirement that "closes" it is `inferred`, and says so.
+- Mark an inference your own way. `Provenance: inferred` is the mark; a bracket in the title or a note in the criterion is a mark nobody counts.
 - Ask for approval of a block longer than ~15 lines.
 
 ---
@@ -117,12 +121,15 @@ Grouped by module or flow. Each one in the template:
 > - Given / When / Then, or a verifiable list
 > - covering normal, boundary, error and state
 > **Criticality:** must / should / could
+> **Provenance:** evidence `path:line` `fragment` · decision ADR-nnnn · user-supplied (who, when) · inferred
 > **Traces:** PRD objective or success criterion
 > **Dependencies:** other RFs, systems, teams
 > **Restricts:** [only when the requirement forbids, removes or narrows: WHO is restricted — the actor, the role, the path]
 > **Keeps possible:** [only with Restricts: what stays possible for everyone else, and where — the administrative route, the exception path]
 
-The bold labels of this template — `Description:`, `Acceptance criteria:`, `Criticality:`, `Traces:`, `Dependencies:`, `Restricts:`, `Keeps possible:` — are method vocabulary, never translated; the content beside them speaks the instance's language (the evals-labels rule). Two floors `verify` watches: **every RF carries at least one criterion under `Acceptance criteria:`** (a requirement with no scenario is acceptance nobody can check), and **a `Restricts:` never travels without its `Keeps possible:`** (a restriction declared without what survives it is a law nobody downstream can weigh).
+The bold labels of this template — `Description:`, `Acceptance criteria:`, `Criticality:`, `Provenance:`, `Traces:`, `Dependencies:`, `Restricts:`, `Keeps possible:` — are method vocabulary, never translated; the content beside them speaks the instance's language (the evals-labels rule). Two floors `verify` watches: **every RF carries at least one criterion under `Acceptance criteria:`** (a requirement with no scenario is acceptance nobody can check), and **a `Restricts:` never travels without its `Keeps possible:`** (a restriction declared without what survives it is a law nobody downstream can weigh). And one census it reports: **the provenance of every RF**, by class, with the requirements that have NONE named, and the count of `inferred` ones — a number the human sees again at `approve`, because approving an FRD ratifies every inference in it, and the one who ratifies must know how many there are.
+
+**Provenance is the line that keeps you from inventing.** Four values, one per requirement. `evidence` is a file:line WITH the fragment you saw (verify re-reads it). `decision` is the ADR or the decisions-log entry. `user-supplied` is who said it and when. `inferred` is everything else: the number you chose because the PRD did not, the criticality nobody stated, the rule you deduced from an observation. Inferred is honest and allowed; what is not allowed is inferred wearing another class, or an inference marked in a homemade way (`[inferred]` in the title, "premissa inferida" in the criterion) that no reader counts. Field case: an FRD with 287 requirements, every criticality inferred, 92 criteria carrying invented numbers and 29 requirements with no origin at all — all marked, in two homemade spellings, none counted, all approved in one gate. And the sharpest case: a reverse diagnosis, never ratified by the human, classified a legacy behavior as "accidental"; the requirement built on it went further than the fix and invented a rule the legacy code contradicted (`SET NULL` in the schema; "dies with its creator" in the RF). An unratified divergence is an observation. You may build on it only as `inferred`, and the question goes to the human before the gate, not after.
 
 **You write for a literal reader.** The executor obeys what is written, by contract, without judgment. A requirement that RESTRICTS is therefore a BOUNDED restriction: who it restricts, what stays possible, and the objective whose reach it does not exceed. "Never a global list of users" forbids a capability; "only an administrator lists users; a common user sees their own accesses" restricts an actor and names the surviving route. Write the second. A prohibition wider than its objective is a defect of this document, not a stronger requirement — the objective asked to restrict WHO, and the requirement removed WHAT.
 
@@ -223,7 +230,7 @@ Record in `decisions/frd.yaml` with `key`, `answer`, `provenance: user-supplied`
 ## Writing
 - Adjectives are a warning sign: *fast, secure, easy, robust, intuitive*. Each one hides a number.
 - Percentile, not average, in any latency threshold.
-- Ambiguity becomes a marked **Assumption**, never a silent choice.
+- Ambiguity becomes a marked **Assumption**, never a silent choice — and the requirement that carries it has `Provenance: inferred`.
 - Acronyms explained at first occurrence; domain terms in the Glossary.
 - A concrete example in the criterion whenever it fits.
 

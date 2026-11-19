@@ -292,6 +292,8 @@ Nothing needed to update a separate index.
 
 The current content and the recorded hash disagree, so the system knows that the approval no longer applies.
 
+When the document is approved again, the new record keeps the one it replaced (`approval.previous`: who, when, which hash). A downstream document that still quotes the old hash is then told exactly what it is quoting: a version that no longer stands.
+
 This is one of the central guarantees of DOCOD:
 
 > Approval belongs to a version of the content, not permanently to a filename.
@@ -347,7 +349,7 @@ It requires proof for the observable class.
 
 It leaves judgment where judgment belongs.
 
-The same rule covers references between documents. A component that declares which requirements it serves, a traceability table that assigns them, a requirement that promises acceptance scenarios, a decision that names the automated check holding it up: each of these is a declared link, and since 1.21.0 `verify` crosses every one of them. Set differences are reported by id and by side, never as a count, because two counts can match while the content diverges. Since 1.23.0 a requirement that restricts declares who it restricts and what stays possible, and `verify` checks that a declared restriction travels whole: a workstream that sees only its own goal must not be able to remove a capability the rest of the system depends on. Since 1.24.0 the reviewers are held to the same standard as the documents they review: every finding carries the refutation its author tried and why the finding survived, a verdict says what the review proved (no problem found, never no problem), a claim of absence publishes the search that produced it, and the test plan covers the surviving side of a restriction, not only the side it blocks. `verify` warns on a finding without its refutation and on a restriction with no case on the surviving side.
+The same rule covers references between documents. A component that declares which requirements it serves, a traceability table that assigns them, a requirement that promises acceptance scenarios, a decision that names the automated check holding it up: each of these is a declared link, and since 1.21.0 `verify` crosses every one of them. Set differences are reported by id and by side, never as a count, because two counts can match while the content diverges. Since 1.23.0 a requirement that restricts declares who it restricts and what stays possible, and `verify` checks that a declared restriction travels whole: a workstream that sees only its own goal must not be able to remove a capability the rest of the system depends on. Since 1.24.0 the reviewers are held to the same standard as the documents they review: every finding carries the refutation its author tried and why the finding survived, a verdict says what the review proved (no problem found, never no problem), a claim of absence publishes the search that produced it, and the test plan covers the surviving side of a restriction, not only the side it blocks. `verify` warns on a finding without its refutation and on a restriction with no case on the surviving side. Since 1.26.0 every requirement says where it came from (`Provenance:` evidence, decision, user-supplied or inferred), `verify` counts the classes and names the requirements with none, a requirement built on a divergence no human approved is flagged as such, and `approve` prints the count of inferences you are about to make your own before it stamps.
 
 ---
 

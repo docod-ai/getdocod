@@ -1,4 +1,4 @@
-specVersion: "1.24.0"
+specVersion: "1.26.0"
 
 # =============================================================================
 # LAYER 2 — COMMANDS  ·  NEUTRAL
@@ -139,13 +139,19 @@ commands:
       desc: "The human gate. Records the verdict and moves the status — with a hash."
       answers: "I, a human, approve this content — and what and when get recorded"
       behavior: |
-        On an artifact in `review` (or `draft`, with a warning):
+        On an artifact in `review` — a `draft` is REFUSED (1.22.3: draft is
+        the producer's own "incomplete"; there is nothing to approve, and the
+        way out is the producer delivering in review, never a hand-edited
+        status):
 
           1. computes the content hash (excluding the frontmatter itself)
           2. writes into the frontmatter:  approval: { by, at, content_hash,
-             envelope } — the envelope is the structural fingerprint of what
-             was blessed (sections, headings, ID inventory, inputs set,
-             protected spine), recorded for the correction door below
+             envelope, previous } — the envelope is the structural fingerprint
+             of what was blessed (sections, headings, ID inventory, inputs
+             set, protected spine), recorded for the correction door below;
+             `previous` is {by, at, content_hash} of the approval this one
+             replaces (1.25.0), written by every door that overwrites one, so
+             the generation the runtime discards is the generation it records
           3. moves status → approved
 
         Validity is MECHANICAL: approved only counts while content_hash matches

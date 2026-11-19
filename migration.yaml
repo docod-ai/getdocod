@@ -180,6 +180,42 @@ migration:
         (seq-race solved it in three lines); three severity scales
         reconciled by a fourth actor (severity-vocabulary's specimen).
 
+    - id: task-cost
+      severity: minor
+      issue: |
+        Field report, 2026-10-06, the author's project: 3 to 5 clock hours
+        per task through five gates (build 50-110 min; QA pass 1 35-60; code
+        review 15-30 in parallel; fix round 15-105; QA pass 2 6-40), ten
+        tasks left, with four proposals to cut it. The measurement is
+        CONTAMINATED and the ledger's own rule applies ("measure before
+        designing", cascade-economy / section-granularity): a macOS indexer
+        held the machine at load 150 for hours, tests went from 2 to 15
+        minutes, agents hit the 10-minute watchdog about fifteen times at 10
+        to 60 minutes of restart each — between 2.5 and 15 hours lost, more
+        than the method cost in the tasks measured. The author's hour was
+        also spent waiting on notifications from runs that had already
+        ended (CONDUCTOR rule added in 1.26.0).
+      decision: |
+        What had a design gap behind it entered 1.26.0: `Surface: ui` on the
+        test-plan case (the browser was owed nowhere in particular, so it ran
+        everywhere), and the CONDUCTOR rules (check the record, not the
+        notification; second pass is revalidate / re_review, never the
+        first-pass action again — the author could not tell which had run,
+        hence `produced_by`). Rejected with the law: code review batched at
+        the end for "pattern" tasks (the author delimits the class — the
+        1.3.0 fork; and it saves zero clock, the review runs in parallel
+        with QA); kept-context across ROLES (never the machine that did the
+        work). Not the method's: mutation testing narrowed to new guards
+        (the project's verification config); kept-context within a role
+        (harness). HELD until the first clean numbers (load 3.5, from the
+        next task on): whether the fix round's size (up to 105 min, a second
+        build) says the executor's done-definition is too weak — QA found a
+        real bug in every task, which is either the gate working or the
+        producer not running the plan's cases before handing over; the
+        executor's contract already demands the task's tests implemented
+        AND run, and the complete suite green, so the question is whether
+        the test-plan cases reach the executor's `reads` in a usable form.
+
     - id: diagnostic-mode
       severity: major
       progress: |
@@ -606,6 +642,190 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: provenance-census
+      was: major
+      issue: |
+        Field case, 2026-10-06, the author's project. The chain: a reverse
+        diagnosis made by an agent and never ratified classified a legacy
+        behavior (the API key falling to the default MEMBER role) as
+        "accidental"; the FRD agent took "accidental" and went past the fix,
+        inventing that the key follows its creator's role and dies with him
+        — the legacy schema's `SET NULL` says the opposite; criticality
+        marked `[inferred]`, nobody asked; approved together with 286 other
+        requirements; today the impact map built questions on it and the
+        author relayed them without opening the legacy. The author's count
+        across the FRD: 195/287 cite the legacy as origin; 287/287
+        criticalities inferred; 92 criteria with numbers marked "premissa
+        inferida" (5 seconds, 90 days, 7 days of regret); 29 requirements
+        with no origin; 8 "close a v1 defect" judged by an agent every time.
+        The author: "os agents inventam muito e causam idas e vindas
+        intermináveis". Reading the contracts: frd.md:45 "every claim
+        carries provenance: evidence, inferred or user-supplied" and :47
+        "criticality is never evidence" existed since the reverse was born
+        — as postconditions with NO label in the RF template and NO reader
+        in the runtime. The agent obeyed (it marked), invented the spelling
+        (the template had none), and nothing counted. Declared-without-a-
+        consumer, the fourth time in five releases (used_by, Keeps
+        possible:, superseded_approval, now [inferred]). And the ratified /
+        recorded distinction (agent.yaml:434-442, "recorded, not ratified,
+        never citable as evidence") was applied to `external` and never to
+        a DIV: an FRD citing an unapproved diagnosis cited an observation as
+        a verdict.
+      resolution: |
+        1.26.0. Label, census, ratification, the asking. `Provenance:` on
+        the RF template, four values (evidence file:line+fragment · decision
+        · user-supplied · inferred), deterministic postcondition on
+        create_frd, the reverse's postcondition pointed at the same label.
+        Ratification rule (evidence class): an RF that overrides observed
+        legacy cites a DIV in an APPROVED document or a human decision;
+        otherwise it is inferred and says so. verify: PROVENANCE CENSUS per
+        class with the none-named, homemade marks (`[inferred]`, "premissa
+        inferida", Assumption) read as inferred and warned as homemade (read,
+        never rewritten); RATIFICATION EDGE — DIV cited × home document's
+        approval (hash valid), warn on unratified naming file and status,
+        warn on homeless, self-defined DIVs exempt (ratified with the
+        document). approve on an frd prints the census before the stamp:
+        "you are ratifying N: … I INFERRED · M with NO origin" — the question
+        the field never asked, at the only moment it can be asked. Printed,
+        never blocking. Planted (1.25.0 vs new, one fixture): RF with
+        evidence, RF with `[inferred]` in the title and no line, RF with
+        `Provenance: inferred` and "premissa inferida" in the criterion, RF
+        with nothing → old silent; new: census 1·0·0·2·1, homemade RF-002
+        named, RF-004 named as no-origin; RF-002 citing DIV-01 from a
+        diagnostic in review → "NO HUMAN RATIFIED (file, review)", quiet
+        after the diagnostic's approve; DIV-09 defined nowhere → named;
+        approve prints the census. What stays out: the assumptions register
+        held in `external-reading-2026-09` — the census makes the inferences
+        countable where they live, and a second artifact to list them would
+        be the maintained mirror of a derived count; it enters only if the
+        count proves insufficient (an inference that must be tracked to its
+        resolution, not just seen at approve).
+
+    - id: positional-definitions
+      was: minor
+      issue: |
+        Found while planting the census: RF, DIV and the COVERAGE ids were
+        still FIRST-MATCH on a definition-shaped line (COMP got its
+        positional grammar in 1.21.0 after the Talks-to bug). Proven on the
+        old runtime, two ways: `> **Dependencies:** RF-002` before RF-001's
+        criteria opened RF-002's block at the mention, so the scenario floor
+        named RF-001 (which HAD a scenario) and missed RF-002 (which had
+        none); and `> **Traces:** OBJ-1`, the frd template's own line,
+        DEFINED OBJ-1 as an upstream id that COVERAGE then demanded of every
+        task — a false warn on every FRD written with the template, in the
+        field since the coverage check was born. Sixth instance of the
+        founding parse class.
+      misread: |
+        The maintainer's first fix (`defIdAt`, delivered to disk 2026-10-06,
+        never committed) was STRICT ADJACENCY — the id immediately after the
+        prefix — plus a plain table cell accepted for EVERY id, added because
+        the DIV tables needed it. The verifying agent ran the function alone
+        against a summary table and stopped the commit (2026-11-19): `|
+        RF-001 | A |` above the definitions became the definition, RF-001
+        read as without origin and RF-002 counted with RF-001's provenance
+        line; `| SHA-256 | … |` in a system-design became a coverage id;
+        `### Requisito RF-001`, which the old grammar read, vanished from the
+        census in silence. Three regressions from a fix of one bug — the
+        seventh, eighth and ninth of the class, written by the hand that was
+        fixing the sixth. The planted battery had covered the bug being
+        fixed and NOT the shapes the old grammar read correctly: a parser
+        change is planted in both directions, what must stop matching AND
+        what must keep matching.
+      resolution: |
+        1.26.0, the corrected form. `defAt(line, idPattern, {cell})` reads a
+        definition by SHAPE: the first id in a heading; an id inside the
+        line's first bold span when the span is not a LABEL (ends in `:` —
+        the method's own label grammar is what separates a title from a
+        mention, no adjacency needed); the same in a table's first cell; a
+        plain first cell only where the caller asks (DIV). `idBlocks` gives
+        each id ONE definition (heading/bold wins over a table row) and a
+        bounded block (next definition, or a heading that closes it), which
+        also ends the last requirement's ownership of the rest of the
+        document. Plus, from the same review: provenance class by the
+        value's leading word; a never-silent-zero warn when an frd has RF
+        ids and no readable definition. Planted against the pre-fix runtime
+        on one fixture (summary table, prefixed heading, decision citing a
+        file:line, references section with a DIV, SHA-256 cell): pre-fix
+        census 1 evidence · 0 inferred · 2 without origin, scenario floor
+        naming two requirements that had scenarios, DIV-07 attributed to
+        RF-003, COVERAGE demanding SHA-256; fixed: 1 · 1 decision · 1
+        inferred · 0, all floors clean, coverage clean. The fixture ships as
+        `tests/verify-grammar.sh` (dev-only, beside install-adapters.sh):
+        green on the fixed runtime, red on the pre-fix one at its first
+        assertion — run it on any change to defAt or idBlocks.
+
+    - id: produced-by
+      was: minor
+      issue: |
+        The author, 2026-10-06: "não sei qual ação o QA rodou". A qa record
+        written by `run_qa` and one written by `revalidate` are
+        indistinguishable in the file, and the two actions have different
+        obligations (redo the plan vs re-execute the bugs and hunt the fix's
+        regressions). The method's economy for the second pass was
+        invisible, and the cost report counted "QA rodada 2: 6 a 40 min"
+        without anyone able to say which door it went through.
+      resolution: |
+        1.26.0. `produced_by: <agent-key>.<action>` stamped with `status`
+        (agent.yaml § write_order: the stamp names its hand — the ACTION,
+        not only the agent). verify checks it against the registry when
+        present: parses, action exists, its contract writes this artifact;
+        a legacy record without it is not warned. CONDUCTOR gains the
+        routing rule (second pass = revalidate / re_review). Planted:
+        `frd.create_frd` on an frd → ok; `qa-executor.run_qa` on an frd →
+        warn "whose contract does not write 'frd'".
+
+    - id: approval-previous
+      was: minor
+      issue: |
+        Field case, 2026-10-06, three artifacts in the author's project (an
+        api-contract, a data-design, a system-design review): bodies citing
+        `sha256:` hashes that matched nothing, verify's "matches NO current
+        artifact and NO declared input" on all three. Under the warnings, a
+        convention the project had invented IN ITS DOCUMENTS ONLY — the
+        author: "foi escrito apenas nos docs do projeto e não no runtime": a
+        `superseded_approval` frontmatter key written by hand on every
+        re-approve, preserving the hash of the approval being replaced.
+        Reading the runtime: every door that writes `approval` overwrote
+        the record it replaced — the full door kept nothing of it (docod.mjs
+        cmdApprove), `--correction` kept `previous: {by, at}` WITHOUT the
+        hash (:655-656), `rebless` kept only `rebless_reason` (:1952). The
+        runtime discarded the lineage; the field preserved it by hand; the
+        runtime read none of it. The runtime-side agent's framing was the
+        right dichotomy — "ou entra para o verify reconhecer e conferir, ou
+        a convenção morre" — and its proposed landing (register the key in
+        artifacts.yaml) was the wrong half: recognizing a key only a hand
+        writes gives verify a reason to reassure on the day the hand
+        forgets. A mirror kept by hand is `used_by` again, in the user's
+        frontmatter this time.
+      resolution: |
+        1.25.0. The runtime records what it overwrites, at the moment it
+        overwrites it: `approval.previous: {by, at, content_hash}`, written
+        by all three doors through one helper (`previousOf`), one generation
+        only — the chain is the VCS's, derived, never kept in frontmatter.
+        `--correction`'s `previous` becomes a superset of itself; pre-1.25.0
+        records are read as they are. verify's cited-hash check gains the
+        superseded set (every current artifact's previous.content_hash) and
+        NAMES the match: "a SUPERSEDED approval of system-design (replaced
+        on DATE by WHO) — re-read against the current approval and re-cite,
+        or drop the hash" — the same ⚠, a diagnosis instead of a shrug. The
+        hand key: read in ANY shape (a deep scan of its YAML for sha256
+        strings — the author confirmed the shape lives only in his project,
+        and a reader is not written for a grammar nobody fixed), its hashes
+        count as superseded, its presence draws a warn naming the way out
+        (next approve records the lineage; then delete the key). Never
+        rewritten by the machine. install.sh M6 counts the keys, detection
+        only. commands.yaml's approve text still said "(or draft, with a
+        warning)" — 1.22.3 never reached it; fixed. Planted, old 1.24.0 vs
+        new on one fixture: re-approve through the full door, then the
+        correction door, then rebless, `previous` carrying the replaced hash
+        each time; a downstream body citing the replaced hash → old
+        "matches nothing", new names the approval, its date and approver; a
+        hand key in an invented list shape → old silent on the key, new
+        warns on it and resolves the hash it holds. Lesson for the ledger:
+        when the field invents a frontmatter key, read which door of the
+        runtime discards what the key preserves — the convention is a bug
+        report about that door, and the fix lives in the door.
+
     - id: reviewer-refutation
       was: major
       issue: |
