@@ -589,6 +589,21 @@ function previousOf(ap) {
   return { previous: { by: ap.by ?? "?", at: ap.at ?? "?", content_hash: ap.content_hash } };
 }
 
+// The id grammars the frd checks read. RF is the functional requirement; DIV
+// carries its reverse FAMILY in the field (DIV-API-08, DIV-SEC-04 — a bare
+// `DIV-\d` pattern, 1.26.0's, saw none of them and the ratification edge
+// stayed silent on every real citation); RNF/NFR are the non-functional
+// requirements two field projects number beside the RFs.
+const RF_PAT = String.raw`RF-\d{1,4}`;
+const DIV_PAT = String.raw`DIV(?:-[A-Z]{2,6})*-\d{1,4}`;
+const NFR_PAT = String.raw`(?:RNF|NFR)-\d{1,4}`;
+// The criteria label, canonical and as the field translated it. The canonical
+// one is method vocabulary; the translated one is READ so that a floor can say
+// "translated" instead of "missing" — 57 requirements with scenarios were
+// reported as having none because the label read `Critérios de aceite:`.
+const CRIT_CANON = /\*\*Acceptance criteria:\*\*/;
+const CRIT_TRANSLATED = /\*\*(Crit[ée]rios? de aceit[\p{L}]*|Criterios de aceptaci[óo]n)[:：]?\*\*/iu;
+
 function defAt(line, idPat, { cell = false } = {}) {
   // POSITIONAL DEFINITION (1.26.0) — where an id DEFINES, by the shape of the
   // line and never by its mere presence on it. Sixth instance of the founding
@@ -613,46 +628,73 @@ function defAt(line, idPat, { cell = false } = {}) {
   // a summary table above the definitions (`| RF-001 | A |`) became the
   // definition, RF-001 read as having no origin, RF-002 inherited RF-001's
   // provenance line, and `| SHA-256 | … |` in a system-design became an id
-  // every task owed. Returns { id, kind, level } or null.
+  // every task owed. `lead` says whether the id OPENS the title (nothing
+  // before it but numbering and punctuation) — idBlocks ranks on it.
+  // Returns { id, kind, level, lead } or null.
   const idRx = new RegExp(String.raw`\b(` + idPat + String.raw`)\b`);
+  const leads = (text, h) => /^[\s\d.\-–—)(§#:*_`]*$/.test(text.slice(0, h.index));
   let m = /^\s*(?:>+\s*)?(#{1,6})\s+(.*)$/.exec(line);
-  if (m) { const h = idRx.exec(m[2]); return h ? { id: h[1], kind: "heading", level: m[1].length } : null; }
+  if (m) { const h = idRx.exec(m[2]); return h ? { id: h[1], kind: "heading", level: m[1].length, lead: leads(m[2], h) } : null; }
   m = /^\s*(\|\s*)?(?:>+\s*)?(?:[-*]\s+)?\*\*([^*]*)(?:\*\*|$)/.exec(line);
   if (m) {
     const span = m[2].trim();
-    if (!/[:：]$/.test(span)) { const h = idRx.exec(span); if (h) return { id: h[1], kind: m[1] ? "cell" : "bold", level: 6 }; }
+    if (!/[:：]$/.test(span)) { const h = idRx.exec(span); if (h) return { id: h[1], kind: m[1] ? "cell" : "bold", level: 6, lead: leads(span, h) }; }
     return null;
   }
-  if (cell) { m = new RegExp(String.raw`^\s*\|\s*(` + idPat + String.raw`)\b`).exec(line); if (m) return { id: m[1], kind: "cell", level: 6 }; }
+  if (cell) { m = new RegExp(String.raw`^\s*\|\s*(` + idPat + String.raw`)\b`).exec(line); if (m) return { id: m[1], kind: "cell", level: 6, lead: true }; }
   return null;
 }
 
-function idBlocks(lines, idPat) {
+function idBlocks(lines, idPat, opts = {}) {
   // The block an id OWNS, for every check that reads "under the definition".
-  // One definition per id: a heading or bold definition wins over a table
-  // row (a summary table above the requirements indexes them, it does not
-  // define them); with only table rows, the first row stands. A block ends at
-  // the next chosen definition, or at a heading that closes it — any heading
-  // for a bold/cell definition, a heading of the same or a higher level for a
-  // heading definition. Without that bound the LAST requirement owned the
-  // rest of the document: a references section citing DIV-07 after the last
-  // RF was read as that RF building on DIV-07.
-  const chosen = new Map();
-  lines.forEach((line, i) => {
-    const d = defAt(line, idPat);
-    if (!d) return;
-    const cur = chosen.get(d.id);
-    if (!cur || (cur.kind === "cell" && d.kind !== "cell")) chosen.set(d.id, { ...d, start: i });
+  // ONE definition per id, chosen by STANDING and never by coming first:
+  //   3  the id opens a heading or a bold title (`> **RF-001 — title**`,
+  //      `### 4.2 RF-002`) — or, where the caller reads tables (DIV), a row;
+  //   2  the id sits inside a heading or bold title behind other words
+  //      (`### Requisito RF-003`) — a definition only when nothing better
+  //      exists, because this is also the shape of a MENTION (`## Summary of
+  //      RF-001..RF-040`, `> **Important — RF-002 runs first**`);
+  //   1  a table row (a summary table indexes, it does not define).
+  // At equal standing the candidate followed by a label body (`**X:**` before
+  // the next candidate or heading) wins — a definition owns a body, a mention
+  // does not — and only then the first. Two candidates of standing 2 or 3
+  // that BOTH own a body are an ambiguity the machine reports and does not
+  // resolve: a duplicated or recycled id. First-wins was the last surviving
+  // form of the founding parse class: reported from the field review as two
+  // cases the 1.26.0 grammar still read wrong.
+  // A block ends at the next chosen definition, or at a heading that closes
+  // it — any heading for a bold/cell definition, a heading of the same or a
+  // higher level for a heading definition. Without that bound the LAST
+  // requirement owned the rest of the document.
+  const cands = [];
+  lines.forEach((line, i) => { const d = defAt(line, idPat, opts); if (d) cands.push({ ...d, start: i }); });
+  cands.forEach((c, k) => {
+    c.rank = c.kind === "cell" ? (opts.cell ? 3 : 1) : c.lead ? 3 : 2;
+    c.body = false;
+    const stop = k + 1 < cands.length ? cands[k + 1].start : lines.length;
+    for (let i = c.start + 1; i < stop; i++) {
+      if (/^\s*(?:>+\s*)?#{1,6}\s+\S/.test(lines[i])) break;
+      if (/\*\*[^*\n]{1,60}[:：]\*\*/.test(lines[i])) { c.body = true; break; }
+    }
   });
+  const chosen = new Map();
+  for (const c of cands) {
+    const cur = chosen.get(c.id);
+    if (!cur || c.rank > cur.rank || (c.rank === cur.rank && c.body && !cur.body)) chosen.set(c.id, c);
+  }
   const defs = [...chosen.values()].sort((a, b) => a.start - b.start);
-  return defs.map((d, k) => {
+  const blocks = defs.map((d, k) => {
     let end = k + 1 < defs.length ? defs[k + 1].start : lines.length;
     for (let i = d.start + 1; i < end; i++) {
       const h = /^\s*(?:>+\s*)?(#{1,6})\s+\S/.exec(lines[i]);
       if (h && h[1].length <= d.level) { end = i; break; }
     }
-    return { id: d.id, start: d.start, end };
+    return { id: d.id, start: d.start, end, rank: d.rank };
   });
+  blocks.ambiguous = defs
+    .map(d => [d.id, cands.filter(c => c.id === d.id && c.rank === d.rank && c.rank >= 2 && c.body && d.body).map(c => c.start + 1)])
+    .filter(([, at]) => at.length > 1);
+  return blocks;
 }
 
 function provenanceCensus(body) {
@@ -667,31 +709,104 @@ function provenanceCensus(body) {
   // gate, because the one who approved was never told the number. Homemade
   // marks are READ (an inference marked any way is an inference), never
   // rewritten, and named as homemade so the next FRD uses the label.
+  //
+  // READ FROM THE FIELD (1.27.0). 1.26.0 was written from the author's
+  // description of one FRD and run for the first time against two real ones
+  // a release later: 28 of 30 requirements reported "without origin" while
+  // every one carried `**Origem:**` — the label had no name in the method, so
+  // the agent named it, in its language. The homemade LABEL is now read and
+  // its value classed like the canonical one's. And two requirements read as
+  // "inferred" because their prose said "deixou de ser Assumption" and "não
+  // inferida de log": the inference marks are now the bracket and the phrase
+  // the field actually used as marks, never a word in a sentence.
   const lines = body.split("\n");
-  const defs = idBlocks(lines, String.raw`RF-\d{1,4}`);
-  const c = { defs: defs.length, evidence: 0, decision: 0, user: 0, inferred: 0, none: [], homemade: [], unparsed: [], divCites: [] };
-  const ALIAS = /\[inferr?ed\]|\[inferid[ao]\]|premissa inferida|\binferid[ao]s?\b|\*\*Assumption\*\*|\bAssumption:/i;
+  const defs = idBlocks(lines, RF_PAT);
+  const c = { defs: defs.length, evidence: 0, decision: 0, user: 0, inferred: 0, none: [], homemade: [], homemadeLabel: [], labels: new Set(), unparsed: [], divCites: [],
+    ambiguous: defs.ambiguous, nfr: idBlocks(lines, NFR_PAT).length };
+  const MARK = /\[inferr?ed\]|\[inferid[ao]\]|premissa inferida|^\s*(?:>+\s*)?(?:[-*]\s+)?\*\*Assumption[:：]?\*\*/i;
+  const HOME = /\*\*((?:Origem|Origin|Source|Fonte|Proveni[êe]ncia|Proced[êe]ncia|Evid[êe]ncia|Evidence)\b[^*]{0,40}?)[:：]\*\*/i;
+  const divRx = new RegExp(String.raw`\b` + DIV_PAT + String.raw`\b`, "g");
+  const classOf = (v) => {
+    // The class is the value's LEADING word — the template's grammar
+    // (`evidence …`, `decision …`, `user-supplied …`, `inferred`). Content
+    // heuristics only when no keyword leads, and decision before evidence:
+    // `decision … docs/decisions/adr/0003.md:12` cites a file:line and is
+    // still a decision. A finding id (DIV-…, RISK-…) is evidence BY
+    // REFERENCE — the reverse recorded it with file:line on both sides;
+    // whether a human ratified it is the other axis, the ratification edge's.
+    const lead = (/^[`*_\s]*(inferr?ed|inferid[ao]|evidence|evid[êe]ncia|decision|decis[ãa]o|user[- ]supplied)\b/i.exec(v) || [])[1]?.toLowerCase();
+    return lead ? (lead.startsWith("infer") ? "inferred" : lead.startsWith("user") ? "user" : lead.startsWith("evid") ? "evidence" : "decision")
+      : /\bADR-\d|decisions?\//i.test(v) ? "decision"
+      : /[\w./-]+\.[a-z]{1,4}:\d{1,5}\b/i.test(v) ? "evidence"
+      : /\b(?:DIV|RISK)(?:-[A-Z]{2,6})*-\d{1,4}\b/.test(v) ? "evidence"
+      : /\binferr?ed\b|\binferid[ao]\b/i.test(v) ? "inferred" : null;
+  };
   defs.forEach(({ id, start, end }) => {
     const block = lines.slice(start, end);
-    for (const l of block) for (const m of l.matchAll(/\bDIV-\d{1,4}\b/g)) c.divCites.push([id, m[0]]);
+    for (const l of block) for (const m of l.matchAll(divRx)) c.divCites.push([id, m[0]]);
     const pl = block.find(l => /\*\*Provenance:\*\*/.test(l));
-    if (pl) {
-      // The class is the value's LEADING word — the template's grammar
-      // (`evidence …`, `decision …`, `user-supplied …`, `inferred`). Content
-      // heuristics only when no keyword leads, and decision before evidence:
-      // `decision … docs/decisions/adr/0003.md:12` cites a file:line and is
-      // still a decision (the first draft tested evidence first and classed
-      // it wrong).
-      const v = pl.replace(/^.*\*\*Provenance:\*\*/, "").trim();
-      const lead = (/^[`*_\s]*(inferr?ed|inferid[ao]|evidence|decision|user[- ]supplied)\b/i.exec(v) || [])[1]?.toLowerCase();
-      const cls = lead ? (lead.startsWith("infer") ? "inferred" : lead.startsWith("user") ? "user" : lead)
-        : /\bADR-\d|decisions?\//i.test(v) ? "decision"
-        : /[\w./-]+\.[a-z]{1,4}:\d{1,5}\b/i.test(v) ? "evidence"
-        : /\binferr?ed\b|\binferid[ao]\b/i.test(v) ? "inferred" : null;
+    const hl = pl ? null : block.find(l => HOME.test(l));
+    if (pl || hl) {
+      const v = (pl ?? hl).replace(/^.*?\*\*[^*]+[:：]\*\*/, "").trim();
+      if (hl) { c.homemadeLabel.push(id); c.labels.add(HOME.exec(hl)[1].trim()); }
+      const cls = classOf(v);
       if (cls) c[cls]++; else c.unparsed.push(id);
-    } else if (block.some(l => ALIAS.test(l))) { c.inferred++; c.homemade.push(id); }
+    } else if (block.some(l => MARK.test(l))) { c.inferred++; c.homemade.push(id); }
     else c.none.push(id);
   });
+  return c;
+}
+
+function dimensionCensus(body) {
+  // THE DIMENSION CENSUS (1.27.0). create_frd demands, as JUDGMENT, that every
+  // criterion "covers normal, boundary, error and state" — and the template
+  // gave the four dimensions no label. Field case: a gap in an FRD said from
+  // the first round that "only the pending criteria" were incomplete; the
+  // real count appeared in the SEVENTH, when the coordinator counted labels
+  // by hand. The agents had been labelling all along — `**Borda:**`,
+  // `**Erro:**`, `**Estado:**` in one project, `*Normal:*` … `*Estado:*` in
+  // another — in spellings they chose, because the method never gave them
+  // one, and nothing counted. Vocabulary first (`normal · boundary · error ·
+  // state`, never translated), then this count, from the first delivery.
+  // Whether a criterion truly COVERS its dimension stays judgment; that each
+  // requirement DECLARES the four — or says `n/a` with the reason — is a
+  // count. Homemade and translated labels are read and named; an unlabeled
+  // first criterion is read as `normal`, the field's own shape.
+  const lines = body.split("\n");
+  const DIMS = [["normal", /^(normal|happy(?: path)?|caminho feliz|nominal)$/i], ["boundary", /^(boundary|edge|borda|limite|fronteira)$/i],
+    ["error", /^(error|erro|failure|falha)$/i], ["state", /^(state|estado)$/i]];
+  const c = { rfs: 0, labeled: 0, totals: { normal: 0, boundary: 0, error: 0, state: 0 }, na: 0, missing: [], homemade: new Set(), positional: 0, bareNa: [] };
+  for (const { id, start, end } of idBlocks(lines, RF_PAT)) {
+    const block = lines.slice(start, end);
+    const li = block.findIndex(l => CRIT_CANON.test(l) || CRIT_TRANSLATED.test(l));
+    if (li < 0) continue;
+    const items = [];
+    for (let i = li + 1; i < block.length; i++) {
+      if (/^\s*(?:>+\s*)?\*\*[^*]+[:：]\*\*/.test(block[i])) break;      // the next label of the requirement
+      const m = /^\s*(?:>+\s*)?[-*]\s+(.*)$/.exec(block[i]);
+      if (m) items.push(m[1]);
+    }
+    if (!items.length) continue;
+    c.rfs++;
+    const have = new Set(), na = new Set();
+    items.forEach((it, k) => {
+      // `**Estado:** …`, `*Borda:* …`, `[error] …`, and the label with a gloss the
+      // field wrote (`**Estado (é o critério que impõe a ordem):** …`) — the
+      // first reading of a real frd counted that requirement as missing `state`.
+      const m = /^(\*\*|\*|_|\[|`)?\s*([\p{L}][\p{L} ]{2,19}?)\s*(?:\([^)]{0,120}\)\s*)?(?:[:：]\s*(?:\*\*|\*|_|`)?|(?:\*\*|\*|_|`)\s*[:：]|\]\s*[:：]?)\s*(.*)$/u.exec(it);
+      const dim = m ? (DIMS.find(([, rx]) => rx.test(m[2].trim())) || [])[0] : null;
+      if (!dim) { if (k === 0) { have.add("normal"); c.positional++; } return; }
+      c.labeled++;
+      if (!(m[1] === "**" && m[2] === dim && /^\*\*[a-z]+:\*\*/.test(it))) c.homemade.add(m[2].trim());
+      const n = /^(?:n\/a|n\.a\.|n[ãa]o se aplica|not applicable)\b[\s—–:,.;-]*(.*)$/i.exec(m[3]);
+      if (!n) have.add(dim);
+      else if (n[1].trim().length >= 3) { na.add(dim); c.na++; }
+      else c.bareNa.push(`${id} (${dim})`);
+    });
+    for (const [d] of DIMS) if (have.has(d)) c.totals[d]++;
+    const miss = DIMS.map(([d]) => d).filter(d => !have.has(d) && !na.has(d));
+    if (miss.length) c.missing.push(`${id} (${miss.join(", ")})`);
+  }
   return c;
 }
 
@@ -1542,14 +1657,20 @@ function cmdVerify(root, file) {
   if (selfKey === "frd" && p.endsWith(".md")) {
     const lines = body0.split("\n");
     // [start, RF-id, end] — POSITIONAL definitions and bounded blocks (idBlocks); a mention never opens a block
-    const defs = idBlocks(lines, String.raw`RF-\d{1,4}`).map(b => [b.start, b.id, b.end]);
+    const defs = idBlocks(lines, RF_PAT).map(b => [b.start, b.id, b.end]);
     if (defs.length) {
-      const bare = [];
+      const bare = [], translated = [];
+      let translatedAs = null;
       defs.forEach(([start, id, end]) => {
         const block = lines.slice(start, end);
-        const li = block.findIndex(l => /\*\*Acceptance criteria:\*\*/.test(l));
-        const hasScenario = li >= 0 && block.slice(li + 1).some(l => /^\s*>?\s*[-*]\s+\S/.test(l) || /\*\*Acceptance criteria:\*\*\s*\S/.test(block[li]));
-        if (!hasScenario) bare.push(id);
+        const has = (rx) => { const li = block.findIndex(l => rx.test(l)); return li >= 0 && (block.slice(li + 1).some(l => /^\s*>?\s*[-*]\s+\S/.test(l)) || new RegExp(rx.source + String.raw`\s*\S`, rx.flags).test(block[li])); };
+        if (has(CRIT_CANON)) return;
+        // A scenario under a TRANSLATED label is not a missing scenario. The
+        // first reading of a real field frd reported 57 requirements "with no
+        // scenario" — every one had four, under `Critérios de aceite:`. Say
+        // what is true: the criterion exists, the label is not the method's.
+        if (has(CRIT_TRANSLATED)) { translated.push(id); translatedAs ??= CRIT_TRANSLATED.exec(block.find(l => CRIT_TRANSLATED.test(l)))[1]; }
+        else bare.push(id);
       });
       // THE BOUNDED-RESTRICTION FLOOR (1.23.0) — a declared restriction travels
       // whole or it warns. The machine does NOT guess what a restriction is
@@ -1572,9 +1693,31 @@ function cmdVerify(root, file) {
         warns.push(`bounded restriction: ${halfBound.length} requirement(s) declare \`Restricts:\` with no \`Keeps possible:\` — ${halfBound.slice(0, 6).join(", ")}${halfBound.length > 6 ? ", …" : ""}. A restriction declared without what survives it is a law nobody downstream can weigh; name what stays possible, and for whom`);
       else if (defs.some(([start, , end]) => lines.slice(start, end).some(l => /\*\*Restricts:\*\*\s*\S/.test(l))))
         oks.push(`bounded restriction: every requirement that declares \`Restricts:\` also declares \`Keeps possible:\``);
+      if (translated.length)
+        warns.push(`scenario floor: ${translated.length} requirement(s) carry their criteria under a TRANSLATED label (\`${translatedAs}:\`) — ${translated.slice(0, 6).join(", ")}${translated.length > 6 ? ", …" : ""}. The scenarios exist and were read; the label is method vocabulary (\`Acceptance criteria:\` — content localizes, labels do not), and every reader that looks for it by name finds nothing here`);
       if (bare.length)
         warns.push(`scenario floor: ${bare.length} requirement(s) with no \`Acceptance criteria:\` scenario under the definition — ${bare.slice(0, 6).join(", ")}${bare.length > 6 ? ", …" : ""}. A requirement with no scenario is acceptance nobody can check; the label is method vocabulary (content localizes; labels do not)`);
-      else oks.push(`scenario floor: all ${defs.length} requirement(s) carry at least one acceptance criterion under an \`Acceptance criteria:\` label`);
+      else if (!translated.length) oks.push(`scenario floor: all ${defs.length} requirement(s) carry at least one acceptance criterion under an \`Acceptance criteria:\` label`);
+    }
+    // THE DIMENSION CENSUS (1.27.0) — see dimensionCensus(). Counted, never
+    // judged: whether a criterion truly covers its dimension is the
+    // reviewer's; that the requirement DECLARES the four is this line.
+    {
+      const dc = dimensionCensus(body0);
+      if (dc.rfs && !dc.labeled)
+        warns.push(`dimension census: ${dc.rfs} requirement(s) with criteria and NO criterion declares its dimension (\`normal\` · \`boundary\` · \`error\` · \`state\`). The contract asks every requirement to cover the four, as judgment; unlabeled, nobody can COUNT what is covered — a gap that says "only a few are incomplete" stays unmeasured until someone counts by hand`);
+      else if (dc.rfs) {
+        const t = dc.totals;
+        oks.push(`dimension census: ${dc.rfs} requirement(s) with criteria — normal ${t.normal} · boundary ${t.boundary} · error ${t.error} · state ${t.state}` + (dc.na ? ` · ${dc.na} declared n/a with a reason` : "") +
+          (dc.missing.length ? "" : " — every requirement declares the four (coverage of each is the reviewer's judgment; the declaration is this count)"));
+        if (dc.missing.length)
+          warns.push(`dimension census: ${dc.missing.length} of ${dc.rfs} requirement(s) do not declare the four dimensions — ${dc.missing.slice(0, 8).join("; ")}${dc.missing.length > 8 ? "; …" : ""}. Write the missing criterion, or declare it \`n/a\` with the reason; this is the count a gap section owes instead of "some are incomplete"`);
+        if (dc.homemade.size || dc.positional)
+          warns.push(`dimension census: labels read in a homemade or translated form` + (dc.homemade.size ? ` (${[...dc.homemade].slice(0, 6).join(", ")})` : "") + (dc.positional ? `${dc.homemade.size ? ";" : ""} an unlabeled first criterion read as \`normal\` in ${dc.positional} requirement(s)` : "") +
+            `. Counted here; the labels are method vocabulary — \`**normal:**\` · \`**boundary:**\` · \`**error:**\` · \`**state:**\` — and a label outside it is counted by nobody else`);
+        if (dc.bareNa.length)
+          warns.push(`dimension census: ${dc.bareNa.length} dimension(s) declared \`n/a\` with NO reason — ${dc.bareNa.slice(0, 6).join("; ")}. A dimension is waived with its why, or it is missing`);
+      }
     }
     // THE PROVENANCE CENSUS (1.26.0) — see provenanceCensus(). Reported, not
     // judged: inferred is honest; the machine counts and the human ratifies at
@@ -1589,17 +1732,22 @@ function cmdVerify(root, file) {
     if (!pc.defs) {
       const seen = new Set([...body0.matchAll(/\bRF-\d{1,4}\b/g)].map(m => m[0]));
       if (seen.size)
-        warns.push(`${seen.size} RF id(s) appear in this document and NONE is defined in a shape verify reads (a heading or a bold title carrying the id — the template's \`> **RF-001 — title**\`). The scenario floor, the bounded-restriction floor and the provenance census DID NOT RUN: this is not a clean result, it is an unread document`);
+        warns.push(`${seen.size} RF id(s) appear in this document and NONE is defined in a shape verify reads (a heading or a bold title carrying the id — the template's \`> **RF-001 — title**\`). The scenario floor, the bounded-restriction floor, the dimension census and the provenance census DID NOT RUN: this is not a clean result, it is an unread document`);
     }
+    if (pc.ambiguous.length)
+      warns.push(`${pc.ambiguous.length} requirement id(s) are DEFINED more than once in equal standing — ${pc.ambiguous.slice(0, 4).map(([id, at]) => `${id} (body lines ${at.join(", ")})`).join("; ")}${pc.ambiguous.length > 4 ? "; …" : ""}. The first was read; a duplicated or recycled id makes every floor read one requirement and skip the other (a dead id stays dead — frd § Never)`);
     if (pc.defs) {
       oks.push(`provenance census: ${pc.defs} requirement(s) — ${pc.evidence} evidence · ${pc.decision} decision · ${pc.user} user-supplied · ${pc.inferred} inferred · ${pc.none.length} without origin` +
-        (pc.inferred ? ` (an inferred requirement is honest; approving this document RATIFIES ${pc.inferred} inference(s) — the approve door prints this count again)` : ""));
+        (pc.inferred ? ` (an inferred requirement is honest; approving this document RATIFIES ${pc.inferred} inference(s) — the approve door prints this count again)` : "") +
+        (pc.nfr ? ` · and ${pc.nfr} non-functional requirement(s) (RNF/NFR) defined here that NO floor of this command reads — the count above is the RFs'` : ""));
       if (pc.none.length)
         warns.push(`provenance: ${pc.none.length} requirement(s) with NO \`Provenance:\` line and no inference mark — ${pc.none.slice(0, 6).join(", ")}${pc.none.length > 6 ? ", …" : ""}. A requirement nobody can trace to code, decision, person or inference is the one an agent invented without saying so; write the line (evidence · decision · user-supplied · inferred)`);
+      if (pc.homemadeLabel.length)
+        warns.push(`provenance: ${pc.homemadeLabel.length} requirement(s) carry their origin under a homemade label (\`${[...pc.labels].slice(0, 3).join(":`, `")}:\`) instead of \`Provenance:\` — read and classed here by its value; the label is method vocabulary, and a line outside it is counted by nobody else`);
       if (pc.homemade.length)
-        warns.push(`provenance: ${pc.homemade.length} requirement(s) mark an inference in a homemade way (\`[inferred]\`, "premissa inferida", Assumption) instead of \`Provenance: inferred\` — ${pc.homemade.slice(0, 6).join(", ")}${pc.homemade.length > 6 ? ", …" : ""}. Read as inferred here; the label is method vocabulary, and a mark outside it is counted by nobody else`);
+        warns.push(`provenance: ${pc.homemade.length} requirement(s) mark an inference in a homemade way (\`[inferred]\`, "premissa inferida", \`**Assumption**\`) instead of \`Provenance: inferred\` — ${pc.homemade.slice(0, 6).join(", ")}${pc.homemade.length > 6 ? ", …" : ""}. Read as inferred here; the label is method vocabulary, and a mark outside it is counted by nobody else`);
       if (pc.unparsed.length)
-        warns.push(`provenance: ${pc.unparsed.length} \`Provenance:\` value(s) outside the four classes (evidence · decision · user-supplied · inferred) — ${pc.unparsed.slice(0, 6).join(", ")}`);
+        warns.push(`provenance: ${pc.unparsed.length} origin value(s) outside the four classes (evidence · decision · user-supplied · inferred) — ${pc.unparsed.slice(0, 6).join(", ")}${pc.unparsed.length > 6 ? ", …" : ""}. The line exists and says something the machine cannot class; start it with the class`);
       // THE RATIFICATION EDGE — an RF that cites DIV-nn is building on a
       // divergence an agent recorded. Recorded is not ratified (agent.yaml §
       // census: `external` and the reverse's findings are "recorded, not
@@ -1610,29 +1758,34 @@ function cmdVerify(root, file) {
       // for the citation to stand as ratified; a DIV defined in THIS document
       // is ratified together with it and is not checked here.
       if (pc.divCites.length) {
-        const homes = new Map(); // DIV-id → [file, ratified]
+        const homes = new Map(); // DIV-id → [file, ratified, artifact, status, standing]
         for (const [k2, a2] of Object.entries(arts))
           for (const f2 of findInstances(a2, root, inst, "*")) {
             if (!f2.endsWith(".md") || f2 === p || !fs.existsSync(f2) || !fs.statSync(f2).isFile()) continue;
             const [fm2, b2] = readFrontmatter(f2);
             const ratified = fm2.status === "approved" && fm2.approval?.content_hash === sha256Body(f2);
-            for (const l of b2.split("\n")) {
-              const d = defAt(l, String.raw`DIV-\d{1,4}`, { cell: true })?.id; // DIVs live in tables: the plain first cell defines here, and only here
-              if (d && !homes.has(d)) homes.set(d, [path.relative(root, f2), ratified, k2, fm2.status ?? "no status"]);
-            }
+            // DIVs live in tables: the row defines here, and only here. By
+            // STANDING across files too — a heading that mentions a DIV in one
+            // document never outranks the row that defines it in another.
+            for (const d of idBlocks(b2.split("\n"), DIV_PAT, { cell: true }))
+              if (!homes.has(d.id) || d.rank > homes.get(d.id)[4]) homes.set(d.id, [path.relative(root, f2), ratified, k2, fm2.status ?? "no status", d.rank]);
           }
-        const selfDivs = new Set(body0.split("\n").map(l => defAt(l, String.raw`DIV-\d{1,4}`, { cell: true })?.id).filter(Boolean));
-        const unrat = [], nowhere = [];
+        const selfDivs = new Set(idBlocks(body0.split("\n"), DIV_PAT, { cell: true }).map(d => d.id));
+        // Counted as the message says: REQUIREMENTS, and distinct citations. A
+        // DIV cited three times in one block is one citation by one requirement
+        // (1.26.0 counted the mentions and called them requirements).
+        const unratSet = new Set(), nowhereSet = new Set(), unratRf = new Set(), nowhereRf = new Set();
         for (const [rf, div] of pc.divCites) {
           if (selfDivs.has(div)) continue;
           const h = homes.get(div);
-          if (!h) nowhere.push(`${rf} → ${div}`);
-          else if (!h[1]) unrat.push(`${rf} → ${div} (${h[0]}, ${h[3]})`);
+          if (!h) { nowhereSet.add(`${rf} → ${div}`); nowhereRf.add(rf); }
+          else if (!h[1]) { unratSet.add(`${rf} → ${div} (${h[0]}, ${h[3]})`); unratRf.add(rf); }
         }
+        const unrat = [...unratSet], nowhere = [...nowhereSet];
         if (unrat.length)
-          warns.push(`ratification: ${unrat.length} requirement(s) build on a divergence NO HUMAN RATIFIED — ${[...new Set(unrat)].slice(0, 4).join("; ")}${unrat.length > 4 ? "; …" : ""}. A DIV an agent recorded is an observation until its document is approved; until then the requirement's provenance is inferred, and the question belongs to the human before the gate`);
+          warns.push(`ratification: ${unratRf.size} requirement(s) build on a divergence NO HUMAN RATIFIED (${unrat.length} citation(s)) — ${unrat.slice(0, 4).join("; ")}${unrat.length > 4 ? "; …" : ""}. A DIV an agent recorded is an observation until its document is approved; until then the requirement's provenance is inferred, and the question belongs to the human before the gate`);
         if (nowhere.length)
-          warns.push(`ratification: ${nowhere.length} requirement(s) cite a DIV defined in no registered artifact — ${[...new Set(nowhere)].slice(0, 4).join("; ")}. A divergence with no home document is a claim nobody can ratify`);
+          warns.push(`ratification: ${nowhereRf.size} requirement(s) cite a DIV defined in no registered artifact — ${nowhere.slice(0, 4).join("; ")}${nowhere.length > 4 ? "; …" : ""}. A divergence with no home document is a claim nobody can ratify`);
         if (!unrat.length && !nowhere.length)
           oks.push(`ratification: every DIV this document builds on lives in an approved document (or in this one, ratified together)`);
       }
@@ -1707,7 +1860,7 @@ function cmdVerify(root, file) {
     for (const f of frdArt ? findInstances(frdArt, root, inst, "*") : []) {
       if (!f.endsWith(".md") || !fs.existsSync(f) || !fs.statSync(f).isFile()) continue;
       const fl = readFrontmatter(f)[1].split("\n");
-      idBlocks(fl, String.raw`RF-\d{1,4}`).forEach(({ id, start, end }) => {
+      idBlocks(fl, RF_PAT).forEach(({ id, start, end }) => {
         if (fl.slice(start, end).some(l => /\*\*Restricts:\*\*\s*\S/.test(l)) && !restricting.has(id)) restricting.set(id, path.relative(root, f));
       });
     }

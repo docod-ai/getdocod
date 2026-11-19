@@ -27,6 +27,8 @@ contract:
         - "deterministic: Every requirement traces to a PRD objective or success criterion"
         - "deterministic: Every PRD objective has at least one requirement — or the gap is pointed out"
         - "judgment: Every criterion covers normal, boundary, error and state"
+        - "deterministic: Every acceptance criterion carries its dimension label — `normal`, `boundary`, `error` or `state` — and every requirement declares the four, or declares the one that does not exist for it `n/a` with the reason. The label is what lets coverage be COUNTED from the first delivery; whether the criterion truly covers its dimension stays the judgment above"
+        - "evidence: A gap about incomplete criteria cites the count — which requirements, which dimensions — as `verify`'s dimension census prints it; 'some criteria are incomplete' is not a gap, it is an estimate"
         - "judgment: No requirement freezes a technology choice"
         - "deterministic: Every requirement has a criticality (must/should/could)"
         - "deterministic: Every requirement carries `Provenance:` — evidence (file:line with the observed fragment), decision (the ADR or log entry), user-supplied (who, when), or inferred. Criticality is never evidence: the code does not know what is essential, so a criticality nobody stated is inferred and says so"
@@ -118,8 +120,10 @@ Grouped by module or flow. Each one in the template:
 > **RF-001 — [Compact title]**
 > **Description:** The system shall [verb] [object] [condition].
 > **Acceptance criteria:**
-> - Given / When / Then, or a verifiable list
-> - covering normal, boundary, error and state
+> - **normal:** Given / When / Then, or a verifiable statement of the expected path
+> - **boundary:** zero, one, many, the limit, the empty and the duplicate
+> - **error:** each failure the user can meet, and what they see
+> - **state:** first time, repetition, concurrency, after a partial failure (or `n/a` and the reason this requirement has no state)
 > **Criticality:** must / should / could
 > **Provenance:** evidence `path:line` `fragment` · decision ADR-nnnn · user-supplied (who, when) · inferred
 > **Traces:** PRD objective or success criterion
@@ -128,6 +132,8 @@ Grouped by module or flow. Each one in the template:
 > **Keeps possible:** [only with Restricts: what stays possible for everyone else, and where — the administrative route, the exception path]
 
 The bold labels of this template — `Description:`, `Acceptance criteria:`, `Criticality:`, `Provenance:`, `Traces:`, `Dependencies:`, `Restricts:`, `Keeps possible:` — are method vocabulary, never translated; the content beside them speaks the instance's language (the evals-labels rule). Two floors `verify` watches: **every RF carries at least one criterion under `Acceptance criteria:`** (a requirement with no scenario is acceptance nobody can check), and **a `Restricts:` never travels without its `Keeps possible:`** (a restriction declared without what survives it is a law nobody downstream can weigh). And one census it reports: **the provenance of every RF**, by class, with the requirements that have NONE named, and the count of `inferred` ones — a number the human sees again at `approve`, because approving an FRD ratifies every inference in it, and the one who ratifies must know how many there are.
+
+**The four dimension labels are vocabulary too.** `normal:`, `boundary:`, `error:` and `state:` open each criterion, never translated, exactly as written in the template. A requirement declares the four; when one does not exist for it (a pure read has no state of its own) the criterion says `n/a` and why, and a bare `n/a` counts as missing. `verify` prints the DIMENSION CENSUS on every run: how many requirements declare each dimension, and which requirements lack which. Field case: a gap in an FRD said from the first round that only "the pending criteria" were incomplete; the real count appeared in the seventh round, when someone counted labels by hand. The agents had labelled the dimensions all along, in spellings they chose (`Borda:`, `Erro:`, `Estado:` in one project, `*Normal:*` in another), because this template gave the four no name. A criterion you cannot count is a criterion nobody checks until late.
 
 **Provenance is the line that keeps you from inventing.** Four values, one per requirement. `evidence` is a file:line WITH the fragment you saw (verify re-reads it). `decision` is the ADR or the decisions-log entry. `user-supplied` is who said it and when. `inferred` is everything else: the number you chose because the PRD did not, the criticality nobody stated, the rule you deduced from an observation. Inferred is honest and allowed; what is not allowed is inferred wearing another class, or an inference marked in a homemade way (`[inferred]` in the title, "premissa inferida" in the criterion) that no reader counts. Field case: an FRD with 287 requirements, every criticality inferred, 92 criteria carrying invented numbers and 29 requirements with no origin at all — all marked, in two homemade spellings, none counted, all approved in one gate. And the sharpest case: a reverse diagnosis, never ratified by the human, classified a legacy behavior as "accidental"; the requirement built on it went further than the fix and invented a rule the legacy code contradicted (`SET NULL` in the schema; "dies with its creator" in the RF). An unratified divergence is an observation. You may build on it only as `inferred`, and the question goes to the human before the gate, not after.
 

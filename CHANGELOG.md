@@ -5,6 +5,83 @@ All notable changes to the DOCOD bundle. Versions follow semver and match the
 migrations (backward-safe), major = contract changes that move user state —
 and those only ship together with their migration (install.sh step 2b).
 
+## [1.27.0] — 2026-11-19
+
+The dimension census, and the first reading of 1.26.0 against real
+documents. Two reports the same day. From a project running the method: a
+gap in an FRD said from the first round that only "the pending criteria"
+were incomplete, and the real count appeared in the SEVENTH, when the
+coordinator counted labels by hand — "a label count like that, running from
+the first delivery, would have shown the hole at the start". From the
+verifying agent: two shapes the 1.26.0 definition grammar still read wrong.
+And a third thing nobody reported: this release ran 1.26.0, for the first
+time, against two real field FRDs.
+
+Added: the four dimension labels — `normal:` · `boundary:` · `error:` ·
+`state:` — on every acceptance criterion, never translated. create_frd
+demanded as JUDGMENT that every criterion "covers normal, boundary, error
+and state" and its template gave the four no name; the field named them
+itself (`Borda:`, `Erro:`, `Estado:` in one project, `*Normal:*` … in
+another) and nothing counted. The template now carries them; a new
+deterministic postcondition asks every requirement to declare the four, or
+to declare the one that does not exist for it `n/a` with the reason; a gap
+about incomplete criteria cites the count (evidence). The judgment stays
+judgment: whether a criterion truly covers its dimension is the reviewer's.
+
+Added: `verify` prints the DIMENSION CENSUS on the frd — how many
+requirements declare each dimension, and WHICH requirements lack WHICH. A
+bare `n/a` counts as missing and is named. Translated and homemade labels
+are read and named as such, an unlabeled first criterion is read as
+`normal` (the field's own shape), and a label carrying a gloss (`**Estado
+(é o critério que impõe a ordem):**`) is the label. A document where no
+criterion declares a dimension gets one warn, not one per requirement.
+
+Fixed: first-wins, the last surviving form of the founding parse class. A
+heading that mentions an id before the definitions (`## Summary of
+RF-001..RF-040`) and a bold title inside another requirement's block (`>
+**Important — RF-002 runs first**`) still took the definition. A definition
+is now chosen by STANDING, never by coming first: the id opening a heading
+or a bold title outranks the id sitting behind other words, which outranks
+a table row; at equal standing the candidate that owns a label body wins.
+Two candidates of equal standing that both own a body are an ambiguity the
+machine reports and does not resolve — a duplicated or recycled id.
+
+Fixed, from reading the field with 1.26.0 as committed:
+- 28 of 30 requirements were reported "without origin" while every one
+  carried `**Origem:**`. The origin under a homemade label (`Origem:`,
+  `Fonte …:`, `Evidência …:`) is now read, classed by its value, and named
+  as homemade. A finding id (`DIV-…`, `RISK-…`) is evidence by reference;
+  whether a human ratified it remains the ratification edge's axis.
+- The ratification edge matched `DIV-nn` and the field's ids carry a
+  family (`DIV-API-08`, `DIV-SEC-04`): it had been silent on every real
+  citation. It now reads the family, and reports six requirements of that
+  FRD built on a diagnostic whose own header says "pre-read, never
+  pre-approved" — counted as requirements and distinct citations (1.26.0
+  counted every mention and called the total requirements).
+- Two requirements were read as inferred because their prose said "deixou
+  de ser Assumption" and "não inferida de log". The inference marks are now
+  the bracket and the phrase the field used as marks, never a word in a
+  sentence.
+- 57 requirements with four scenarios each were reported as having none,
+  because the label read `Critérios de aceite:`. The scenario floor now
+  says what is true — criteria under a TRANSLATED label — instead of
+  "missing".
+- RNF/NFR requirements, numbered beside the RFs in both projects, are read
+  by no floor. They are now counted in the census line as unread, so "30
+  requirements" no longer reads as the whole document. Whether the floors
+  should own them is held in the ledger.
+
+`tests/verify-grammar.sh` grew with every shape above; run against the
+committed 1.26.0 runtime it fails thirteen assertions.
+
+Not done: the test-plan's family is `happy` where the frd's dimension is
+`normal` — one concept, two names, noted in the ledger and left until a
+miss asks for it. The label census is the frd's; the approve door does not
+print it (the provenance count is a ratification, the dimension count is a
+review finding, and its home is `verify`).
+
+specVersion → 1.27.0 in lockstep (5 spec files + install.sh + both plugin.json).
+
 ## [1.26.0] — 2026-11-19
 
 Provenance — the line that keeps the agent from inventing, and the census

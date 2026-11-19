@@ -180,6 +180,28 @@ migration:
         (seq-race solved it in three lines); three severity scales
         reconciled by a fourth actor (severity-vocabulary's specimen).
 
+    - id: nfr-unread
+      severity: minor
+      issue: |
+        Found 2026-11-19 reading two field FRDs: both number non-functional
+        requirements beside the functional ones (`RNF-001…` in one, `NFR-01…`
+        in the other), written in the same template with the same labels,
+        and NO floor of verify reads them — scenario floor, bounded
+        restriction, provenance census, dimension census, benign path and
+        COVERAGE all key on `RF-`. Thirteen requirements across the two
+        documents with no machine reader at all.
+      decision: |
+        1.27.0 makes the gap VISIBLE and decides nothing: the census line
+        counts them as unread, so a count of RFs no longer reads as the
+        whole document. Which floors should own a non-functional
+        requirement is the author's call and not obvious: the scenario
+        floor and the provenance census apply as they are; the four
+        dimensions mostly do not (a retention period has no error path);
+        COVERAGE would start demanding tasks for every NFR, and some NFRs
+        are held by an evals case or an SLO, not a task. Waits for the
+        first miss that an unread NFR causes, or for the author to say the
+        template's id is `RF` and the field's RNF/NFR is the drift.
+
     - id: task-cost
       severity: minor
       issue: |
@@ -642,6 +664,103 @@ migration:
   # RESOLVED — they stay on record. A deleted blocker is a blocker that comes back.
   # ---------------------------------------------------------------------------
   resolved:
+    - id: dimension-census
+      was: major
+      issue: |
+        Field report, 2026-11-19, relayed by the author from an agent
+        working in a project governed by the method: "A lacuna G-15 dizia
+        desde as primeiras rodadas que só os critérios pendentes estavam
+        incompletos, e a contagem real só apareceu na sétima. O verify
+        confere que todo requisito tem ao menos um critério, mas não confere
+        as quatro dimensões, porque essa condição é de julgamento. Uma
+        contagem de rótulos como a que o coordenador fez agora, rodando
+        desde a primeira entrega, teria mostrado o buraco no começo."
+        Reading the contract: create_frd carries "judgment: Every criterion
+        covers normal, boundary, error and state" (frd.md:29) and the
+        template's criteria block said "covering normal, boundary, error and
+        state" with NO label for any of the four. Reading the field (two
+        FRDs under the author's folder, staged and read before a line of
+        grammar was written — the 1.22.2 rule): the agents label the
+        dimensions already, 30 of 30 requirements in one project
+        (`**Borda:**`, `**Erro:**`, `**Estado:**`, the normal case first and
+        unlabeled) and 57 of 57 in another (`*Normal:*`, `*Borda:*`,
+        `*Erro:*`, `*Estado:*`). The vocabulary existed in the field, in
+        spellings the agents chose because the method gave none, and no
+        reader counted it. Declared-without-a-consumer, the fifth time
+        (used_by, Keeps possible:, superseded_approval, [inferred], now the
+        dimensions) — and the second where the DECLARATION itself was the
+        field's invention filling a hole in the template.
+      resolution: |
+        1.27.0. Vocabulary first: `normal:` · `boundary:` · `error:` ·
+        `state:` on every criterion in the RF template, never translated.
+        The judgment postcondition stays (does the criterion truly cover
+        its dimension is the reviewer's); a deterministic one joins it
+        (every requirement DECLARES the four, or declares the absent one
+        `n/a` with the reason — without the waiver the method would be
+        ordering agents to invent a state criterion for a pure read, the
+        invention 1.26.0 was built against); an evidence one for the gap
+        ("some criteria are incomplete" is an estimate; the gap cites the
+        count). Then the reader: verify's DIMENSION CENSUS, per-dimension
+        totals and the requirements missing a dimension NAMED with the
+        dimension. Homemade and translated labels read and named, never
+        rewritten; an unlabeled first criterion read as normal (the shape
+        30 of 30 real requirements have); a glossed label (`**Estado (é o
+        critério que impõe a ordem):**`) is the label — the first run on
+        the real FRD counted that requirement as missing `state`, a false
+        positive caught by reading the output against the file, before
+        shipping. A document where NO criterion declares a dimension gets
+        one warn, not one per requirement. Advisory at birth. Not printed at
+        approve: the provenance count is a ratification, this one is a
+        review finding. Left open, no miss behind it: the test-plan's
+        family is `happy` where the frd's dimension is `normal` — one
+        concept, two names (`happy` is read as an alias here).
+
+    - id: field-first-reading
+      was: major
+      issue: |
+        1.26.0 (provenance census, ratification edge) was written from the
+        author's DESCRIPTION of one FRD and planted against fixtures the
+        maintainer wrote to match the description. It was never run against
+        a real field document. On 2026-11-19, while reading field files for
+        the dimension vocabulary, the committed runtime was run for the
+        first time on two real FRDs and one real diagnostic, and misread
+        five shapes: (1) 28 of 30 requirements "without origin" while each
+        carried `**Origem:**` — a homemade provenance label the census did
+        not read; (2) the ratification edge matched `DIV-\d` and every
+        field DIV carries a family (`DIV-API-08`, `DIV-SEC-04`,
+        `DIV-PRD-01`) — silent on every real citation, the edge's whole
+        purpose; (3) two requirements "inferred" because their prose said
+        "deixou de ser Assumption" and "não inferida de log" — the alias
+        list matched words in sentences; (4) 57 requirements "with no
+        scenario", each with four, under `Critérios de aceite:`; (5) RNF /
+        NFR requirements, in both projects, read by no floor and absent
+        from every count. Also found: the ratification message counted
+        mentions and called them requirements. The rule existed and was the
+        maintainer's own (1.22.2: "read the field files before writing a
+        grammar"); it was applied to filenames and not to label vocabulary.
+      resolution: |
+        1.27.0. The homemade origin label (`Origem:`, `Origin:`, `Source:`,
+        `Fonte …:`, `Evidência …:`, `Proveniência:`) is read, classed by
+        its value and named as homemade; a finding id (DIV-…, RISK-…) in
+        the value is evidence BY REFERENCE (the reverse recorded it with
+        file:line on both sides — the census's "recorded" axis), and
+        whether a human ratified it stays the ratification edge's axis (the
+        two-axis reading agent.yaml § census already prescribes). DIV ids
+        read with their family, in citations and in the diagnostic's bold
+        first cell; the edge now reports six requirements of the real FRD
+        built on a diagnostic in `draft` whose header says "pre-read, never
+        pre-approved". Inference marks are the bracket, the phrase, and a
+        bold `**Assumption**` opening a line — never a word in prose. The
+        scenario floor names a TRANSLATED criteria label as translated.
+        RNF/NFR are counted in the census line as unread (never a silent
+        partial count); whether the floors should own them is `nfr-unread`,
+        pending. Ratification counts requirements and distinct citations.
+        Every shape went into tests/verify-grammar.sh; the committed 1.26.0
+        fails thirteen of its assertions. Process, for CONTRIBUTING's sense
+        if not its text: a check that reads documents is not done until it
+        has read a REAL one — a fixture written by the hand that wrote the
+        parser proves the parser agrees with its author.
+
     - id: provenance-census
       was: major
       issue: |
@@ -753,6 +872,19 @@ migration:
         `tests/verify-grammar.sh` (dev-only, beside install-adapters.sh):
         green on the fixed runtime, red on the pre-fix one at its first
         assertion — run it on any change to defAt or idBlocks.
+        CLOSED IN 1.27.0, the last form of the class: first-wins. The
+        verifying agent, after the commit: a heading that mentions an id
+        before the definitions (`## Summary of RF-001..RF-040`) and a bold
+        title inside another requirement's block (`> **Important — RF-002
+        runs first**`) still took the definition. A definition is now
+        chosen by STANDING — the id opening a heading or bold title, then
+        the id behind other words, then a table row — and at equal standing
+        by owning a label body; two of equal standing that both own a body
+        are reported as a duplicated id and not resolved. Known residue,
+        stated: a document whose every definition is word-prefixed
+        (`### Requisito RF-001`) AND carries a bodied bold mention of the
+        same id earlier reads the mention; it warns as a duplicate, so it
+        is never silent.
 
     - id: produced-by
       was: minor
